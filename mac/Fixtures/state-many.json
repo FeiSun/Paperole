@@ -1,0 +1,5463 @@
+{
+ "schema": 1,
+ "paper": {
+  "path": "/Users/advisor/Reviews/zhou-warmcast",
+  "title": "Predictive Warm Pools (80 synthetic comments)",
+  "student": "Lin Zhou",
+  "main": "main.tex",
+  "engine": "pdflatex"
+ },
+ "rounds": [
+  {
+   "n": 1,
+   "created": "2026-10-07T09:12:40+08:00",
+   "source": "/Users/advisor/Downloads/warmcast-v1",
+   "closed": true,
+   "closed_at": "2026-10-08T21:30:05+08:00",
+   "status": "ok",
+   "pdf": "round1/main.pdf"
+  },
+  {
+   "n": 2,
+   "created": "2026-10-14T10:02:11+08:00",
+   "source": "/Users/advisor/Downloads/warmcast-v2",
+   "closed": false,
+   "closed_at": null,
+   "status": "ok",
+   "pdf": "round2/main.pdf"
+  }
+ ],
+ "round": {
+  "n": 2,
+  "closed": false,
+  "created": "2026-10-14T10:02:11+08:00",
+  "closed_at": null,
+  "build": {
+   "status": "ok",
+   "pdf": "round2/main.pdf",
+   "pages": 4,
+   "warnings": [],
+   "errors": [],
+   "log_tail": "Output written on main.pdf (4 pages, 268373 bytes).\nSyncTeX written on main.synctex.gz."
+  },
+  "final_pdf": null,
+  "email": null
+ },
+ "comments": [
+  {
+   "id": "R1-04",
+   "kind": "strikeout",
+   "color": "pink",
+   "note": "这句和上一句重复，删掉一句。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "verified",
+   "verdict_note": "",
+   "anchor_state": "moved",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     173.02,
+     110.37,
+     358.2,
+     127.58
+    ]
+   ],
+   "text": "Warm Pools for Serverless",
+   "old_quote": "Warm Pools for Serverless",
+   "new_quote": "Warm Pools for Serverless",
+   "file": "main.tex",
+   "line": 43,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "Predictive Warm Pools for Serverless Cold-Start Reduction",
+      "sel": [
+       [
+        11,
+        36
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        173.02,
+        110.37,
+        358.2,
+        127.58
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "Predictive Warm Pools for Serverless Cold-Start Reduction",
+    "sel": [
+     [
+      11,
+      36
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      173.02,
+      110.37,
+      358.2,
+      127.58
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-13",
+   "kind": "underline",
+   "color": "yellow",
+   "note": "Too vague: say which instances.Too vague: say which instances.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "unchanged",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     363.34,
+     211.53,
+     448.17,
+     220.5
+    ]
+   ],
+   "text": "arrives for a function",
+   "old_quote": "arrives for a function",
+   "new_quote": "arrives for a function",
+   "file": "main.tex",
+   "line": 52,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "Serverless platforms start a fresh sandbox whenever a request arrives for a function that has no idle instance, and this cold start can add hundreds of milliseconds to the response time.",
+      "sel": [
+       [
+        62,
+        84
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        363.34,
+        211.53,
+        448.17,
+        220.5
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "Serverless platforms start a fresh sandbox whenever a request arrives for a function that has no idle instance, and this cold start can add hundreds of milliseconds to the response time.",
+    "sel": [
+     [
+      62,
+      84
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      363.34,
+      211.53,
+      448.17,
+      220.5
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-01",
+   "kind": "highlight",
+   "color": "yellow",
+   "note": "Too vague: say which instances.Too vague: say which instances.",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     135.29,
+     222.49,
+     187.42,
+     231.45
+    ]
+   ],
+   "text": "and this cold",
+   "old_quote": null,
+   "new_quote": "and this cold",
+   "file": "main.tex",
+   "line": 100,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "Serverless platforms start a fresh sandbox whenever a request arrives for a function that has no idle instance, and this cold start can add hundreds of milliseconds to the response time.",
+    "sel": [
+     [
+      112,
+      125
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      135.29,
+      222.49,
+      187.42,
+      231.45
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-03",
+   "kind": "underline",
+   "color": "blue",
+   "note": "Define the symbol before it is used.",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     117.57,
+     233.45,
+     187.54,
+     242.41
+    ]
+   ],
+   "text": "finished instances",
+   "old_quote": null,
+   "new_quote": "finished instances",
+   "file": "main.tex",
+   "line": 102,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "Platforms therefore keep finished instances warm for a fixed period, which wastes memory on functions that are rarely called and still misses bursts on functions that are called often.",
+    "sel": [
+     [
+      25,
+      43
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      117.57,
+      233.45,
+      187.54,
+      242.41
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-16",
+   "kind": "highlight",
+   "color": "pink",
+   "note": "这句和上一句重复，删掉一句。",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     165.07,
+     244.41,
+     244.94,
+     253.37
+    ]
+   ],
+   "text": "bursts on functions",
+   "old_quote": null,
+   "new_quote": "bursts on functions",
+   "file": "main.tex",
+   "line": 115,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "Platforms therefore keep finished instances warm for a fixed period, which wastes memory on functions that are rarely called and still misses bursts on functions that are called often.",
+    "sel": [
+     [
+      142,
+      161
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      165.07,
+      244.41,
+      244.94,
+      253.37
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-25",
+   "kind": "note",
+   "color": "yellow",
+   "note": "Too vague: say which instances.Too vague: say which instances.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "unchanged",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     362.87,
+     244.41,
+     451.23,
+     253.37
+    ]
+   ],
+   "text": "present WarmCast, a",
+   "old_quote": "present WarmCast, a",
+   "new_quote": "present WarmCast, a",
+   "file": "main.tex",
+   "line": 64,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "We present WarmCast, a controller that forecasts the arrival rate of each function and sizes a pool of pre-started instances to minimise the sum of memory cost and cold-start cost.",
+      "sel": [
+       [
+        3,
+        22
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        362.87,
+        244.41,
+        451.23,
+        253.37
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "We present WarmCast, a controller that forecasts the arrival rate of each function and sizes a pool of pre-started instances to minimise the sum of memory cost and cold-start cost.",
+    "sel": [
+     [
+      3,
+      22
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      362.87,
+      244.41,
+      451.23,
+      253.37
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-19",
+   "kind": "strikeout",
+   "color": "yellow",
+   "note": "Shorten: the reader knows this from §1.",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     107.55,
+     266.32,
+     159.21,
+     275.29
+    ]
+   ],
+   "text": "memory cost",
+   "old_quote": null,
+   "new_quote": "memory cost",
+   "file": "main.tex",
+   "line": 118,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "We present WarmCast, a controller that forecasts the arrival rate of each function and sizes a pool of pre-started instances to minimise the sum of memory cost and cold-start cost.",
+    "sel": [
+     [
+      148,
+      159
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      107.55,
+      266.32,
+      159.21,
+      275.29
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-12",
+   "kind": "highlight",
+   "color": "orange",
+   "note": "Which trace days? Say it here, not only in the caption.",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     198.56,
+     277.28,
+     280.6,
+     286.25
+    ]
+   ],
+   "text": "while using 22% less",
+   "old_quote": null,
+   "new_quote": "while using 22% less",
+   "file": "main.tex",
+   "line": 111,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "On a two-week production trace, WarmCast reduces the cold-start rate from 18.4% to 6.1% while using 22% less idle memory than a ten-minute keep-alive policy.",
+    "sel": [
+     [
+      88,
+      108
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      198.56,
+      277.28,
+      280.6,
+      286.25
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-17",
+   "kind": "highlight",
+   "color": "purple",
+   "note": "Use the past tense for what you measured.Use the past tense for what you measured.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "reopened",
+   "verdict_note": "还是不清楚，再改一下。",
+   "anchor_state": "unchanged",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     192.67,
+     343.22,
+     257.25,
+     353.18
+    ]
+   ],
+   "text": "servers, scaling",
+   "old_quote": "servers, scaling",
+   "new_quote": "servers, scaling",
+   "file": "main.tex",
+   "line": 56,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "The platform hides servers, scaling and placement, but it cannot hide the cost of starting a sandbox.",
+      "sel": [
+       [
+        19,
+        35
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        192.67,
+        343.22,
+        257.25,
+        353.18
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "The platform hides servers, scaling and placement, but it cannot hide the cost of starting a sandbox.",
+    "sel": [
+     [
+      19,
+      35
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      192.67,
+      343.22,
+      257.25,
+      353.18
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-15",
+   "kind": "note",
+   "color": "blue",
+   "note": "Define the symbol before it is used.",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     399.64,
+     355.18,
+     479.07,
+     365.14
+    ]
+   ],
+   "text": "create a container",
+   "old_quote": null,
+   "new_quote": "create a container",
+   "file": "main.tex",
+   "line": 114,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "When a request finds no idle instance of its function, the platform must create a container or microVM, load the language runtime and initialise the application, which together take between 100 ms and several seconds [10, 8].",
+    "sel": [
+     [
+      73,
+      91
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      399.64,
+      355.18,
+      479.07,
+      365.14
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-36",
+   "kind": "highlight",
+   "color": "orange",
+   "note": "Which trace days? Say it here, not only in the caption.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "wontfix",
+   "verdict_note": "",
+   "anchor_state": "moved",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     126.88,
+     379.09,
+     162.56,
+     389.05
+    ]
+   ],
+   "text": "8]. Such",
+   "old_quote": "8]. Such",
+   "new_quote": "8]. Such",
+   "file": "main.tex",
+   "line": 75,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "When a request finds no idle instance of its function, the platform must create a container or microVM, load the language runtime and initialise the application, which together take between 100 ms and several seconds [10, 8]. Such cold starts dominate the tail latency of short functions.",
+      "sel": [
+       [
+        222,
+        230
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        126.88,
+        379.09,
+        162.56,
+        389.05
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "When a request finds no idle instance of its function, the platform must create a container or microVM, load the language runtime and initialise the application, which together take between 100 ms and several seconds [10, 8]. Such cold starts dominate the tail latency of short functions.",
+    "sel": [
+     [
+      222,
+      230
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      126.88,
+      379.09,
+      162.56,
+      389.05
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-02",
+   "kind": "highlight",
+   "color": "green",
+   "note": "这里需要引用。",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     324.7,
+     391.04,
+     394.96,
+     401.0
+    ]
+   ],
+   "text": "instance finishes",
+   "old_quote": null,
+   "new_quote": "instance finishes",
+   "file": "main.tex",
+   "line": 101,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "Most platforms use a static keep-alive policy: after an instance finishes a request, it stays in memory for a fixed period, typically ten minutes, in case another request arrives [9].",
+    "sel": [
+     [
+      56,
+      73
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      324.7,
+      391.04,
+      394.96,
+      401.0
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-07",
+   "kind": "highlight",
+   "color": "yellow",
+   "note": "Shorten: the reader knows this from §1.",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.62,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     72.0,
+     403.0,
+     100.79,
+     412.96
+    ]
+   ],
+   "text": "a fixed",
+   "old_quote": null,
+   "new_quote": "a fixed",
+   "file": "main.tex",
+   "line": 106,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "Most platforms use a static keep-alive policy: after an instance finishes a request, it stays in memory for a fixed period, typically ten minutes, in case another request arrives [9].",
+    "sel": [
+     [
+      108,
+      115
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      72.0,
+      403.0,
+      100.79,
+      412.96
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-19",
+   "kind": "strikeout",
+   "color": "yellow",
+   "note": "Shorten: the reader knows this from §1.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     126.52,
+     414.95,
+     218.85,
+     424.91
+    ]
+   ],
+   "text": "function the same. A",
+   "old_quote": "function the same. A",
+   "new_quote": "function the same. A",
+   "file": "main.tex",
+   "line": 58,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "This policy is easy to deploy, but it treats every the previous wording of this part function invoked once per hour holds memory for ten minutes and is still cold on its next call, while a function with bursty traffic needs several instances at once and receives only one.",
+      "sel": [
+       [
+        51,
+        84
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        126.52,
+        414.95,
+        218.85,
+        424.91
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "This policy is easy to deploy, but it treats every function the same. A function invoked once per hour holds memory for ten minutes and is still cold on its next call, while a function with bursty traffic needs several instances at once and receives only one.",
+    "sel": [
+     [
+      51,
+      71
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      126.52,
+      414.95,
+      218.85,
+      424.91
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-02",
+   "kind": "highlight",
+   "color": "green",
+   "note": "这里需要引用。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     264.22,
+     426.91,
+     348.79,
+     436.87
+    ]
+   ],
+   "text": "bursty traffic needs",
+   "old_quote": "bursty traffic needs",
+   "new_quote": "bursty traffic needs",
+   "file": "main.tex",
+   "line": 41,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "A function invoked once per hour holds memory for ten minutes and is still cold on its next call, while a function with the previous wording of this part several instances at once and receives only one.",
+      "sel": [
+       [
+        120,
+        153
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        264.22,
+        426.91,
+        348.79,
+        436.87
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "A function invoked once per hour holds memory for ten minutes and is still cold on its next call, while a function with bursty traffic needs several instances at once and receives only one.",
+    "sel": [
+     [
+      120,
+      140
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      264.22,
+      426.91,
+      348.79,
+      436.87
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-57",
+   "kind": "highlight",
+   "color": "blue",
+   "note": "Give the unit.Give the unit.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "unchanged",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     86.94,
+     450.82,
+     135.71,
+     460.78
+    ]
+   ],
+   "text": "We observe",
+   "old_quote": "We observe",
+   "new_quote": "We observe",
+   "file": "main.tex",
+   "line": 96,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "We observe that the arrival rate of most functions changes slowly compared with the time needed to start an instance.",
+      "sel": [
+       [
+        0,
+        10
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        86.94,
+        450.82,
+        135.71,
+        460.78
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "We observe that the arrival rate of most functions changes slowly compared with the time needed to start an instance.",
+    "sel": [
+     [
+      0,
+      10
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      86.94,
+      450.82,
+      135.71,
+      460.78
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-33",
+   "kind": "underline",
+   "color": "blue",
+   "note": "Give the unit.Give the unit.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "unchanged",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     396.57,
+     474.73,
+     455.65,
+     484.69
+    ]
+   ],
+   "text": "we model the",
+   "old_quote": "we model the",
+   "new_quote": "we model the",
+   "file": "main.tex",
+   "line": 72,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "First, we model the number of arrivals in the next interval as a Poisson variable whose rate is estimated online (Section 3).",
+      "sel": [
+       [
+        7,
+        19
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        396.57,
+        474.73,
+        455.65,
+        484.69
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "First, we model the number of arrivals in the next interval as a Poisson variable whose rate is estimated online (Section 3).",
+    "sel": [
+     [
+      7,
+      19
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      396.57,
+      474.73,
+      455.65,
+      484.69
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-09",
+   "kind": "strikeout",
+   "color": "blue",
+   "note": "Give the unit.Give the unit.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "unchanged",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     159.8,
+     486.68,
+     213.26,
+     496.65
+    ]
+   ],
+   "text": "as a Poisson",
+   "old_quote": "as a Poisson",
+   "new_quote": "as a Poisson",
+   "file": "main.tex",
+   "line": 48,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "First, we model the number of arrivals in the next interval as a Poisson variable whose rate is estimated online (Section 3).",
+      "sel": [
+       [
+        60,
+        72
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        159.8,
+        486.68,
+        213.26,
+        496.65
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "First, we model the number of arrivals in the next interval as a Poisson variable whose rate is estimated online (Section 3).",
+    "sel": [
+     [
+      60,
+      72
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      159.8,
+      486.68,
+      213.26,
+      496.65
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-42",
+   "kind": "highlight",
+   "color": "orange",
+   "note": "数字和表 1 对不上，检查一下。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "wontfix",
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     169.64,
+     510.59,
+     222.73,
+     520.56
+    ]
+   ],
+   "text": "evaluate the",
+   "old_quote": "evaluate the",
+   "new_quote": "evaluate the",
+   "file": "main.tex",
+   "line": 81,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "Third, we the previous wording of this part resulting controller, WarmCast, on a production trace and show that it dominates fixed keep-alive policies on both cost and latency (Section 4).",
+      "sel": [
+       [
+        10,
+        43
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        169.64,
+        510.59,
+        222.73,
+        520.56
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "Third, we evaluate the resulting controller, WarmCast, on a production trace and show that it dominates fixed keep-alive policies on both cost and latency (Section 4).",
+    "sel": [
+     [
+      10,
+      22
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      169.64,
+      510.59,
+      222.73,
+      520.56
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-06",
+   "kind": "highlight",
+   "color": "orange",
+   "note": "数字和表 1 对不上，检查一下。",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     191.83,
+     613.17,
+     314.05,
+     623.14
+    ]
+   ],
+   "text": "application in one container",
+   "old_quote": null,
+   "new_quote": "application in one container",
+   "file": "main.tex",
+   "line": 105,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "SAND [2] runs functions of the same application in one container to share their start cost.",
+    "sel": [
+     [
+      36,
+      64
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      191.83,
+      613.17,
+      314.05,
+      623.14
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-11",
+   "kind": "highlight",
+   "color": "purple",
+   "note": "",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     330.07,
+     637.09,
+     443.97,
+     647.05
+    ]
+   ],
+   "text": "Azure Functions workload",
+   "old_quote": null,
+   "new_quote": "Azure Functions workload",
+   "file": "main.tex",
+   "line": 110,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "On the second front, Shahrad et al. [9] characterise the Azure Functions workload and propose a hybrid histogram policy that chooses the keep-alive and pre-warming windows for each application.",
+    "sel": [
+     [
+      57,
+      81
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      330.07,
+      637.09,
+      443.97,
+      647.05
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-35",
+   "kind": "note",
+   "color": "purple",
+   "note": "",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "reopened",
+   "verdict_note": "还是不清楚，再改一下。",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     118.69,
+     649.04,
+     166.41,
+     659.0
+    ]
+   ],
+   "text": "policy that",
+   "old_quote": "policy that",
+   "new_quote": "policy that",
+   "file": "main.tex",
+   "line": 74,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "On the second front, Shahrad et al. [9] characterise the Azure Functions workload and propose a hybrid histogram the previous wording of this part chooses the keep-alive and pre-warming windows for each application.",
+      "sel": [
+       [
+        113,
+        146
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        118.69,
+        649.04,
+        166.41,
+        659.0
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "On the second front, Shahrad et al. [9] characterise the Azure Functions workload and propose a hybrid histogram policy that chooses the keep-alive and pre-warming windows for each application.",
+    "sel": [
+     [
+      113,
+      124
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      118.69,
+      649.04,
+      166.41,
+      659.0
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-03",
+   "kind": "underline",
+   "color": "blue",
+   "note": "Define the symbol before it is used.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     189.28,
+     661.0,
+     284.58,
+     670.96
+    ]
+   ],
+   "text": "cache and evicts them",
+   "old_quote": "cache and evicts them",
+   "new_quote": "cache and evicts them",
+   "file": "main.tex",
+   "line": 42,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "FaasCache [4] treats warm instances as a the previous wording of this part with a Greedy-Dual policy.",
+      "sel": [
+       [
+        41,
+        74
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        189.28,
+        661.0,
+        284.58,
+        670.96
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "FaasCache [4] treats warm instances as a cache and evicts them with a Greedy-Dual policy.",
+    "sel": [
+     [
+      41,
+      62
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      189.28,
+      661.0,
+      284.58,
+      670.96
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-07",
+   "kind": "highlight",
+   "color": "yellow",
+   "note": "Shorten: the reader knows this from §1.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     244.97,
+     672.95,
+     296.16,
+     682.91
+    ]
+   ],
+   "text": "the number",
+   "old_quote": "the number",
+   "new_quote": "the number",
+   "file": "main.tex",
+   "line": 46,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "Both approaches reason about the lifetime of one instance and leave the previous wording of this part of concurrent instances to the autoscaler.",
+      "sel": [
+       [
+        68,
+        101
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        244.97,
+        672.95,
+        296.16,
+        682.91
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "Both approaches reason about the lifetime of one instance and leave the number of concurrent instances to the autoscaler.",
+    "sel": [
+     [
+      68,
+      78
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      244.97,
+      672.95,
+      296.16,
+      682.91
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-54",
+   "kind": "strikeout",
+   "color": "orange",
+   "note": "数字和表 1 对不上，检查一下。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "wontfix",
+   "verdict_note": "",
+   "anchor_state": "gone",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     243.45,
+     684.91,
+     245.45,
+     694.87
+    ]
+   ],
+   "text": "",
+   "old_quote": "keep, which matters",
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 93,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "WarmCast instead decides how many instances to keep, which matters for functions whose requests arrive in bursts.",
+      "sel": [
+       [
+        47,
+        66
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        243.45,
+        684.91,
+        330.67,
+        694.87
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "Both approaches reason about the lifetime of one instance and leave the number of concurrent instances to the autoscaler. WarmCast instead decides how many instances to keep, which matters for functions whose requests arrive in bursts.",
+    "sel": [],
+    "cut": 168,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      243.45,
+      684.91,
+      245.45,
+      694.87
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-60",
+   "kind": "note",
+   "color": "orange",
+   "note": "Which trace days? Say it here, not only in the caption.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "wontfix",
+   "verdict_note": "",
+   "anchor_state": "moved",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     310.51,
+     696.86,
+     409.55,
+     706.82
+    ]
+   ],
+   "text": "exponential smoothing",
+   "old_quote": "exponential smoothing",
+   "new_quote": "exponential smoothing",
+   "file": "main.tex",
+   "line": 99,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "We use exponential smoothing [6] because it needs constant memory per function and adapts within a few intervals; heavier models such as recurrent networks would",
+      "sel": [
+       [
+        7,
+        28
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        310.51,
+        696.86,
+        409.55,
+        706.82
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "We use exponential smoothing [6] because it needs constant memory per function and adapts within a few intervals; heavier models such as recurrent networks would",
+    "sel": [
+     [
+      7,
+      28
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      310.51,
+      696.86,
+      409.55,
+      706.82
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-52",
+   "kind": "highlight",
+   "color": "pink",
+   "note": "这句和上一句重复，删掉一句。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "verified",
+   "verdict_note": "",
+   "anchor_state": "moved",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     358.48,
+     708.82,
+     467.96,
+     718.78
+    ]
+   ],
+   "text": "models such as recurrent",
+   "old_quote": "models such as recurrent",
+   "new_quote": "models such as recurrent",
+   "file": "main.tex",
+   "line": 91,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "We use exponential smoothing [6] because it needs constant memory per function and adapts within a few intervals; heavier models such as recurrent networks would",
+      "sel": [
+       [
+        122,
+        146
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        358.48,
+        708.82,
+        467.96,
+        718.78
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "We use exponential smoothing [6] because it needs constant memory per function and adapts within a few intervals; heavier models such as recurrent networks would",
+    "sel": [
+     [
+      122,
+      146
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      358.48,
+      708.82,
+      467.96,
+      718.78
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-46",
+   "kind": "highlight",
+   "color": "pink",
+   "note": "Split this sentence in two; it is hard to follow.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "verified",
+   "verdict_note": "",
+   "anchor_state": "gone",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     211.78,
+     140.91,
+     213.78,
+     150.87
+    ]
+   ],
+   "text": "",
+   "old_quote": "next to",
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 85,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "WarmCast runs as a controller next to the platform scheduler.",
+      "sel": [
+       [
+        30,
+        37
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        211.78,
+        140.91,
+        243.55,
+        150.87
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "WarmCast runs as a controller next to the platform scheduler.",
+    "sel": [],
+    "cut": 29,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      211.78,
+      140.91,
+      213.78,
+      150.87
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-15",
+   "kind": "note",
+   "color": "blue",
+   "note": "Define the symbol before it is used.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     393.21,
+     152.86,
+     457.06,
+     162.82
+    ]
+   ],
+   "text": "updates a rate",
+   "old_quote": "updates a rate",
+   "new_quote": "updates a rate",
+   "file": "main.tex",
+   "line": 54,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "At the start of each interval the controller the previous wording of this part estimate for every function, computes a target pool size, and starts or stops pre-warmed instances to reach it.",
+      "sel": [
+       [
+        45,
+        78
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        393.21,
+        152.86,
+        457.06,
+        162.82
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "At the start of each interval the controller updates a rate estimate for every function, computes a target pool size, and starts or stops pre-warmed instances to reach it.",
+    "sel": [
+     [
+      45,
+      59
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      393.21,
+      152.86,
+      457.06,
+      162.82
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-01",
+   "kind": "highlight",
+   "color": "yellow",
+   "note": "Too vague: say which instances.Too vague: say which instances.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "unchanged",
+   "confidence": 0.62,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     428.87,
+     164.82,
+     522.76,
+     174.78
+    ]
+   ],
+   "text": "to reach it. Requests",
+   "old_quote": "to reach it. Requests",
+   "new_quote": "to reach it. Requests",
+   "file": "main.tex",
+   "line": 40,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "At the start of each interval the controller updates a rate estimate for every function, computes a target pool size, and starts or stops pre-warmed instances to reach it. Requests are routed to warm instances first; a request that finds none triggers a cold start as before.",
+      "sel": [
+       [
+        159,
+        180
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        428.87,
+        164.82,
+        522.76,
+        174.78
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "At the start of each interval the controller updates a rate estimate for every function, computes a target pool size, and starts or stops pre-warmed instances to reach it. Requests are routed to warm instances first; a request that finds none triggers a cold start as before.",
+    "sel": [
+     [
+      159,
+      180
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      428.87,
+      164.82,
+      522.76,
+      174.78
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-44",
+   "kind": "strikeout",
+   "color": "green",
+   "note": "这个结论太强了，改成 suggests。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "moved",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     273.74,
+     176.77,
+     354.12,
+     186.73
+    ]
+   ],
+   "text": "finds none triggers",
+   "old_quote": "finds none triggers",
+   "new_quote": "finds none triggers",
+   "file": "main.tex",
+   "line": 83,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "Requests are routed to warm instances first; a request that finds none triggers a cold start as before.",
+      "sel": [
+       [
+        60,
+        79
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        273.74,
+        176.77,
+        354.12,
+        186.73
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "Requests are routed to warm instances first; a request that finds none triggers a cold start as before.",
+    "sel": [
+     [
+      60,
+      79
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      273.74,
+      176.77,
+      354.12,
+      186.73
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-12",
+   "kind": "highlight",
+   "color": "orange",
+   "note": "Which trace days? Say it here, not only in the caption.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "wontfix",
+   "verdict_note": "",
+   "anchor_state": "moved",
+   "confidence": 0.62,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     295.42,
+     263.81,
+     378.27,
+     273.77
+    ]
+   ],
+   "text": "follows a change in",
+   "old_quote": "follows a change in",
+   "new_quote": "follows a change in",
+   "file": "main.tex",
+   "line": 51,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "where α ∈(0, 1] controls how quickly the estimate follows a change in load.",
+      "sel": [
+       [
+        50,
+        69
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        295.42,
+        263.81,
+        378.27,
+        273.77
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "where α ∈(0, 1] controls how quickly the estimate follows a change in load.",
+    "sel": [
+     [
+      50,
+      69
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      295.42,
+      263.81,
+      378.27,
+      273.77
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-49",
+   "kind": "strikeout",
+   "color": "yellow",
+   "note": "Too vague: say which instances.Too vague: say which instances.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "unchanged",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     278.39,
+     275.76,
+     357.83,
+     285.73
+    ]
+   ],
+   "text": "best on a held-out",
+   "old_quote": "best on a held-out",
+   "new_quote": "best on a held-out",
+   "file": "main.tex",
+   "line": 88,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "A large α reacts to bursts but also to noise; we use α = 0.3, which performed best on a held-out day of the trace.",
+      "sel": [
+       [
+        78,
+        96
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        278.39,
+        275.76,
+        357.83,
+        285.73
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "A large α reacts to bursts but also to noise; we use α = 0.3, which performed best on a held-out day of the trace.",
+    "sel": [
+     [
+      78,
+      96
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      278.39,
+      275.76,
+      357.83,
+      285.73
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-38",
+   "kind": "underline",
+   "color": "green",
+   "note": "这里需要引用。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "gone",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     139.29,
+     301.66,
+     141.29,
+     311.62
+    ]
+   ],
+   "text": "",
+   "old_quote": "Given the rate,",
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 77,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "Given the rate, we model the number of arrivals N in the next interval as a Poisson variable with mean µ = ˆλtτ.",
+      "sel": [
+       [
+        0,
+        15
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        139.29,
+        301.66,
+        204.88,
+        311.62
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "Pool sizing. Given the rate, we model the number of arrivals N in the next interval as a Poisson variable with mean µ = ˆλtτ.",
+    "sel": [],
+    "cut": 12,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      139.29,
+      301.66,
+      141.29,
+      311.62
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-06",
+   "kind": "highlight",
+   "color": "orange",
+   "note": "数字和表 1 对不上，检查一下。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "wontfix",
+   "verdict_note": "",
+   "anchor_state": "gone",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     413.15,
+     313.61,
+     415.15,
+     323.57
+    ]
+   ],
+   "text": "",
+   "old_quote": "concurrent one causes a",
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 45,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "If k instances are warm, every arrival beyond the k-th concurrent one causes a cold start.",
+      "sel": [
+       [
+        55,
+        78
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        413.15,
+        313.61,
+        518.33,
+        323.57
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "Given the rate, we model the number of arrivals N in the next interval as a Poisson variable with mean µ = ˆλtτ. If k instances are warm, every arrival beyond the k-th concurrent one causes a cold start.",
+    "sel": [],
+    "cut": 167,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      413.15,
+      313.61,
+      415.15,
+      323.57
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-28",
+   "kind": "underline",
+   "color": "pink",
+   "note": "这句和上一句重复，删掉一句。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "verified",
+   "verdict_note": "",
+   "anchor_state": "moved",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     165.83,
+     337.52,
+     204.29,
+     347.48
+    ]
+   ],
+   "text": "a pool of",
+   "old_quote": "a pool of",
+   "new_quote": "a pool of",
+   "file": "main.tex",
+   "line": 67,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "The expected cost of a pool of size k is",
+      "sel": [
+       [
+        21,
+        30
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        165.83,
+        337.52,
+        204.29,
+        347.48
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "The expected cost of a pool of size k is",
+    "sel": [
+     [
+      21,
+      30
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      165.83,
+      337.52,
+      204.29,
+      347.48
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-10",
+   "kind": "note",
+   "color": "pink",
+   "note": "Split this sentence in two; it is hard to follow.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "verified",
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     270.3,
+     359.43,
+     315.07,
+     370.23
+    ]
+   ],
+   "text": "cmτ k + cs",
+   "old_quote": "cmτ k + cs",
+   "new_quote": "cmτ k + cs",
+   "file": "main.tex",
+   "line": 49,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "C(k) = the previous wording of this part E (N −k)+ , (2)",
+      "sel": [
+       [
+        7,
+        40
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        270.3,
+        359.43,
+        315.07,
+        370.23
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "C(k) = cmτ k + cs E (N −k)+ , (2)",
+    "sel": [
+     [
+      7,
+      17
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      270.3,
+      359.43,
+      315.07,
+      370.23
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-45",
+   "kind": "note",
+   "color": "blue",
+   "note": "Give the unit.Give the unit.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "unchanged",
+   "confidence": 0.62,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     404.63,
+     419.2,
+     484.85,
+     429.17
+    ]
+   ],
+   "text": "memory cost cm is",
+   "old_quote": "memory cost cm is",
+   "new_quote": "memory cost cm is",
+   "file": "main.tex",
+   "line": 84,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "The memory cost cm is the memory size of the function times τ, and the start cost cs is the memory size times the measured cold-start duration, multiplied by a weight w that encodes how much the operator values latency over memory.",
+      "sel": [
+       [
+        4,
+        21
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        404.63,
+        419.2,
+        484.85,
+        429.17
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "The memory cost cm is the memory size of the function times τ, and the start cost cs is the memory size times the measured cold-start duration, multiplied by a weight w that encodes how much the operator values latency over memory.",
+    "sel": [
+     [
+      4,
+      21
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      404.63,
+      419.2,
+      484.85,
+      429.17
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-26",
+   "kind": "highlight",
+   "color": "green",
+   "note": "这里需要引用。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     101.49,
+     431.16,
+     153.96,
+     441.12
+    ]
+   ],
+   "text": "the function",
+   "old_quote": "the function",
+   "new_quote": "the function",
+   "file": "main.tex",
+   "line": 65,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "The memory cost cm is the memory size of the previous wording of this part times τ, and the start cost cs is the memory size times the measured cold-start duration, multiplied by a weight w that encodes how much the operator values latency over memory.",
+      "sel": [
+       [
+        41,
+        74
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        101.49,
+        431.16,
+        153.96,
+        441.12
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "The memory cost cm is the memory size of the function times τ, and the start cost cs is the memory size times the measured cold-start duration, multiplied by a weight w that encodes how much the operator values latency over memory.",
+    "sel": [
+     [
+      41,
+      53
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      101.49,
+      431.16,
+      153.96,
+      441.12
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-13",
+   "kind": "underline",
+   "color": "yellow",
+   "note": "Too vague: say which instances.Too vague: say which instances.",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 1,
+   "rects": [
+    [
+     345.11,
+     443.11,
+     427.07,
+     453.08
+    ]
+   ],
+   "text": "values latency over",
+   "old_quote": null,
+   "new_quote": "values latency over",
+   "file": "main.tex",
+   "line": 112,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "The memory cost cm is the memory size of the function times τ, and the start cost cs is the memory size times the measured cold-start duration, multiplied by a weight w that encodes how much the operator values latency over memory.",
+    "sel": [
+     [
+      204,
+      223
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      345.11,
+      443.11,
+      427.07,
+      453.08
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-09",
+   "kind": "strikeout",
+   "color": "blue",
+   "note": "Give the unit.Give the unit.",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 1,
+   "rects": [
+    [
+     186.44,
+     455.07,
+     305.01,
+     465.03
+    ]
+   ],
+   "text": "memory time; larger values",
+   "old_quote": null,
+   "new_quote": "memory time; larger values",
+   "file": "main.tex",
+   "line": 108,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "With w = 1 the controller minimises total memory time; larger values buy lower latency with more memory.",
+    "sel": [
+     [
+      42,
+      68
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      186.44,
+      455.07,
+      305.01,
+      465.03
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-14",
+   "kind": "strikeout",
+   "color": "green",
+   "note": "这里需要引用。",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 1,
+   "rects": [
+    [
+     161.52,
+     480.96,
+     219.43,
+     490.92
+    ]
+   ],
+   "text": "avoid holding",
+   "old_quote": null,
+   "new_quote": "avoid holding",
+   "file": "main.tex",
+   "line": 113,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "To avoid holding memory for a function whose traffic has stopped, the controller caps k∗at the largest number of concurrent requests observed in the last hour and releases all instances of a function that received no request for 30 minutes.",
+    "sel": [
+     [
+      3,
+      16
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      161.52,
+      480.96,
+      219.43,
+      490.92
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-31",
+   "kind": "highlight",
+   "color": "yellow",
+   "note": "Shorten: the reader knows this from §1.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     258.36,
+     492.92,
+     325.25,
+     502.88
+    ]
+   ],
+   "text": "observed in the",
+   "old_quote": "observed in the",
+   "new_quote": "observed in the",
+   "file": "main.tex",
+   "line": 70,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "To avoid holding memory for a function whose traffic has stopped, the controller caps k∗at the largest number of concurrent requests the previous wording of this part last hour and releases all instances of a function that received no request for 30 minutes.",
+      "sel": [
+       [
+        133,
+        166
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        258.36,
+        492.92,
+        325.25,
+        502.88
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "To avoid holding memory for a function whose traffic has stopped, the controller caps k∗at the largest number of concurrent requests observed in the last hour and releases all instances of a function that received no request for 30 minutes.",
+    "sel": [
+     [
+      133,
+      148
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      258.36,
+      492.92,
+      325.25,
+      502.88
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-11",
+   "kind": "highlight",
+   "color": "purple",
+   "note": "",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "reopened",
+   "verdict_note": "还是不清楚，再改一下。",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     93.99,
+     504.87,
+     143.1,
+     514.83
+    ]
+   ],
+   "text": "received no",
+   "old_quote": "received no",
+   "new_quote": "received no",
+   "file": "main.tex",
+   "line": 50,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "To avoid holding memory for a function whose traffic has stopped, the controller caps k∗at the largest number of concurrent requests observed in the last hour and releases all instances of a function that the previous wording of this part request for 30 minutes.",
+      "sel": [
+       [
+        205,
+        238
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        93.99,
+        504.87,
+        143.1,
+        514.83
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "To avoid holding memory for a function whose traffic has stopped, the controller caps k∗at the largest number of concurrent requests observed in the last hour and releases all instances of a function that received no request for 30 minutes.",
+    "sel": [
+     [
+      205,
+      216
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      93.99,
+      504.87,
+      143.1,
+      514.83
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-27",
+   "kind": "highlight",
+   "color": "blue",
+   "note": "Define the symbol before it is used.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     209.68,
+     516.83,
+     286.92,
+     526.79
+    ]
+   ],
+   "text": "are evicted before",
+   "old_quote": "are evicted before",
+   "new_quote": "are evicted before",
+   "file": "main.tex",
+   "line": 66,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "Pre-warming uses spare capacity only; when a host runs short of memory, pre-warmed instances the previous wording of this part instances that serve requests.",
+      "sel": [
+       [
+        93,
+        126
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        209.68,
+        516.83,
+        286.92,
+        526.79
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "Pre-warming uses spare capacity only; when a host runs short of memory, pre-warmed instances are evicted before instances that serve requests.",
+    "sel": [
+     [
+      93,
+      111
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      209.68,
+      516.83,
+      286.92,
+      526.79
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-22",
+   "kind": "highlight",
+   "color": "pink",
+   "note": "Split this sentence in two; it is hard to follow.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "verified",
+   "verdict_note": "",
+   "anchor_state": "gone",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     314.34,
+     583.54,
+     316.34,
+     593.51
+    ]
+   ],
+   "text": "",
+   "old_quote": "We use",
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 61,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "We use day 1 to tune α and w and report results on days 2–14.",
+      "sel": [
+       [
+        0,
+        6
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        314.34,
+        583.54,
+        345.18,
+        593.51
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "We replay the first two weeks of the Azure Functions trace [9], which records per-minute invocation counts, execution times and memory sizes for 46 413 functions. We use day 1 to tune α and w and report results on days 2–14.",
+    "sel": [],
+    "cut": 162,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      314.34,
+      583.54,
+      316.34,
+      593.51
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-29",
+   "kind": "strikeout",
+   "color": "purple",
+   "note": "Use the past tense for what you measured.Use the past tense for what you measured.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "reopened",
+   "verdict_note": "还是不清楚，再改一下。",
+   "anchor_state": "unchanged",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     121.8,
+     595.5,
+     227.04,
+     605.46
+    ]
+   ],
+   "text": "Cold-start durations are",
+   "old_quote": "Cold-start durations are",
+   "new_quote": "Cold-start durations are",
+   "file": "main.tex",
+   "line": 68,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "Cold-start durations are drawn from the per-runtime distribution measured by Wang et al. [10].",
+      "sel": [
+       [
+        0,
+        24
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        121.8,
+        595.5,
+        227.04,
+        605.46
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "Cold-start durations are drawn from the per-runtime distribution measured by Wang et al. [10].",
+    "sel": [
+     [
+      0,
+      24
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      121.8,
+      595.5,
+      227.04,
+      605.46
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-37",
+   "kind": "highlight",
+   "color": "yellow",
+   "note": "Too vague: say which instances.Too vague: say which instances.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "unchanged",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     375.11,
+     607.45,
+     422.87,
+     617.42
+    ]
+   ],
+   "text": "10 minutes",
+   "old_quote": "10 minutes",
+   "new_quote": "10 minutes",
+   "file": "main.tex",
+   "line": 76,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "We compare WarmCast with three policies: a fixed keep-alive of 10 minutes (KA-10), the same policy with a 60-minute window (KA-60), and the hybrid histogram policy of Shahrad et al. (Hybrid).",
+      "sel": [
+       [
+        63,
+        73
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        375.11,
+        607.45,
+        422.87,
+        617.42
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "We compare WarmCast with three policies: a fixed keep-alive of 10 minutes (KA-10), the same policy with a 60-minute window (KA-60), and the hybrid histogram policy of Shahrad et al. (Hybrid).",
+    "sel": [
+     [
+      63,
+      73
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      375.11,
+      607.45,
+      422.87,
+      617.42
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-18",
+   "kind": "underline",
+   "color": "orange",
+   "note": "数字和表 1 对不上，检查一下。",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.62,
+   "method": "selection",
+   "page": 1,
+   "rects": [
+    [
+     234.88,
+     631.36,
+     298.07,
+     641.33
+    ]
+   ],
+   "text": "200 hosts with",
+   "old_quote": null,
+   "new_quote": "200 hosts with",
+   "file": "main.tex",
+   "line": 117,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "All policies run on the same simulated cluster of 200 hosts with 64 GB of memory each.",
+    "sel": [
+     [
+      50,
+      64
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      234.88,
+      631.36,
+      298.07,
+      641.33
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-18",
+   "kind": "underline",
+   "color": "orange",
+   "note": "数字和表 1 对不上，检查一下。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "wontfix",
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     242.27,
+     655.28,
+     312.0,
+     665.24
+    ]
+   ],
+   "text": "holding less idle",
+   "old_quote": "holding less idle",
+   "new_quote": "holding less idle",
+   "file": "main.tex",
+   "line": 57,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "WarmCast lowers the cold-start rate to 6.1%, compared with 18.4% for KA-10 and 9.7% for Hybrid, while the previous wording of this part memory than either.",
+      "sel": [
+       [
+        102,
+        135
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        242.27,
+        655.28,
+        312.0,
+        665.24
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "WarmCast lowers the cold-start rate to 6.1%, compared with 18.4% for KA-10 and 9.7% for Hybrid, while holding less idle memory than either.",
+    "sel": [
+     [
+      102,
+      119
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      242.27,
+      655.28,
+      312.0,
+      665.24
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-05",
+   "kind": "note",
+   "color": "purple",
+   "note": "Use the past tense for what you measured.Use the past tense for what you measured.",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 1,
+   "rects": [
+    [
+     268.82,
+     667.23,
+     304.44,
+     677.19
+    ]
+   ],
+   "text": "as much",
+   "old_quote": null,
+   "new_quote": "as much",
+   "file": "main.tex",
+   "line": 104,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "KA-60 reaches a similar coldstart rate only by keeping almost four times as much memory idle.",
+    "sel": [
+     [
+      73,
+      80
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      268.82,
+      667.23,
+      304.44,
+      677.19
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-21",
+   "kind": "highlight",
+   "color": "blue",
+   "note": "Give the unit.Give the unit.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "unchanged",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     72.0,
+     703.1,
+     106.04,
+     713.06
+    ]
+   ],
+   "text": "are cold",
+   "old_quote": "are cold",
+   "new_quote": "are cold",
+   "file": "main.tex",
+   "line": 60,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "Rarely invoked functions are cold under every policy, because no forecast can predict a single request per day.",
+      "sel": [
+       [
+        25,
+        33
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        72.0,
+        703.1,
+        106.04,
+        713.06
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "Rarely invoked functions are cold under every policy, because no forecast can predict a single request per day.",
+    "sel": [
+     [
+      25,
+      33
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      72.0,
+      703.1,
+      106.04,
+      713.06
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-05",
+   "kind": "box",
+   "color": "purple",
+   "note": "Use the past tense for what you measured.Use the past tense for what you measured.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "reopened",
+   "verdict_note": "还是不清楚，再改一下。",
+   "anchor_state": "unchanged",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     118.8,
+     174.58,
+     493.22,
+     361.92
+    ]
+   ],
+   "text": "",
+   "old_quote": "",
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 44,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "",
+      "sel": [],
+      "cut": null,
+      "display": "image",
+      "page": 2,
+      "rects": [
+       [
+        118.8,
+        174.58,
+        493.22,
+        361.92
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "",
+    "sel": [],
+    "cut": null,
+    "display": "image",
+    "page": 2,
+    "rects": [
+     [
+      118.8,
+      174.58,
+      493.22,
+      361.92
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-14",
+   "kind": "box",
+   "color": "green",
+   "note": "这里需要引用。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     118.8,
+     174.58,
+     493.22,
+     361.92
+    ]
+   ],
+   "text": "",
+   "old_quote": "",
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 53,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "",
+      "sel": [],
+      "cut": null,
+      "display": "image",
+      "page": 2,
+      "rects": [
+       [
+        118.8,
+        174.58,
+        493.22,
+        361.92
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "",
+    "sel": [],
+    "cut": null,
+    "display": "image",
+    "page": 2,
+    "rects": [
+     [
+      118.8,
+      174.58,
+      493.22,
+      361.92
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-23",
+   "kind": "box",
+   "color": "purple",
+   "note": "",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "reopened",
+   "verdict_note": "还是不清楚，再改一下。",
+   "anchor_state": "changed",
+   "confidence": 0.62,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     118.8,
+     174.58,
+     493.22,
+     361.92
+    ]
+   ],
+   "text": "",
+   "old_quote": "",
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 62,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "",
+      "sel": [],
+      "cut": null,
+      "display": "image",
+      "page": 2,
+      "rects": [
+       [
+        118.8,
+        174.58,
+        493.22,
+        361.92
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "",
+    "sel": [],
+    "cut": null,
+    "display": "image",
+    "page": 2,
+    "rects": [
+     [
+      118.8,
+      174.58,
+      493.22,
+      361.92
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-32",
+   "kind": "box",
+   "color": "green",
+   "note": "这个结论太强了，改成 suggests。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     118.8,
+     174.58,
+     493.22,
+     361.92
+    ]
+   ],
+   "text": "",
+   "old_quote": "",
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 71,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "",
+      "sel": [],
+      "cut": null,
+      "display": "image",
+      "page": 2,
+      "rects": [
+       [
+        118.8,
+        174.58,
+        493.22,
+        361.92
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "",
+    "sel": [],
+    "cut": null,
+    "display": "image",
+    "page": 2,
+    "rects": [
+     [
+      118.8,
+      174.58,
+      493.22,
+      361.92
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-41",
+   "kind": "box",
+   "color": "purple",
+   "note": "Use the past tense for what you measured.Use the past tense for what you measured.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "reopened",
+   "verdict_note": "还是不清楚，再改一下。",
+   "anchor_state": "unchanged",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     118.8,
+     174.58,
+     493.22,
+     361.92
+    ]
+   ],
+   "text": "",
+   "old_quote": "",
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 80,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "",
+      "sel": [],
+      "cut": null,
+      "display": "image",
+      "page": 2,
+      "rects": [
+       [
+        118.8,
+        174.58,
+        493.22,
+        361.92
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "",
+    "sel": [],
+    "cut": null,
+    "display": "image",
+    "page": 2,
+    "rects": [
+     [
+      118.8,
+      174.58,
+      493.22,
+      361.92
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-50",
+   "kind": "box",
+   "color": "green",
+   "note": "这里需要引用。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     118.8,
+     174.58,
+     493.22,
+     361.92
+    ]
+   ],
+   "text": "",
+   "old_quote": "",
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 89,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "",
+      "sel": [],
+      "cut": null,
+      "display": "image",
+      "page": 2,
+      "rects": [
+       [
+        118.8,
+        174.58,
+        493.22,
+        361.92
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "",
+    "sel": [],
+    "cut": null,
+    "display": "image",
+    "page": 2,
+    "rects": [
+     [
+      118.8,
+      174.58,
+      493.22,
+      361.92
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-59",
+   "kind": "box",
+   "color": "purple",
+   "note": "",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "reopened",
+   "verdict_note": "还是不清楚，再改一下。",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     118.8,
+     174.58,
+     493.22,
+     361.92
+    ]
+   ],
+   "text": "",
+   "old_quote": "",
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 98,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "",
+      "sel": [],
+      "cut": null,
+      "display": "image",
+      "page": 2,
+      "rects": [
+       [
+        118.8,
+        174.58,
+        493.22,
+        361.92
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "",
+    "sel": [],
+    "cut": null,
+    "display": "image",
+    "page": 2,
+    "rects": [
+     [
+      118.8,
+      174.58,
+      493.22,
+      361.92
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-08",
+   "kind": "box",
+   "color": "green",
+   "note": "这个结论太强了，改成 suggests。",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 2,
+   "rects": [
+    [
+     118.8,
+     174.58,
+     493.22,
+     361.92
+    ]
+   ],
+   "text": "",
+   "old_quote": null,
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 107,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "",
+    "sel": [],
+    "cut": null,
+    "display": "image",
+    "page": 2,
+    "rects": [
+     [
+      118.8,
+      174.58,
+      493.22,
+      361.92
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-17",
+   "kind": "box",
+   "color": "purple",
+   "note": "Use the past tense for what you measured.Use the past tense for what you measured.",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 2,
+   "rects": [
+    [
+     118.8,
+     174.58,
+     493.22,
+     361.92
+    ]
+   ],
+   "text": "",
+   "old_quote": null,
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 116,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "",
+    "sel": [],
+    "cut": null,
+    "display": "image",
+    "page": 2,
+    "rects": [
+     [
+      118.8,
+      174.58,
+      493.22,
+      361.92
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-58",
+   "kind": "underline",
+   "color": "pink",
+   "note": "Split this sentence in two; it is hard to follow.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "verified",
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     104.42,
+     376.07,
+     162.91,
+     386.03
+    ]
+   ],
+   "text": "1: Cold-start",
+   "old_quote": "1: Cold-start",
+   "new_quote": "1: Cold-start",
+   "file": "main.tex",
+   "line": 97,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "Figure the previous wording of this part rate by invocation frequency.",
+      "sel": [
+       [
+        7,
+        40
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 2,
+      "rects": [
+       [
+        104.42,
+        376.07,
+        162.91,
+        386.03
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "Figure 1: Cold-start rate by invocation frequency.",
+    "sel": [
+     [
+      7,
+      20
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 2,
+    "rects": [
+     [
+      104.42,
+      376.07,
+      162.91,
+      386.03
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-30",
+   "kind": "note",
+   "color": "orange",
+   "note": "数字和表 1 对不上，检查一下。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "wontfix",
+   "verdict_note": "",
+   "anchor_state": "gone",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     146.45,
+     388.02,
+     148.45,
+     397.98
+    ]
+   ],
+   "text": "",
+   "old_quote": "requests falls in the",
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 69,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "Each group of bars covers the functions whose mean interval between requests falls in the given range.",
+      "sel": [
+       [
+        68,
+        89
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 2,
+      "rects": [
+       [
+        146.45,
+        388.02,
+        231.3,
+        397.98
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "Figure 1: Cold-start rate by invocation frequency. Each group of bars covers the functions whose mean interval between requests falls in the given range.",
+    "sel": [],
+    "cut": 118,
+    "display": "text",
+    "page": 2,
+    "rects": [
+     [
+      146.45,
+      388.02,
+      148.45,
+      397.98
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-20",
+   "kind": "note",
+   "color": "green",
+   "note": "这个结论太强了，改成 suggests。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "moved",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     100.78,
+     419.85,
+     199.01,
+     429.81
+    ]
+   ],
+   "text": "from functions invoked",
+   "old_quote": "from functions invoked",
+   "new_quote": "from functions invoked",
+   "file": "main.tex",
+   "line": 59,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "comes from functions invoked between once per minute and once per hour, where fixed windows either expire too early or hold instances for too long.",
+      "sel": [
+       [
+        6,
+        28
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 2,
+      "rects": [
+       [
+        100.78,
+        419.85,
+        199.01,
+        429.81
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "comes from functions invoked between once per minute and once per hour, where fixed windows either expire too early or hold instances for too long.",
+    "sel": [
+     [
+      6,
+      28
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 2,
+    "rects": [
+     [
+      100.78,
+      419.85,
+      199.01,
+      429.81
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-20",
+   "kind": "note",
+   "color": "green",
+   "note": "这个结论太强了，改成 suggests。",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 2,
+   "rects": [
+    [
+     72.0,
+     431.8,
+     145.11,
+     441.76
+    ]
+   ],
+   "text": "too early or hold",
+   "old_quote": null,
+   "new_quote": "too early or hold",
+   "file": "main.tex",
+   "line": 119,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "comes from functions invoked between once per minute and once per hour, where fixed windows either expire too early or hold instances for too long.",
+    "sel": [
+     [
+      106,
+      123
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 2,
+    "rects": [
+     [
+      72.0,
+      431.8,
+      145.11,
+      441.76
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-39",
+   "kind": "strikeout",
+   "color": "blue",
+   "note": "Define the symbol before it is used.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     449.64,
+     443.74,
+     522.95,
+     453.72
+    ]
+   ],
+   "text": "for k∗take 3.2 µs",
+   "old_quote": "for k∗take 3.2 µs",
+   "new_quote": "for k∗take 3.2 µs",
+   "file": "main.tex",
+   "line": 78,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "Updating the estimate in Eq. (1) and searching the previous wording of this part per function on one core, so a single controller thread handles all 46 413 functions within 0.2 s per interval. We did not observe any measurable effect of the controller on request latency in a prototype deployment.",
+      "sel": [
+       [
+        47,
+        80
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 2,
+      "rects": [
+       [
+        449.64,
+        443.74,
+        522.95,
+        453.72
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "Updating the estimate in Eq. (1) and searching for k∗take 3.2 µs per function on one core, so a single controller thread handles all 46 413 functions within 0.2 s per interval. We did not observe any measurable effect of the controller on request latency in a prototype deployment.",
+    "sel": [
+     [
+      47,
+      64
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 2,
+    "rects": [
+     [
+      449.64,
+      443.74,
+      522.95,
+      453.72
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-34",
+   "kind": "strikeout",
+   "color": "pink",
+   "note": "Split this sentence in two; it is hard to follow.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "verified",
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.62,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     215.99,
+     455.71,
+     288.96,
+     465.67
+    ]
+   ],
+   "text": "controller thread",
+   "old_quote": "controller thread",
+   "new_quote": "controller thread",
+   "file": "main.tex",
+   "line": 73,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "Updating the estimate in Eq. (1) and searching for k∗take 3.2 µs per function on one core, so a single the previous wording of this part handles all 46 413 functions within 0.2 s per interval. We did not observe any measurable effect of the controller on request latency in a prototype deployment.",
+      "sel": [
+       [
+        103,
+        136
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 2,
+      "rects": [
+       [
+        215.99,
+        455.71,
+        288.96,
+        465.67
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "Updating the estimate in Eq. (1) and searching for k∗take 3.2 µs per function on one core, so a single controller thread handles all 46 413 functions within 0.2 s per interval. We did not observe any measurable effect of the controller on request latency in a prototype deployment.",
+    "sel": [
+     [
+      103,
+      120
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 2,
+    "rects": [
+     [
+      215.99,
+      455.71,
+      288.96,
+      465.67
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-53",
+   "kind": "underline",
+   "color": "purple",
+   "note": "Use the past tense for what you measured.Use the past tense for what you measured.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "reopened",
+   "verdict_note": "还是不清楚，再改一下。",
+   "anchor_state": "unchanged",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     239.52,
+     467.67,
+     309.31,
+     477.63
+    ]
+   ],
+   "text": "of the controller",
+   "old_quote": "of the controller",
+   "new_quote": "of the controller",
+   "file": "main.tex",
+   "line": 92,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "Updating the estimate in Eq. (1) and searching for k∗take 3.2 µs per function on one core, so a single controller thread handles all 46 413 functions within 0.2 s per interval. We did not observe any measurable effect of the controller on request latency in a prototype deployment.",
+      "sel": [
+       [
+        218,
+        235
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 2,
+      "rects": [
+       [
+        239.52,
+        467.67,
+        309.31,
+        477.63
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "Updating the estimate in Eq. (1) and searching for k∗take 3.2 µs per function on one core, so a single controller thread handles all 46 413 functions within 0.2 s per interval. We did not observe any measurable effect of the controller on request latency in a prototype deployment.",
+    "sel": [
+     [
+      218,
+      235
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 2,
+    "rects": [
+     [
+      239.52,
+      467.67,
+      309.31,
+      477.63
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-10",
+   "kind": "note",
+   "color": "pink",
+   "note": "Split this sentence in two; it is hard to follow.",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 2,
+   "rects": [
+    [
+     224.48,
+     491.58,
+     298.26,
+     501.54
+    ]
+   ],
+   "text": "immediately and",
+   "old_quote": null,
+   "new_quote": "immediately and",
+   "file": "main.tex",
+   "line": 109,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "It assumes that a warm instance serves a request immediately and that a cold start blocks the request for the full start duration.",
+    "sel": [
+     [
+      49,
+      64
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 2,
+    "rects": [
+     [
+      224.48,
+      491.58,
+      298.26,
+      501.54
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-43",
+   "kind": "underline",
+   "color": "yellow",
+   "note": "Shorten: the reader knows this from §1.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     132.73,
+     558.29,
+     232.43,
+     568.26
+    ]
+   ],
+   "text": "WarmCast, which sizes",
+   "old_quote": "WarmCast, which sizes",
+   "new_quote": "WarmCast, which sizes",
+   "file": "main.tex",
+   "line": 82,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "We presented the previous wording of this part a pool of warm instances for each serverless function from a short-term forecast of its arrival rate.",
+      "sel": [
+       [
+        13,
+        46
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 2,
+      "rects": [
+       [
+        132.73,
+        558.29,
+        232.43,
+        568.26
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "We presented WarmCast, which sizes a pool of warm instances for each serverless function from a short-term forecast of its arrival rate.",
+    "sel": [
+     [
+      13,
+      34
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 2,
+    "rects": [
+     [
+      132.73,
+      558.29,
+      232.43,
+      568.26
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-47",
+   "kind": "highlight",
+   "color": "purple",
+   "note": "",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "reopened",
+   "verdict_note": "还是不清楚，再改一下。",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     399.09,
+     594.16,
+     514.9,
+     604.12
+    ]
+   ],
+   "text": "function. On a production",
+   "old_quote": "function. On a production",
+   "new_quote": "function. On a production",
+   "file": "main.tex",
+   "line": 86,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "The pool size follows from a convex cost model with a closed-form minimiser, and the controller runs in microseconds per the previous wording of this part trace it reduces cold starts by a factor of three compared with the default keep-alive policy while holding less idle memory.",
+      "sel": [
+       [
+        121,
+        154
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 2,
+      "rects": [
+       [
+        399.09,
+        594.16,
+        514.9,
+        604.12
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "The pool size follows from a convex cost model with a closed-form minimiser, and the controller runs in microseconds per function. On a production trace it reduces cold starts by a factor of three compared with the default keep-alive policy while holding less idle memory.",
+    "sel": [
+     [
+      121,
+      146
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 2,
+    "rects": [
+     [
+      399.09,
+      594.16,
+      514.9,
+      604.12
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-55",
+   "kind": "note",
+   "color": "yellow",
+   "note": "Shorten: the reader knows this from §1.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     81.79,
+     606.12,
+     162.45,
+     616.08
+    ]
+   ],
+   "text": "reduces cold starts",
+   "old_quote": "reduces cold starts",
+   "new_quote": "reduces cold starts",
+   "file": "main.tex",
+   "line": 94,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "On a production trace it the previous wording of this part by a factor of three compared with the default keep-alive policy while holding less idle memory.",
+      "sel": [
+       [
+        25,
+        58
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 2,
+      "rects": [
+       [
+        81.79,
+        606.12,
+        162.45,
+        616.08
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "On a production trace it reduces cold starts by a factor of three compared with the default keep-alive policy while holding less idle memory.",
+    "sel": [
+     [
+      25,
+      44
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 2,
+    "rects": [
+     [
+      81.79,
+      606.12,
+      162.45,
+      616.08
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-04",
+   "kind": "strikeout",
+   "color": "pink",
+   "note": "这句和上一句重复，删掉一句。",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.95,
+   "method": "selection",
+   "page": 2,
+   "rects": [
+    [
+     284.22,
+     618.07,
+     362.21,
+     628.03
+    ]
+   ],
+   "text": "instances between",
+   "old_quote": null,
+   "new_quote": "instances between",
+   "file": "main.tex",
+   "line": 103,
+   "changes": [],
+   "history": [],
+   "context": {
+    "text": "In future work we plan to share warm instances between functions with the same runtime and to forecast with seasonal models.",
+    "sel": [
+     [
+      37,
+      54
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 2,
+    "rects": [
+     [
+      284.22,
+      618.07,
+      362.21,
+      628.03
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-51",
+   "kind": "highlight",
+   "color": "blue",
+   "note": "Define the symbol before it is used.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     76.98,
+     684.79,
+     140.84,
+     694.75
+    ]
+   ],
+   "text": "[1] A. Agache,",
+   "old_quote": "[1] A. Agache,",
+   "new_quote": "[1] A. Agache,",
+   "file": "main.tex",
+   "line": 90,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "the previous wording of this part M. Brooker, A. Iordache, A. Liguori, R. Neugebauer, P. Piwonka, and D.-M. Popa.",
+      "sel": [
+       [
+        0,
+        33
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 2,
+      "rects": [
+       [
+        76.98,
+        684.79,
+        140.84,
+        694.75
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "[1] A. Agache, M. Brooker, A. Iordache, A. Liguori, R. Neugebauer, P. Piwonka, and D.-M. Popa.",
+    "sel": [
+     [
+      0,
+      14
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 2,
+    "rects": [
+     [
+      76.98,
+      684.79,
+      140.84,
+      694.75
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-08",
+   "kind": "underline",
+   "color": "green",
+   "note": "这个结论太强了，改成 suggests。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "orphan",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": null,
+   "rects": [],
+   "text": "",
+   "old_quote": "cost and",
+   "new_quote": null,
+   "file": null,
+   "line": null,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "Third, we evaluate the resulting controller, WarmCast, on a production trace and show that it dominates fixed keep-alive policies on both cost and latency (Section 4).",
+      "sel": [
+       [
+        138,
+        146
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        262.16,
+        522.55,
+        298.72,
+        532.51
+       ]
+      ]
+     }
+    }
+   ],
+   "context": null
+  },
+  {
+   "id": "R1-16",
+   "kind": "highlight",
+   "color": "pink",
+   "note": "这句和上一句重复，删掉一句。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "verified",
+   "verdict_note": "",
+   "anchor_state": "orphan",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": null,
+   "rects": [],
+   "text": "",
+   "old_quote": "lowers the cold-start rate",
+   "new_quote": null,
+   "file": null,
+   "line": null,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "WarmCast lowers the cold-start rate to 6.1%, compared with 18.4% for KA-10 and 9.7% for Hybrid, while holding less idle memory than either.",
+      "sel": [
+       [
+        9,
+        35
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        286.19,
+        643.32,
+        398.27,
+        653.28
+       ]
+      ]
+     }
+    }
+   ],
+   "context": null
+  },
+  {
+   "id": "R1-24",
+   "kind": "strikeout",
+   "color": "orange",
+   "note": "Which trace days? Say it here, not only in the caption.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "wontfix",
+   "verdict_note": "",
+   "anchor_state": "orphan",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": null,
+   "rects": [],
+   "text": "",
+   "old_quote": "of idle memory",
+   "new_quote": null,
+   "file": null,
+   "line": null,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "Second, we derive the pool size that minimises the expected cost of idle memory and cold starts, which has a closed form for a given rate.",
+      "sel": [
+       [
+        65,
+        79
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        264.46,
+        498.64,
+        331.12,
+        508.6
+       ]
+      ]
+     }
+    }
+   ],
+   "context": null
+  },
+  {
+   "id": "R1-40",
+   "kind": "note",
+   "color": "pink",
+   "note": "这句和上一句重复，删掉一句。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "verified",
+   "verdict_note": "",
+   "anchor_state": "orphan",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": null,
+   "rects": [],
+   "text": "",
+   "old_quote": "arg mink≥0 C(k).",
+   "new_quote": null,
+   "file": null,
+   "line": null,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "and the controller chooses k∗= arg mink≥0 C(k).",
+      "sel": [
+       [
+        31,
+        47
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        212.5,
+        381.34,
+        285.38,
+        391.32
+       ]
+      ]
+     }
+    }
+   ],
+   "context": null
+  },
+  {
+   "id": "R1-48",
+   "kind": "underline",
+   "color": "orange",
+   "note": "Which trace days? Say it here, not only in the caption.",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "wontfix",
+   "verdict_note": "",
+   "anchor_state": "orphan",
+   "confidence": 0.95,
+   "method": "diff",
+   "page": null,
+   "rects": [],
+   "text": "",
+   "old_quote": "often a function is",
+   "new_quote": null,
+   "file": null,
+   "line": null,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "Figure 1 breaks the cold-start rate down by how often a function is invoked.",
+      "sel": [
+       [
+        48,
+        67
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        305.48,
+        691.14,
+        386.01,
+        701.1
+       ]
+      ]
+     }
+    }
+   ],
+   "context": null
+  },
+  {
+   "id": "R1-56",
+   "kind": "highlight",
+   "color": "green",
+   "note": "这个结论太强了，改成 suggests。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "orphan",
+   "confidence": 0.62,
+   "method": "diff",
+   "page": null,
+   "rects": [],
+   "text": "",
+   "old_quote": "a zygote process,",
+   "new_quote": null,
+   "file": null,
+   "line": null,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "On the first front, SOCK [8] caches imported packages in a zygote process, Firecracker [1] boots a minimal microVM in about 125 ms, and Catalyzer [3] restores an initialised instance from a checkpoint.",
+      "sel": [
+       [
+        57,
+        74
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        325.95,
+        589.27,
+        399.84,
+        599.23
+       ]
+      ]
+     }
+    }
+   ],
+   "context": null
+  }
+ ],
+ "changes": []
+}

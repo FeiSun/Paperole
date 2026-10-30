@@ -1,0 +1,3044 @@
+{
+ "papers": [
+  {
+   "path": "/synthetic/sonar",
+   "overview": {
+    "paper": {
+     "title": "Echo-Sounder Tracking of Reef Fish Schools at Dusk",
+     "student": "Ana Sousa",
+     "created": "2026-09-02T10:00:00+08:00"
+    },
+    "sections": [
+     {
+      "key": "front",
+      "title": "Title and abstract",
+      "name": "Title and abstract",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 1
+     },
+     {
+      "key": "introduction",
+      "title": "1 Introduction",
+      "name": "Introduction",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 4
+     },
+     {
+      "key": "related-work",
+      "title": "2 Related work",
+      "name": "Related work",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 1
+     },
+     {
+      "key": "study-sites",
+      "title": "3 Study sites",
+      "name": "Study sites",
+      "first": 1,
+      "last": 1,
+      "gone": true,
+      "comments": 1
+     },
+     {
+      "key": "methods",
+      "title": "3 Methods",
+      "name": "Methods",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 8
+     },
+     {
+      "key": "results",
+      "title": "4 Results",
+      "name": "Results",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 4
+     },
+     {
+      "key": "discussion",
+      "title": "5 Discussion",
+      "name": "Discussion",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 2
+     },
+     {
+      "key": "limitations",
+      "title": "6 Limitations",
+      "name": "Limitations",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 1
+     },
+     {
+      "key": "ethics",
+      "title": "7 Ethics statement",
+      "name": "Ethics statement",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 1
+     },
+     {
+      "key": "acknowledgments",
+      "title": "Acknowledgments",
+      "name": "Acknowledgments",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 0
+     },
+     {
+      "key": "references",
+      "title": "References",
+      "name": "References",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 1
+     },
+     {
+      "key": "survey",
+      "title": "A Survey transects",
+      "name": "Survey transects",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 0
+     },
+     {
+      "key": "calibration",
+      "title": "B Detector calibration",
+      "name": "Detector calibration",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 2
+     },
+     {
+      "key": "extra",
+      "title": "C Extra results",
+      "name": "Extra results",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 2
+     },
+     {
+      "key": "hyper",
+      "title": "D Hyperparameters",
+      "name": "Hyperparameters",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 0
+     },
+     {
+      "key": "fieldlog",
+      "title": "E Field log",
+      "name": "Field log",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 0
+     }
+    ],
+    "rounds": [
+     {
+      "n": 1,
+      "created": "2026-09-02T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-09-06T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 27
+      },
+      "prose": "ok",
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.45,
+        "front"
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.45,
+        1.9,
+        "body"
+       ],
+       [
+        "related-work",
+        "2 Related work",
+        1.9,
+        2.9,
+        "body"
+       ],
+       [
+        "study-sites",
+        "3 Study sites",
+        2.9,
+        3.8,
+        "body"
+       ],
+       [
+        "methods",
+        "4 Approach",
+        3.8,
+        7.0,
+        "body"
+       ],
+       [
+        "results",
+        "5 Results",
+        7.0,
+        10.2,
+        "body"
+       ],
+       [
+        "discussion",
+        "6 Discussion",
+        10.2,
+        11.7,
+        "body"
+       ],
+       [
+        "limitations",
+        "7 Limitations",
+        11.7,
+        12.2,
+        "body"
+       ],
+       [
+        "ethics",
+        "8 Ethics statement",
+        12.2,
+        12.5,
+        "body"
+       ],
+       [
+        "acknowledgments",
+        "Acknowledgments",
+        12.5,
+        12.8,
+        "body"
+       ],
+       [
+        "references",
+        "References",
+        12.8,
+        16.0,
+        "references"
+       ],
+       [
+        "survey",
+        "A Survey transects",
+        16.0,
+        17.955,
+        "appendix"
+       ],
+       [
+        "calibration",
+        "B Detector calibration",
+        17.955,
+        20.335,
+        "appendix"
+       ],
+       [
+        "extra",
+        "C Extra results",
+        20.335,
+        23.395,
+        "appendix"
+       ],
+       [
+        "hyper",
+        "D Hyperparameters",
+        23.395,
+        25.18,
+        "appendix"
+       ],
+       [
+        "fieldlog",
+        "E Field log",
+        25.18,
+        26.455,
+        "appendix"
+       ]
+      ],
+      "match": null,
+      "heat": [
+       [
+        "introduction",
+        3,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "study-sites",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "methods",
+        5,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "results",
+        3,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "discussion",
+        2,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "references",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "calibration",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "extra",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "front",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [],
+      "excerpts": {},
+      "unplaced": 0,
+      "pages": [
+       {
+        "page": 0,
+        "comments": 2,
+        "changes": 0
+       },
+       {
+        "page": 1,
+        "comments": 2,
+        "changes": 0
+       },
+       {
+        "page": 3,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 4,
+        "comments": 2,
+        "changes": 0
+       },
+       {
+        "page": 5,
+        "comments": 2,
+        "changes": 0
+       },
+       {
+        "page": 6,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 8,
+        "comments": 2,
+        "changes": 0
+       },
+       {
+        "page": 9,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 10,
+        "comments": 2,
+        "changes": 0
+       },
+       {
+        "page": 13,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 18,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 20,
+        "comments": 1,
+        "changes": 0
+       }
+      ],
+      "comments": {
+       "new": 18,
+       "carried": 0,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 0,
+       "waiting": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 18
+      },
+      "changes": {
+       "total": 0,
+       "requested": 0,
+       "unrequested": 0,
+       "to_check": 0
+      },
+      "words": {
+       "body": 8640,
+       "added": null,
+       "deleted": null
+      }
+     },
+     {
+      "n": 2,
+      "created": "2026-09-21T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-09-24T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 28
+      },
+      "prose": "ok",
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.45,
+        "front"
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.45,
+        1.9,
+        "body"
+       ],
+       [
+        "related-work",
+        "2 Related work",
+        1.9,
+        2.9,
+        "body"
+       ],
+       [
+        "methods",
+        "3 Methods",
+        2.9,
+        7.4,
+        "body"
+       ],
+       [
+        "results",
+        "4 Results",
+        7.4,
+        10.6,
+        "body"
+       ],
+       [
+        "discussion",
+        "5 Discussion",
+        10.6,
+        12.1,
+        "body"
+       ],
+       [
+        "limitations",
+        "6 Limitations",
+        12.1,
+        12.6,
+        "body"
+       ],
+       [
+        "ethics",
+        "7 Ethics statement",
+        12.6,
+        12.9,
+        "body"
+       ],
+       [
+        "acknowledgments",
+        "Acknowledgments",
+        12.9,
+        13.2,
+        "body"
+       ],
+       [
+        "references",
+        "References",
+        13.2,
+        16.4,
+        "references"
+       ],
+       [
+        "survey",
+        "A Survey transects",
+        16.4,
+        18.516,
+        "appendix"
+       ],
+       [
+        "calibration",
+        "B Detector calibration",
+        18.516,
+        21.092,
+        "appendix"
+       ],
+       [
+        "extra",
+        "C Extra results",
+        21.092,
+        24.404,
+        "appendix"
+       ],
+       [
+        "hyper",
+        "D Hyperparameters",
+        24.404,
+        26.336,
+        "appendix"
+       ],
+       [
+        "fieldlog",
+        "E Field log",
+        26.336,
+        27.716,
+        "appendix"
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        5,
+        5
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        5,
+        5
+       ],
+       [
+        "related-work",
+        "related-work",
+        "same",
+        5,
+        5
+       ],
+       [
+        "study-sites",
+        "methods",
+        "merged",
+        4,
+        5
+       ],
+       [
+        "methods",
+        "methods",
+        "renamed",
+        9,
+        10
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        5,
+        5
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        5,
+        5
+       ],
+       [
+        "limitations",
+        "limitations",
+        "same",
+        5,
+        5
+       ],
+       [
+        "ethics",
+        "ethics",
+        "same",
+        5,
+        5
+       ],
+       [
+        "acknowledgments",
+        "acknowledgments",
+        "same",
+        5,
+        5
+       ],
+       [
+        "references",
+        "references",
+        "same",
+        5,
+        5
+       ],
+       [
+        "survey",
+        "survey",
+        "same",
+        5,
+        5
+       ],
+       [
+        "calibration",
+        "calibration",
+        "same",
+        5,
+        5
+       ],
+       [
+        "extra",
+        "extra",
+        "same",
+        5,
+        5
+       ],
+       [
+        "hyper",
+        "hyper",
+        "same",
+        5,
+        5
+       ],
+       [
+        "fieldlog",
+        "fieldlog",
+        "same",
+        5,
+        5
+       ]
+      ],
+      "heat": [
+       [
+        "introduction",
+        0,
+        3,
+        0,
+        1,
+        9,
+        11
+       ],
+       [
+        "methods",
+        1,
+        6,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "results",
+        1,
+        3,
+        0,
+        2,
+        92,
+        11
+       ],
+       [
+        "discussion",
+        0,
+        2,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "references",
+        0,
+        1,
+        0,
+        1,
+        8,
+        27
+       ],
+       [
+        "calibration",
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "extra",
+        0,
+        1,
+        0,
+        2,
+        72,
+        15
+       ],
+       [
+        "front",
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "related-work",
+        1,
+        0,
+        0,
+        2,
+        58,
+        41
+       ],
+       [
+        "limitations",
+        1,
+        0,
+        0,
+        1,
+        8,
+        2
+       ],
+       [
+        "ethics",
+        1,
+        0,
+        0,
+        1,
+        51,
+        23
+       ]
+      ],
+      "edits": [
+       [
+        "r2c1",
+        1,
+        1.211,
+        "introduction",
+        [
+         "R1-03"
+        ],
+        false,
+        false,
+        false,
+        9,
+        11
+       ],
+       [
+        "r2c2",
+        2,
+        2.784,
+        "related-work",
+        [],
+        true,
+        false,
+        false,
+        46,
+        23
+       ],
+       [
+        "r2c3",
+        2,
+        2.468,
+        "related-work",
+        [],
+        true,
+        false,
+        false,
+        12,
+        18
+       ],
+       [
+        "r2c4",
+        10,
+        10.05,
+        "results",
+        [],
+        true,
+        false,
+        false,
+        48,
+        9
+       ],
+       [
+        "r2c5",
+        7,
+        7.774,
+        "results",
+        [],
+        true,
+        false,
+        false,
+        44,
+        2
+       ],
+       [
+        "r2c6",
+        12,
+        12.278,
+        "limitations",
+        [],
+        true,
+        false,
+        false,
+        8,
+        2
+       ],
+       [
+        "r2c7",
+        12,
+        12.807,
+        "ethics",
+        [],
+        true,
+        false,
+        false,
+        51,
+        23
+       ],
+       [
+        "r2c8",
+        14,
+        14.421,
+        "references",
+        [
+         "R1-15"
+        ],
+        false,
+        false,
+        false,
+        8,
+        27
+       ],
+       [
+        "r2c9",
+        22,
+        22.941,
+        "extra",
+        [
+         "R1-17"
+        ],
+        false,
+        false,
+        false,
+        28,
+        12
+       ],
+       [
+        "r2c10",
+        23,
+        23.036,
+        "extra",
+        [],
+        true,
+        false,
+        false,
+        44,
+        3
+       ]
+      ],
+      "excerpts": {
+       "r2c1": "the schools tu",
+       "r2c2": "the schools turned at dusk",
+       "r2c3": "the schools",
+       "r2c4": "the schools",
+       "r2c5": "the schools turned at dus",
+       "r2c6": "the schools turned at du",
+       "r2c7": "the schools tu",
+       "r2c8": "the schools turned at d",
+       "r2c9": "the school",
+       "r2c10": "the schools turned"
+      },
+      "unplaced": 0,
+      "pages": [
+       {
+        "page": 0,
+        "comments": 3,
+        "changes": 0
+       },
+       {
+        "page": 1,
+        "comments": 1,
+        "changes": 1
+       },
+       {
+        "page": 2,
+        "comments": 1,
+        "changes": 2
+       },
+       {
+        "page": 4,
+        "comments": 2,
+        "changes": 0
+       },
+       {
+        "page": 5,
+        "comments": 3,
+        "changes": 0
+       },
+       {
+        "page": 6,
+        "comments": 2,
+        "changes": 0
+       },
+       {
+        "page": 7,
+        "comments": 2,
+        "changes": 1
+       },
+       {
+        "page": 8,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 10,
+        "comments": 1,
+        "changes": 1
+       },
+       {
+        "page": 11,
+        "comments": 2,
+        "changes": 0
+       },
+       {
+        "page": 12,
+        "comments": 2,
+        "changes": 2
+       },
+       {
+        "page": 14,
+        "comments": 0,
+        "changes": 1
+       },
+       {
+        "page": 15,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 19,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 21,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 22,
+        "comments": 0,
+        "changes": 1
+       },
+       {
+        "page": 23,
+        "comments": 0,
+        "changes": 1
+       }
+      ],
+      "comments": {
+       "new": 5,
+       "carried": 18,
+       "edited": 9,
+       "note_only": 3,
+       "untouched": 6,
+       "waiting": 0,
+       "resolved": 8,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 10,
+       "to_check": 0,
+       "open_after": 15
+      },
+      "changes": {
+       "total": 10,
+       "requested": 3,
+       "unrequested": 7,
+       "to_check": 0
+      },
+      "words": {
+       "body": 9040,
+       "added": 400,
+       "deleted": 120
+      }
+     },
+     {
+      "n": 3,
+      "created": "2026-10-05T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-10-08T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 29
+      },
+      "prose": "ok",
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.45,
+        "front"
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.45,
+        1.9,
+        "body"
+       ],
+       [
+        "related-work",
+        "2 Related work",
+        1.9,
+        2.9,
+        "body"
+       ],
+       [
+        "methods",
+        "3 Methods",
+        2.9,
+        7.4,
+        "body"
+       ],
+       [
+        "results",
+        "4 Results",
+        7.4,
+        10.6,
+        "body"
+       ],
+       [
+        "discussion",
+        "5 Discussion",
+        10.6,
+        12.1,
+        "body"
+       ],
+       [
+        "limitations",
+        "6 Limitations",
+        12.1,
+        12.6,
+        "body"
+       ],
+       [
+        "ethics",
+        "7 Ethics statement",
+        12.6,
+        12.9,
+        "body"
+       ],
+       [
+        "acknowledgments",
+        "Acknowledgments",
+        12.9,
+        13.2,
+        "body"
+       ],
+       [
+        "references",
+        "References",
+        13.2,
+        16.4,
+        "references"
+       ],
+       [
+        "survey",
+        "A Survey transects",
+        16.4,
+        18.7,
+        "appendix"
+       ],
+       [
+        "calibration",
+        "B Detector calibration",
+        18.7,
+        21.5,
+        "appendix"
+       ],
+       [
+        "extra",
+        "C Extra results",
+        21.5,
+        25.1,
+        "appendix"
+       ],
+       [
+        "hyper",
+        "D Hyperparameters",
+        25.1,
+        27.2,
+        "appendix"
+       ],
+       [
+        "fieldlog",
+        "E Field log",
+        27.2,
+        28.7,
+        "appendix"
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        5,
+        5
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        5,
+        5
+       ],
+       [
+        "related-work",
+        "related-work",
+        "same",
+        5,
+        5
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        5,
+        5
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        5,
+        5
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        5,
+        5
+       ],
+       [
+        "limitations",
+        "limitations",
+        "same",
+        5,
+        5
+       ],
+       [
+        "ethics",
+        "ethics",
+        "same",
+        5,
+        5
+       ],
+       [
+        "acknowledgments",
+        "acknowledgments",
+        "same",
+        5,
+        5
+       ],
+       [
+        "references",
+        "references",
+        "same",
+        5,
+        5
+       ],
+       [
+        "survey",
+        "survey",
+        "same",
+        5,
+        5
+       ],
+       [
+        "calibration",
+        "calibration",
+        "same",
+        5,
+        5
+       ],
+       [
+        "extra",
+        "extra",
+        "same",
+        5,
+        5
+       ],
+       [
+        "hyper",
+        "hyper",
+        "same",
+        5,
+        5
+       ],
+       [
+        "fieldlog",
+        "fieldlog",
+        "same",
+        5,
+        5
+       ]
+      ],
+      "heat": [
+       [
+        "introduction",
+        1,
+        1,
+        0,
+        2,
+        60,
+        38
+       ],
+       [
+        "methods",
+        1,
+        6,
+        0,
+        1,
+        18,
+        30
+       ],
+       [
+        "results",
+        0,
+        3,
+        0,
+        2,
+        78,
+        14
+       ],
+       [
+        "discussion",
+        0,
+        1,
+        0,
+        1,
+        25,
+        21
+       ],
+       [
+        "extra",
+        1,
+        1,
+        0,
+        1,
+        11,
+        14
+       ],
+       [
+        "related-work",
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "limitations",
+        0,
+        1,
+        0,
+        2,
+        55,
+        37
+       ],
+       [
+        "ethics",
+        0,
+        1,
+        0,
+        1,
+        24,
+        6
+       ],
+       [
+        "calibration",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "references",
+        0,
+        0,
+        0,
+        1,
+        57,
+        28
+       ]
+      ],
+      "edits": [
+       [
+        "r3c1",
+        1,
+        1.44,
+        "introduction",
+        [
+         "R1-03"
+        ],
+        false,
+        false,
+        false,
+        51,
+        22
+       ],
+       [
+        "r3c2",
+        1,
+        1.106,
+        "introduction",
+        [
+         "R1-03"
+        ],
+        false,
+        false,
+        false,
+        9,
+        16
+       ],
+       [
+        "r3c3",
+        5,
+        5.515,
+        "methods",
+        [
+         "R1-07"
+        ],
+        false,
+        false,
+        false,
+        18,
+        30
+       ],
+       [
+        "r3c4",
+        9,
+        9.717,
+        "results",
+        [
+         "R1-11"
+        ],
+        false,
+        false,
+        false,
+        35,
+        8
+       ],
+       [
+        "r3c5",
+        8,
+        8.662,
+        "results",
+        [],
+        true,
+        false,
+        false,
+        43,
+        6
+       ],
+       [
+        "r3c6",
+        11,
+        11.655,
+        "discussion",
+        [],
+        true,
+        false,
+        false,
+        25,
+        21
+       ],
+       [
+        "r3c7",
+        12,
+        12.507,
+        "limitations",
+        [],
+        true,
+        false,
+        false,
+        24,
+        12
+       ],
+       [
+        "r3c8",
+        12,
+        12.229,
+        "limitations",
+        [],
+        true,
+        false,
+        false,
+        31,
+        25
+       ],
+       [
+        "r3c9",
+        12,
+        12.722,
+        "ethics",
+        [
+         "R2-22"
+        ],
+        false,
+        false,
+        false,
+        24,
+        6
+       ],
+       [
+        "r3c10",
+        14,
+        14.791,
+        "references",
+        [],
+        true,
+        false,
+        false,
+        57,
+        28
+       ],
+       [
+        "r3c11",
+        24,
+        24.227,
+        "extra",
+        [],
+        true,
+        false,
+        false,
+        11,
+        14
+       ]
+      ],
+      "excerpts": {
+       "r3c1": "the schools turned at du",
+       "r3c2": "the schools turned at dusk",
+       "r3c3": "the schools t",
+       "r3c4": "the school",
+       "r3c5": "the schools turned at dusk",
+       "r3c6": "the schools turned at du",
+       "r3c7": "the schools turned",
+       "r3c8": "the schools turn",
+       "r3c9": "the schools tu",
+       "r3c10": "the schools",
+       "r3c11": "the schools turned at dus"
+      },
+      "unplaced": 0,
+      "pages": [
+       {
+        "page": 0,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 1,
+        "comments": 1,
+        "changes": 2
+       },
+       {
+        "page": 2,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 3,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 4,
+        "comments": 2,
+        "changes": 0
+       },
+       {
+        "page": 5,
+        "comments": 3,
+        "changes": 1
+       },
+       {
+        "page": 6,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 8,
+        "comments": 1,
+        "changes": 1
+       },
+       {
+        "page": 9,
+        "comments": 2,
+        "changes": 1
+       },
+       {
+        "page": 11,
+        "comments": 1,
+        "changes": 1
+       },
+       {
+        "page": 12,
+        "comments": 2,
+        "changes": 3
+       },
+       {
+        "page": 14,
+        "comments": 0,
+        "changes": 1
+       },
+       {
+        "page": 20,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 22,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 23,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 24,
+        "comments": 0,
+        "changes": 1
+       }
+      ],
+      "comments": {
+       "new": 4,
+       "carried": 15,
+       "edited": 9,
+       "note_only": 1,
+       "untouched": 5,
+       "waiting": 0,
+       "resolved": 7,
+       "follow_up": 0,
+       "kept": 2,
+       "left_open": 6,
+       "to_check": 0,
+       "open_after": 10
+      },
+      "changes": {
+       "total": 11,
+       "requested": 5,
+       "unrequested": 6,
+       "to_check": 0
+      },
+      "words": {
+       "body": 9440,
+       "added": 450,
+       "deleted": 120
+      }
+     },
+     {
+      "n": 4,
+      "created": "2026-10-16T10:00:00+08:00",
+      "closed": false,
+      "closed_at": null,
+      "build": {
+       "status": "ok",
+       "pages": 29
+      },
+      "prose": "ok",
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.45,
+        "front"
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.45,
+        1.9,
+        "body"
+       ],
+       [
+        "related-work",
+        "2 Related work",
+        1.9,
+        2.9,
+        "body"
+       ],
+       [
+        "methods",
+        "3 Methods",
+        2.9,
+        7.4,
+        "body"
+       ],
+       [
+        "results",
+        "4 Results",
+        7.4,
+        10.6,
+        "body"
+       ],
+       [
+        "discussion",
+        "5 Discussion",
+        10.6,
+        12.1,
+        "body"
+       ],
+       [
+        "limitations",
+        "6 Limitations",
+        12.1,
+        12.6,
+        "body"
+       ],
+       [
+        "ethics",
+        "7 Ethics statement",
+        12.6,
+        12.9,
+        "body"
+       ],
+       [
+        "acknowledgments",
+        "Acknowledgments",
+        12.9,
+        13.2,
+        "body"
+       ],
+       [
+        "references",
+        "References",
+        13.2,
+        16.4,
+        "references"
+       ],
+       [
+        "survey",
+        "A Survey transects",
+        16.4,
+        18.7,
+        "appendix"
+       ],
+       [
+        "calibration",
+        "B Detector calibration",
+        18.7,
+        21.5,
+        "appendix"
+       ],
+       [
+        "extra",
+        "C Extra results",
+        21.5,
+        25.1,
+        "appendix"
+       ],
+       [
+        "hyper",
+        "D Hyperparameters",
+        25.1,
+        27.2,
+        "appendix"
+       ],
+       [
+        "fieldlog",
+        "E Field log",
+        27.2,
+        28.7,
+        "appendix"
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        5,
+        5
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        5,
+        5
+       ],
+       [
+        "related-work",
+        "related-work",
+        "same",
+        5,
+        5
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        5,
+        5
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        5,
+        5
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        5,
+        5
+       ],
+       [
+        "limitations",
+        "limitations",
+        "same",
+        5,
+        5
+       ],
+       [
+        "ethics",
+        "ethics",
+        "same",
+        5,
+        5
+       ],
+       [
+        "acknowledgments",
+        "acknowledgments",
+        "same",
+        5,
+        5
+       ],
+       [
+        "references",
+        "references",
+        "same",
+        5,
+        5
+       ],
+       [
+        "survey",
+        "survey",
+        "same",
+        5,
+        5
+       ],
+       [
+        "calibration",
+        "calibration",
+        "same",
+        5,
+        5
+       ],
+       [
+        "extra",
+        "extra",
+        "same",
+        5,
+        5
+       ],
+       [
+        "hyper",
+        "hyper",
+        "same",
+        5,
+        5
+       ],
+       [
+        "fieldlog",
+        "fieldlog",
+        "same",
+        5,
+        5
+       ]
+      ],
+      "heat": [
+       [
+        "introduction",
+        0,
+        2,
+        1,
+        1,
+        28,
+        20
+       ],
+       [
+        "methods",
+        0,
+        3,
+        3,
+        1,
+        54,
+        18
+       ],
+       [
+        "results",
+        0,
+        2,
+        1,
+        1,
+        21,
+        7
+       ],
+       [
+        "discussion",
+        0,
+        1,
+        1,
+        0,
+        0,
+        0
+       ],
+       [
+        "calibration",
+        0,
+        1,
+        0,
+        1,
+        38,
+        22
+       ],
+       [
+        "extra",
+        0,
+        1,
+        1,
+        1,
+        18,
+        2
+       ],
+       [
+        "related-work",
+        0,
+        0,
+        0,
+        2,
+        78,
+        46
+       ],
+       [
+        "ethics",
+        0,
+        0,
+        0,
+        2,
+        60,
+        51
+       ],
+       [
+        "references",
+        0,
+        0,
+        0,
+        1,
+        34,
+        17
+       ]
+      ],
+      "edits": [
+       [
+        "r4c1",
+        1,
+        1.669,
+        "introduction",
+        [
+         "R3-24"
+        ],
+        false,
+        false,
+        false,
+        28,
+        20
+       ],
+       [
+        "r4c2",
+        2,
+        2.538,
+        "related-work",
+        [],
+        true,
+        false,
+        false,
+        57,
+        19
+       ],
+       [
+        "r4c3",
+        2,
+        2.256,
+        "related-work",
+        [],
+        true,
+        false,
+        false,
+        21,
+        27
+       ],
+       [
+        "r4c4",
+        5,
+        5.404,
+        "methods",
+        [
+         "R3-25"
+        ],
+        false,
+        false,
+        false,
+        54,
+        18
+       ],
+       [
+        "r4c5",
+        8,
+        8.757,
+        "results",
+        [],
+        true,
+        false,
+        false,
+        21,
+        7
+       ],
+       [
+        "r4c6",
+        12,
+        12.656,
+        "ethics",
+        [],
+        true,
+        false,
+        false,
+        44,
+        25
+       ],
+       [
+        "r4c7",
+        12,
+        12.86,
+        "ethics",
+        [],
+        true,
+        false,
+        false,
+        16,
+        26
+       ],
+       [
+        "r4c8",
+        13,
+        13.977,
+        "references",
+        [],
+        true,
+        true,
+        false,
+        34,
+        17
+       ],
+       [
+        "r4c9",
+        19,
+        19.487,
+        "calibration",
+        [
+         "R3-26"
+        ],
+        false,
+        false,
+        false,
+        38,
+        22
+       ],
+       [
+        "r4c10",
+        22,
+        22.993,
+        "extra",
+        [
+         "R3-27"
+        ],
+        false,
+        false,
+        false,
+        18,
+        2
+       ]
+      ],
+      "excerpts": {
+       "r4c1": "the schools turned at dusk",
+       "r4c2": "the schools turned at du",
+       "r4c3": "the schools",
+       "r4c4": "the school",
+       "r4c5": "the schools tu",
+       "r4c6": "the schools turned at",
+       "r4c7": "the schools turned at dus",
+       "r4c8": "the schools",
+       "r4c9": "the schools turned at dusk",
+       "r4c10": "the schools turned at d"
+      },
+      "unplaced": 0,
+      "pages": [
+       {
+        "page": 1,
+        "comments": 2,
+        "changes": 1
+       },
+       {
+        "page": 2,
+        "comments": 0,
+        "changes": 2
+       },
+       {
+        "page": 4,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 5,
+        "comments": 2,
+        "changes": 1
+       },
+       {
+        "page": 8,
+        "comments": 1,
+        "changes": 1
+       },
+       {
+        "page": 9,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 10,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 12,
+        "comments": 0,
+        "changes": 2
+       },
+       {
+        "page": 13,
+        "comments": 0,
+        "changes": 1
+       },
+       {
+        "page": 19,
+        "comments": 1,
+        "changes": 1
+       },
+       {
+        "page": 22,
+        "comments": 1,
+        "changes": 1
+       }
+      ],
+      "comments": {
+       "new": 0,
+       "carried": 10,
+       "edited": 5,
+       "note_only": 1,
+       "untouched": 4,
+       "waiting": 0,
+       "resolved": 3,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 7,
+       "open_after": 0
+      },
+      "changes": {
+       "total": 10,
+       "requested": 4,
+       "unrequested": 6,
+       "to_check": 1
+      },
+      "words": {
+       "body": 9840,
+       "added": 500,
+       "deleted": 120
+      }
+     }
+    ],
+    "comments": [
+     {
+      "id": "R1-01",
+      "created_round": 1,
+      "kind": "box",
+      "color": "purple",
+      "note": "A note on introduction.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.127,
+        "introduction",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.236,
+        "introduction",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-02",
+      "created_round": 1,
+      "kind": "note",
+      "color": "teal",
+      "note": "A note on introduction.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.535,
+        "introduction",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.86,
+        "introduction",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-03",
+      "created_round": 1,
+      "kind": "box",
+      "color": "orange",
+      "note": "A note on introduction.",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.763,
+        "introduction",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.975,
+        "introduction",
+        "edited",
+        "left_open"
+       ],
+       [
+        3,
+        "placed",
+        1,
+        1.214,
+        "introduction",
+        "edited",
+        "left_open"
+       ],
+       [
+        4,
+        "placed",
+        1,
+        1.272,
+        "introduction",
+        "untouched",
+        "to_check"
+       ]
+      ]
+     },
+     {
+      "id": "R1-04",
+      "created_round": 1,
+      "kind": "note",
+      "color": "yellow",
+      "note": "A note on study sites.",
+      "path": [
+       [
+        1,
+        "placed",
+        3,
+        3.501,
+        "study-sites",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        5,
+        5.623,
+        "methods",
+        "edited",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-05",
+      "created_round": 1,
+      "kind": "underline",
+      "color": "pink",
+      "note": "A note on methods.",
+      "path": [
+       [
+        1,
+        "placed",
+        4,
+        4.413,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        4,
+        4.174,
+        "methods",
+        "edited",
+        "left_open"
+       ],
+       [
+        3,
+        "placed",
+        5,
+        5.464,
+        "methods",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-06",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "orange",
+      "note": "A note on methods.",
+      "path": [
+       [
+        1,
+        "placed",
+        5,
+        5.604,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        4,
+        4.19,
+        "methods",
+        "edited",
+        "left_open"
+       ],
+       [
+        3,
+        "placed",
+        5,
+        5.592,
+        "methods",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-07",
+      "created_round": 1,
+      "kind": "underline",
+      "color": "blue",
+      "note": "A note on methods.",
+      "path": [
+       [
+        1,
+        "placed",
+        4,
+        4.47,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        5,
+        5.638,
+        "methods",
+        "untouched",
+        "left_open"
+       ],
+       [
+        3,
+        "placed",
+        6,
+        6.718,
+        "methods",
+        "edited",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-08",
+      "created_round": 1,
+      "kind": "box",
+      "color": "yellow",
+      "note": "A note on methods.",
+      "path": [
+       [
+        1,
+        "placed",
+        5,
+        5.978,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        5,
+        5.191,
+        "methods",
+        "edited",
+        "left_open"
+       ],
+       [
+        3,
+        "placed",
+        3,
+        3.796,
+        "methods",
+        "edited",
+        "left_open"
+       ],
+       [
+        4,
+        "placed",
+        4,
+        4.836,
+        "methods",
+        "note_only",
+        "to_check"
+       ]
+      ]
+     },
+     {
+      "id": "R1-09",
+      "created_round": 1,
+      "kind": "box",
+      "color": "yellow",
+      "note": "A note on methods.",
+      "path": [
+       [
+        1,
+        "placed",
+        6,
+        6.426,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        6,
+        6.244,
+        "methods",
+        "edited",
+        "left_open"
+       ],
+       [
+        3,
+        "placed",
+        4,
+        4.248,
+        "methods",
+        "edited",
+        "left_open"
+       ],
+       [
+        4,
+        "placed",
+        5,
+        5.055,
+        "methods",
+        "untouched",
+        "to_check"
+       ]
+      ]
+     },
+     {
+      "id": "R1-10",
+      "created_round": 1,
+      "kind": "underline",
+      "color": "yellow",
+      "note": "A note on results.",
+      "path": [
+       [
+        1,
+        "placed",
+        8,
+        8.748,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        8,
+        8.325,
+        "results",
+        "note_only",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-11",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "teal",
+      "note": "A note on results.",
+      "path": [
+       [
+        1,
+        "placed",
+        8,
+        8.177,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        7,
+        7.914,
+        "results",
+        "untouched",
+        "left_open"
+       ],
+       [
+        3,
+        "placed",
+        9,
+        9.578,
+        "results",
+        "edited",
+        "kept"
+       ]
+      ]
+     },
+     {
+      "id": "R1-12",
+      "created_round": 1,
+      "kind": "box",
+      "color": "purple",
+      "note": "A note on results.",
+      "path": [
+       [
+        1,
+        "placed",
+        9,
+        9.064,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        7,
+        7.905,
+        "results",
+        "untouched",
+        "left_open"
+       ],
+       [
+        3,
+        "placed",
+        9,
+        9.665,
+        "results",
+        "edited",
+        "left_open"
+       ],
+       [
+        4,
+        "placed",
+        9,
+        9.408,
+        "results",
+        "edited",
+        "to_check"
+       ]
+      ]
+     },
+     {
+      "id": "R1-13",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "A note on discussion.",
+      "path": [
+       [
+        1,
+        "placed",
+        10,
+        10.625,
+        "discussion",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        11,
+        11.593,
+        "discussion",
+        "edited",
+        "left_open"
+       ],
+       [
+        3,
+        "placed",
+        11,
+        11.265,
+        "discussion",
+        "untouched",
+        "left_open"
+       ],
+       [
+        4,
+        "placed",
+        10,
+        10.947,
+        "discussion",
+        "untouched",
+        "to_check"
+       ]
+      ]
+     },
+     {
+      "id": "R1-14",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "teal",
+      "note": "A note on discussion.",
+      "path": [
+       [
+        1,
+        "placed",
+        10,
+        10.708,
+        "discussion",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        11,
+        11.844,
+        "discussion",
+        "note_only",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-15",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "teal",
+      "note": "A note on references.",
+      "path": [
+       [
+        1,
+        "placed",
+        13,
+        13.7,
+        "references",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        15,
+        15.911,
+        "references",
+        "edited",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-16",
+      "created_round": 1,
+      "kind": "underline",
+      "color": "pink",
+      "note": "A note on calibration.",
+      "path": [
+       [
+        1,
+        "placed",
+        18,
+        18.667,
+        "calibration",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        19,
+        19.368,
+        "calibration",
+        "note_only",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-17",
+      "created_round": 1,
+      "kind": "underline",
+      "color": "purple",
+      "note": "A note on extra.",
+      "path": [
+       [
+        1,
+        "placed",
+        20,
+        20.951,
+        "extra",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        21,
+        21.798,
+        "extra",
+        "edited",
+        "left_open"
+       ],
+       [
+        3,
+        "placed",
+        22,
+        22.079,
+        "extra",
+        "note_only",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-18",
+      "created_round": 1,
+      "kind": "note",
+      "color": "teal",
+      "note": "A note on front.",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.21,
+        "front",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.37,
+        "front",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R2-19",
+      "created_round": 2,
+      "kind": "underline",
+      "color": "teal",
+      "note": "A note on related work.",
+      "path": [
+       [
+        2,
+        "placed",
+        2,
+        2.657,
+        "related-work",
+        "new",
+        null
+       ],
+       [
+        3,
+        "placed",
+        2,
+        2.178,
+        "related-work",
+        "edited",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R2-20",
+      "created_round": 2,
+      "kind": "highlight",
+      "color": "orange",
+      "note": "A note on methods.",
+      "path": [
+       [
+        2,
+        "placed",
+        6,
+        6.151,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        3,
+        "placed",
+        4,
+        4.361,
+        "methods",
+        "edited",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R2-21",
+      "created_round": 2,
+      "kind": "box",
+      "color": "purple",
+      "note": "A note on limitations.",
+      "path": [
+       [
+        2,
+        "placed",
+        12,
+        12.395,
+        "limitations",
+        "new",
+        null
+       ],
+       [
+        3,
+        "placed",
+        12,
+        12.369,
+        "limitations",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R2-22",
+      "created_round": 2,
+      "kind": "highlight",
+      "color": "purple",
+      "note": "A note on ethics.",
+      "path": [
+       [
+        2,
+        "placed",
+        12,
+        12.661,
+        "ethics",
+        "new",
+        null
+       ],
+       [
+        3,
+        "placed",
+        12,
+        12.655,
+        "ethics",
+        "edited",
+        "kept"
+       ]
+      ]
+     },
+     {
+      "id": "R2-23",
+      "created_round": 2,
+      "kind": "underline",
+      "color": "purple",
+      "note": "A note on results.",
+      "path": [
+       [
+        2,
+        "placed",
+        10,
+        10.036,
+        "results",
+        "new",
+        null
+       ],
+       [
+        3,
+        "placed",
+        8,
+        8.414,
+        "results",
+        "untouched",
+        "left_open"
+       ],
+       [
+        4,
+        "placed",
+        8,
+        8.456,
+        "results",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R3-24",
+      "created_round": 3,
+      "kind": "highlight",
+      "color": "teal",
+      "note": "A note on introduction.",
+      "path": [
+       [
+        3,
+        "placed",
+        0,
+        0.846,
+        "introduction",
+        "new",
+        null
+       ],
+       [
+        4,
+        "placed",
+        1,
+        1.399,
+        "introduction",
+        "edited",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R3-25",
+      "created_round": 3,
+      "kind": "underline",
+      "color": "teal",
+      "note": "A note on methods.",
+      "path": [
+       [
+        3,
+        "placed",
+        5,
+        5.085,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        4,
+        "placed",
+        5,
+        5.634,
+        "methods",
+        "edited",
+        "to_check"
+       ]
+      ]
+     },
+     {
+      "id": "R3-26",
+      "created_round": 3,
+      "kind": "highlight",
+      "color": "blue",
+      "note": "A note on calibration.",
+      "path": [
+       [
+        3,
+        "placed",
+        20,
+        20.918,
+        "calibration",
+        "new",
+        null
+       ],
+       [
+        4,
+        "placed",
+        19,
+        19.52,
+        "calibration",
+        "edited",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R3-27",
+      "created_round": 3,
+      "kind": "highlight",
+      "color": "blue",
+      "note": "A note on extra.",
+      "path": [
+       [
+        3,
+        "placed",
+        23,
+        23.077,
+        "extra",
+        "new",
+        null
+       ],
+       [
+        4,
+        "placed",
+        22,
+        22.668,
+        "extra",
+        "edited",
+        "to_check"
+       ]
+      ]
+     }
+    ],
+    "threads": {
+     "comments": 27,
+     "resolved": 18,
+     "kept": 2,
+     "open": 10
+    },
+    "pending": []
+   }
+  }
+ ]
+}

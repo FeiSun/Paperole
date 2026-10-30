@@ -1,0 +1,418 @@
+[
+ {
+  "folder": "review",
+  "title": "Easy Before Hard: Curriculum-Paced Distillation for Small Code Models",
+  "student": "Maya Chen",
+  "rounds": [
+   {
+    "source": "student/r1",
+    "comments": [
+     {
+      "id": "R1-01",
+      "page": 0,
+      "phrase": "achieves state-of-the-art results for small code models",
+      "kind": "highlight",
+      "color": "yellow",
+      "tags": [
+       "logic"
+      ],
+      "note": "Overclaim. You compare with two baselines at two sizes; say what you show, e.g. “improves over standard KD at both sizes”."
+     },
+     {
+      "id": "R1-02",
+      "page": 0,
+      "phrase": "by 4.1 points",
+      "kind": "highlight",
+      "color": "yellow",
+      "tags": [
+       "evidence"
+      ],
+      "note": "Table 1 says +3.7. Which is right?"
+     },
+     {
+      "id": "R1-03",
+      "page": 0,
+      "phrase": "distilation",
+      "kind": "underline",
+      "color": "pink",
+      "tags": [
+       "grammar"
+      ],
+      "note": "Typo: distillation."
+     },
+     {
+      "id": "R1-04",
+      "page": 0,
+      "phrase": "the so-called soft targets",
+      "kind": "highlight",
+      "color": "pink",
+      "tags": [
+       "format"
+      ],
+      "note": "Parenthetical citation here: \\citep, not \\citet."
+     },
+     {
+      "id": "R1-05",
+      "page": 0,
+      "phrase": "Because the student is small, the hard problems are what it cannot do yet when they come early, which then the signal it gets is mostly noise that it still fits.",
+      "kind": "highlight",
+      "color": "yellow",
+      "tags": [
+       "clarity"
+      ],
+      "note": "I can't parse this sentence. What goes wrong when hard problems come early? One plain sentence, please."
+     },
+     {
+      "id": "R1-06",
+      "page": 1,
+      "phrase": "Curriculum learning has been studied extensively and has been shown to be helpful in many different settings",
+      "kind": "highlight",
+      "color": "yellow",
+      "tags": [
+       "evidence"
+      ],
+      "note": "Too vague. Which works, and how does CPD differ from them? Platanios et al. (2019), which you cite in Section 3, belongs here."
+     },
+     {
+      "id": "R1-07",
+      "page": 2,
+      "band": {
+       "top": [
+        "after",
+        "We score each training problem once"
+       ],
+       "bottom": "where s(x) is the fraction",
+       "x0": 140,
+       "skip_right": 480,
+       "pad": 2.5
+      },
+      "kind": "box",
+      "color": "blue",
+      "tags": [
+       "math"
+      ],
+      "note": "β is never defined. Say what it weights and which value you use."
+     },
+     {
+      "id": "R1-08",
+      "page": 2,
+      "band": {
+       "top": [
+        "after",
+        "At training step t, the student draws"
+       ],
+       "bottom": "Here λ0",
+       "x0": 140,
+       "skip_right": 480,
+       "pad": 2.5,
+       "pad_x": 38
+      },
+      "kind": "box",
+      "color": "blue",
+      "tags": [
+       "math"
+      ],
+      "note": "As written, g(t) > 1 once t > S. Clip it: min(1, ·)."
+     },
+     {
+      "id": "R1-09",
+      "page": 3,
+      "band": {
+       "top": [
+        "at",
+        "Table 1:"
+       ],
+       "bottom": "Training.",
+       "gap": 4
+      },
+      "kind": "box",
+      "color": "purple",
+      "tags": [
+       "figures"
+      ],
+      "note": "Too long for the main text. Keep the main comparison here and move the ablation rows to the appendix."
+     },
+     {
+      "id": "R1-10",
+      "page": 3,
+      "phrase": "and temperature τ = 2",
+      "kind": "highlight",
+      "color": "blue",
+      "tags": [
+       "math"
+      ],
+      "note": "Eq. (1) calls the temperature T; here and in Algorithm 1 it is τ. Use one symbol throughout."
+     },
+     {
+      "id": "R1-11",
+      "page": 3,
+      "phrase": "We compare CPD with fine-tuning on the reference solutions only (CE), token-level KD without a curriculum (KD), and KD with random pacing",
+      "kind": "highlight",
+      "color": "yellow",
+      "tags": [
+       "evidence"
+      ],
+      "note": "Sequence-level KD (Kim & Rush, 2016) is the obvious baseline for generation, and you cite it in Section 2. Reviewers will ask for it."
+     },
+     {
+      "id": "R1-12",
+      "page": 4,
+      "phrase": "on the hardest quartile, CPD solves 9.1% of the problems against 2.4% for KD.",
+      "kind": "highlight",
+      "color": "teal",
+      "tags": [
+       "praise"
+      ],
+      "note": "Nice result, and clearly shown."
+     },
+     {
+      "id": "R1-13",
+      "page": 4,
+      "phrase": "CPD also makes the student more robust to distribution shift, because it meets hard problems only when it is ready for them.",
+      "kind": "strikeout",
+      "color": "pink",
+      "tags": [
+       "logic"
+      ],
+      "note": "No experiment shows this. Delete it, or test on a shifted set."
+     },
+     {
+      "id": "R1-14",
+      "page": 5,
+      "band": {
+       "top": null,
+       "bottom": "Figure 2:",
+       "gap": 2,
+       "x0": 105
+      },
+      "kind": "box",
+      "color": "purple",
+      "tags": [
+       "figures"
+      ],
+      "note": "Match Figure 1: same colour for each method (CPD is blue there, orange here), no title inside the plot, same font and size."
+     }
+    ],
+    "finish": true
+   },
+   {
+    "source": "student/r2"
+   }
+  ]
+ },
+ {
+  "folder": "others/leo-park/review",
+  "title": "Retrieval-Augmented Docstring Generation for Legacy Fortran Code",
+  "student": "Leo Park",
+  "rounds": [
+   {
+    "source": "others/leo-park/student/r1",
+    "comments": [
+     {
+      "id": "R1-01",
+      "page": 0,
+      "phrase": "its docstrings are preferred by two domain experts in 64% of pairwise comparisons",
+      "kind": "highlight",
+      "color": "yellow",
+      "tags": [
+       "evidence"
+      ],
+      "note": "Two experts and 200 pairs is thin. Report how often they agreed, or call it a pilot study."
+     },
+     {
+      "id": "R1-02",
+      "page": 0,
+      "phrase": "Fortran is a dead language",
+      "kind": "highlight",
+      "color": "yellow",
+      "tags": [
+       "logic"
+      ],
+      "note": "Not true, and it will annoy reviewers. “Still widely used in scientific computing” says what you need."
+     },
+     {
+      "id": "R1-03",
+      "page": 0,
+      "band": {
+       "top": [
+        "after",
+        "generates the docstring"
+       ],
+       "bottom": "where the retrieved",
+       "x0": 140,
+       "skip_right": 480,
+       "pad": 2.5
+      },
+      "kind": "box",
+      "color": "blue",
+      "tags": [
+       "math"
+      ],
+      "note": "Define k here and give the value you use."
+     },
+     {
+      "id": "R1-04",
+      "page": 1,
+      "band": {
+       "top": null,
+       "bottom": "4",
+       "x0": 105
+      },
+      "kind": "box",
+      "color": "purple",
+      "tags": [
+       "figures"
+      ],
+      "note": "Add the number of routines per package, and say how many pairs each preference is based on."
+     },
+     {
+      "id": "R1-05",
+      "page": 1,
+      "phrase": "The gap between same-package and cross-package retrieval shows that local naming conventions matter most.",
+      "kind": "highlight",
+      "color": "yellow",
+      "tags": [
+       "logic"
+      ],
+      "note": "This is a guess. Mark it as one, or test it: rename the identifiers in one package and see if the gain drops."
+     }
+    ],
+    "finish": true
+   },
+   {
+    "source": "others/leo-park/student/r2",
+    "verdicts": [
+     [
+      "R1-02",
+      "verified",
+      ""
+     ],
+     [
+      "R1-03",
+      "verified",
+      ""
+     ],
+     [
+      "R1-04",
+      "verified",
+      ""
+     ],
+     [
+      "R1-01",
+      "reopened",
+      "κ = 0.41 is only moderate agreement. Say so, and call the human study a pilot."
+     ],
+     [
+      "R1-05",
+      "reopened",
+      "Still a guess. Run the renaming test, or soften the claim."
+     ]
+    ],
+    "comments": [
+     {
+      "id": "R2-01",
+      "page": 0,
+      "phrase": "using identifiers and comments as the query",
+      "kind": "highlight",
+      "color": "yellow",
+      "tags": [
+       "clarity"
+      ],
+      "note": "Which BM25 parameters (k1, b)? Give them here so others can reproduce this."
+     }
+    ],
+    "finish": true
+   },
+   {
+    "source": "others/leo-park/student/r3"
+   }
+  ]
+ },
+ {
+  "folder": "others/sara-okafor/review",
+  "title": "Confidence-Gated Early Exit for On-Device Speech Recognition",
+  "student": "Sara Okafor",
+  "xmin": 0,
+  "rounds": [
+   {
+    "source": "others/sara-okafor/student/r1",
+    "comments": [
+     {
+      "id": "R1-01",
+      "page": 0,
+      "phrase": "It is widely used for image classification but less so for streaming speech recognition",
+      "kind": "highlight",
+      "color": "yellow",
+      "tags": [
+       "evidence"
+      ],
+      "note": "“Less so” needs support. Cite the early-exit work on speech that does exist and say what is new here."
+     },
+     {
+      "id": "R1-02",
+      "page": 0,
+      "band": {
+       "top": [
+        "after",
+        "Anonymous Authors"
+       ],
+       "bottom": "We exit after layer",
+       "x0": 300,
+       "x1": 560
+      },
+      "kind": "box",
+      "color": "purple",
+      "tags": [
+       "figures"
+      ],
+      "note": "Add the γ = 0.8 and 0.95 rows from Section 4, and a latency column. Readers want the trade-off in one place."
+     },
+     {
+      "id": "R1-03",
+      "page": 0,
+      "band": {
+       "top": [
+        "after",
+        "the chunk exceeds a threshold:"
+       ],
+       "bottom": "where C is the set",
+       "x0": 311,
+       "x1": 560,
+       "skip_right": 540,
+       "pad": 2.5
+      },
+      "kind": "box",
+      "color": "blue",
+      "tags": [
+       "math"
+      ],
+      "note": "Does q include the blank token? Say so: it decides how silence exits."
+     },
+     {
+      "id": "R1-04",
+      "page": 0,
+      "phrase": "The gated model is also faster than every other on-device recogniser.",
+      "kind": "strikeout",
+      "color": "pink",
+      "tags": [
+       "logic"
+      ],
+      "note": "You compare with no other recogniser. Delete this, or add a latency comparison."
+     },
+     {
+      "id": "R1-05",
+      "page": 0,
+      "phrase": "Silence alone exits early, since the blank token dominates every frame.",
+      "kind": "highlight",
+      "color": "teal",
+      "tags": [
+       "praise"
+      ],
+      "note": "Good observation."
+     }
+    ],
+    "finish": true
+   }
+  ]
+ }
+]

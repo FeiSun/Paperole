@@ -1,0 +1,5379 @@
+{
+ "papers": [
+  {
+   "path": "/synthetic/shrimp",
+   "overview": {
+    "paper": {
+     "title": "Shrimp snap detector",
+     "student": "Mei Lin",
+     "created": "2026-10-20T02:34:51+08:00"
+    },
+    "summary": {
+     "round": 2,
+     "closed": true,
+     "status": "ok",
+     "to_judge": 0,
+     "to_check": 0
+    },
+    "sections": [
+     {
+      "key": "front",
+      "title": "Title and abstract",
+      "name": "Title and abstract",
+      "suggested_bucket": "abstract",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "front",
+      "comments": 0,
+      "written": 0,
+      "written_as": []
+     },
+     {
+      "key": "introduction",
+      "title": "1 Introduction",
+      "name": "Introduction",
+      "suggested_bucket": "introduction",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "body",
+      "comments": 2,
+      "written": 2,
+      "written_as": [
+       {
+        "name": "Introduction",
+        "number": "1",
+        "written": 2
+       }
+      ]
+     },
+     {
+      "key": "methods",
+      "title": "2 Methods",
+      "name": "Methods",
+      "suggested_bucket": "method",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "body",
+      "comments": 3,
+      "written": 3,
+      "written_as": [
+       {
+        "name": "Methods",
+        "number": "2",
+        "written": 3
+       }
+      ]
+     },
+     {
+      "key": "results",
+      "title": "3 Results",
+      "name": "Results",
+      "suggested_bucket": "results",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "body",
+      "comments": 3,
+      "written": 3,
+      "written_as": [
+       {
+        "name": "Results",
+        "number": "3",
+        "written": 3
+       }
+      ]
+     },
+     {
+      "key": "discussion",
+      "title": "4 Discussion",
+      "name": "Discussion",
+      "suggested_bucket": "discussion",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "body",
+      "comments": 1,
+      "written": 1,
+      "written_as": [
+       {
+        "name": "Discussion",
+        "number": "4",
+        "written": 1
+       }
+      ]
+     },
+     {
+      "key": "references",
+      "title": "References",
+      "name": "References",
+      "suggested_bucket": null,
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "references",
+      "comments": 0,
+      "written": 0,
+      "written_as": []
+     },
+     {
+      "key": "station-details",
+      "title": "A Station details",
+      "name": "Station details",
+      "suggested_bucket": null,
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "appendix",
+      "comments": 0,
+      "written": 0,
+      "written_as": []
+     },
+     {
+      "key": "detector-settings",
+      "title": "B Detector settings",
+      "name": "Detector settings",
+      "suggested_bucket": null,
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "appendix",
+      "comments": 0,
+      "written": 0,
+      "written_as": []
+     },
+     {
+      "key": "extra-spectra",
+      "title": "C Extra spectra",
+      "name": "Extra spectra",
+      "suggested_bucket": null,
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "appendix",
+      "comments": 0,
+      "written": 0,
+      "written_as": []
+     }
+    ],
+    "rounds": [
+     {
+      "n": 1,
+      "created": "2026-10-20T02:34:51+08:00",
+      "received": "2026-10-20T02:34:51+08:00",
+      "closed": true,
+      "closed_at": "2026-10-20T02:34:52+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 4
+      },
+      "pdf": null,
+      "final_pdf": null,
+      "email": null,
+      "prose": "ok",
+      "comments": {
+       "new": 9,
+       "carried": 0,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 0,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 9,
+       "revived": 0
+      },
+      "changes": {
+       "total": 0,
+       "requested": 0,
+       "unrequested": 0,
+       "to_check": 0
+      },
+      "words": {
+       "body": 1494,
+       "added": 0,
+       "deleted": 0
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.246,
+        "front"
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.246,
+        0.653,
+        "body"
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.653,
+        1.237,
+        "body"
+       ],
+       [
+        "results",
+        "3 Results",
+        1.237,
+        1.768,
+        "body"
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.768,
+        2.19,
+        "body"
+       ],
+       [
+        "references",
+        "References",
+        2.19,
+        2.366,
+        "references"
+       ],
+       [
+        "station-details",
+        "A Station details",
+        2.366,
+        2.892,
+        "appendix"
+       ],
+       [
+        "detector-settings",
+        "B Detector settings",
+        2.892,
+        3.417,
+        "appendix"
+       ],
+       [
+        "extra-spectra",
+        "C Extra spectra",
+        3.417,
+        3.909,
+        "appendix"
+       ]
+      ],
+      "match": null,
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        2,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "methods",
+        3,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "results",
+        3,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "discussion",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "references",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "station-details",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "detector-settings",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "extra-spectra",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [],
+      "excerpts": {},
+      "pages": [
+       {
+        "page": 1,
+        "comments": 5,
+        "changes": 0
+       },
+       {
+        "page": 0,
+        "comments": 4,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 2,
+      "created": "2026-10-20T02:34:53+08:00",
+      "received": "2026-10-20T02:34:52+08:00",
+      "closed": true,
+      "closed_at": "2026-10-20T02:34:53+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 4
+      },
+      "pdf": null,
+      "final_pdf": null,
+      "email": null,
+      "prose": "ok",
+      "comments": {
+       "new": 0,
+       "carried": 9,
+       "edited": 7,
+       "note_only": 0,
+       "untouched": 2,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 8,
+       "follow_up": 0,
+       "kept": 1,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 0,
+       "revived": 0
+      },
+      "changes": {
+       "total": 7,
+       "requested": 7,
+       "unrequested": 0,
+       "to_check": 0
+      },
+      "words": {
+       "body": 1494,
+       "added": 7,
+       "deleted": 7
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.246,
+        "front"
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.246,
+        0.653,
+        "body"
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.653,
+        1.237,
+        "body"
+       ],
+       [
+        "results",
+        "3 Results",
+        1.237,
+        1.768,
+        "body"
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.768,
+        2.19,
+        "body"
+       ],
+       [
+        "references",
+        "References",
+        2.19,
+        2.366,
+        "references"
+       ],
+       [
+        "station-details",
+        "A Station details",
+        2.366,
+        2.892,
+        "appendix"
+       ],
+       [
+        "detector-settings",
+        "B Detector settings",
+        2.892,
+        3.417,
+        "appendix"
+       ],
+       [
+        "extra-spectra",
+        "C Extra spectra",
+        3.417,
+        3.909,
+        "appendix"
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        0,
+        0
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        3,
+        3
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        5,
+        5
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        4,
+        4
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        3,
+        3
+       ],
+       [
+        "references",
+        "references",
+        "same",
+        3,
+        3
+       ],
+       [
+        "station-details",
+        "station-details",
+        "same",
+        4,
+        4
+       ],
+       [
+        "detector-settings",
+        "detector-settings",
+        "same",
+        4,
+        4
+       ],
+       [
+        "extra-spectra",
+        "extra-spectra",
+        "same",
+        4,
+        4
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        2,
+        0,
+        2,
+        2,
+        2
+       ],
+       [
+        "methods",
+        0,
+        3,
+        0,
+        2,
+        2,
+        2
+       ],
+       [
+        "results",
+        0,
+        3,
+        0,
+        3,
+        3,
+        3
+       ],
+       [
+        "discussion",
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "references",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "station-details",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "detector-settings",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "extra-spectra",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        0,
+        0.299,
+        "introduction",
+        [
+         "R1-01"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c02",
+        0,
+        0.409,
+        "introduction",
+        [
+         "R1-02"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c03",
+        0,
+        0.706,
+        "methods",
+        [
+         "R1-03"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c04",
+        0,
+        0.926,
+        "methods",
+        [
+         "R1-04"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c05",
+        1,
+        1.291,
+        "results",
+        [
+         "R1-05"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c06",
+        1,
+        1.404,
+        "results",
+        [
+         "R1-06"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c07",
+        1,
+        1.63,
+        "results",
+        [
+         "R1-07"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ]
+      ],
+      "excerpts": {
+       "c01": "the",
+       "c02": "was",
+       "c03": "north",
+       "c04": "suggests",
+       "c05": "choruses",
+       "c06": "cited",
+       "c07": "dB"
+      },
+      "pages": [
+       {
+        "page": 0,
+        "comments": 4,
+        "changes": 4
+       },
+       {
+        "page": 1,
+        "comments": 5,
+        "changes": 3
+       }
+      ]
+     }
+    ],
+    "comments": [
+     {
+      "id": "R1-01",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "冠词用错了：a detector 还是 the detector？",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.299,
+        "introduction",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.299,
+        "introduction",
+        "edited",
+        "resolved"
+       ]
+      ],
+      "tags": [
+       "grammar"
+      ],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R1-02",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "时态不一致，前面是过去时。",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.409,
+        "introduction",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.409,
+        "introduction",
+        "edited",
+        "resolved"
+       ]
+      ],
+      "tags": [
+       "grammar"
+      ],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R1-03",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Which station? Define the site at first use.",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.706,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.706,
+        "methods",
+        "edited",
+        "resolved"
+       ]
+      ],
+      "tags": [
+       "clarity"
+      ],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R1-04",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "“prove” 太强：这里只有相关，没有因果。",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.926,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.926,
+        "methods",
+        "edited",
+        "resolved"
+       ]
+      ],
+      "tags": [
+       "logic"
+      ],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R1-05",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "单复数：chorus 还是 choruses？",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.291,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.291,
+        "results",
+        "edited",
+        "resolved"
+       ]
+      ],
+      "tags": [
+       "grammar",
+       "wording"
+      ],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R1-06",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Cite the earlier survey here.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.404,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.404,
+        "results",
+        "edited",
+        "resolved"
+       ]
+      ],
+      "tags": [
+       "evidence"
+      ],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R1-07",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "图的纵轴没有单位。",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.63,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.63,
+        "results",
+        "edited",
+        "resolved"
+       ]
+      ],
+      "tags": [
+       "figures"
+      ],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R1-08",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "这一段的结论推不出来。",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.823,
+        "discussion",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.823,
+        "discussion",
+        "untouched",
+        "kept"
+       ]
+      ],
+      "tags": [
+       "logic"
+      ],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R1-09",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Define p_0 where the equation first uses it.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.053,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.053,
+        "methods",
+        "untouched",
+        "resolved"
+       ]
+      ],
+      "tags": [
+       "math"
+      ],
+      "revived": [],
+      "revivable": false
+     }
+    ],
+    "threads": {
+     "comments": 9,
+     "resolved": 8,
+     "kept": 1,
+     "open": 0,
+     "followed_up": 0,
+     "untouched_after_follow_up": 0,
+     "revived": 0,
+     "closed_after": {
+      "1": 9,
+      "2": 0,
+      "3+": 0
+     }
+    },
+    "pending": [],
+    "key_page": {
+     "round": 2,
+     "page": 0,
+     "chosen": false,
+     "followed": null
+    },
+    "tags": {
+     "comments": 9,
+     "tagged": 9,
+     "open": 0,
+     "rounds": [
+      {
+       "n": 1,
+       "new": 9,
+       "untagged": 0,
+       "by_tag": {
+        "grammar": 3,
+        "clarity": 1,
+        "logic": 2,
+        "wording": 1,
+        "evidence": 1,
+        "figures": 1,
+        "math": 1
+       }
+      },
+      {
+       "n": 2,
+       "new": 0,
+       "untagged": 0,
+       "by_tag": {}
+      }
+     ],
+     "by_tag": {
+      "grammar": {
+       "comments": 3,
+       "open": 0,
+       "closed_after": {
+        "1": 3,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "introduction",
+         2
+        ],
+        [
+         "results",
+         1
+        ]
+       ]
+      },
+      "clarity": {
+       "comments": 1,
+       "open": 0,
+       "closed_after": {
+        "1": 1,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "methods",
+         1
+        ]
+       ]
+      },
+      "logic": {
+       "comments": 2,
+       "open": 0,
+       "closed_after": {
+        "1": 2,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "methods",
+         1
+        ],
+        [
+         "discussion",
+         1
+        ]
+       ]
+      },
+      "wording": {
+       "comments": 1,
+       "open": 0,
+       "closed_after": {
+        "1": 1,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "results",
+         1
+        ]
+       ]
+      },
+      "evidence": {
+       "comments": 1,
+       "open": 0,
+       "closed_after": {
+        "1": 1,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "results",
+         1
+        ]
+       ]
+      },
+      "figures": {
+       "comments": 1,
+       "open": 0,
+       "closed_after": {
+        "1": 1,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "results",
+         1
+        ]
+       ]
+      },
+      "math": {
+       "comments": 1,
+       "open": 0,
+       "closed_after": {
+        "1": 1,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "methods",
+         1
+        ]
+       ]
+      }
+     },
+     "untagged": {
+      "comments": 0,
+      "open": 0,
+      "closed_after": {
+       "1": 0,
+       "2": 0,
+       "3+": 0
+      },
+      "followed_up": 0,
+      "revived": 0,
+      "written_in": []
+     }
+    }
+   }
+  },
+  {
+   "path": "/synthetic/reef",
+   "overview": {
+    "paper": {
+     "title": "Reef choruses at dawn and dusk",
+     "student": "Mei Lin",
+     "created": "2026-10-20T02:34:53+08:00"
+    },
+    "summary": {
+     "round": 4,
+     "closed": false,
+     "status": "ok",
+     "to_judge": 6,
+     "to_check": 5
+    },
+    "sections": [
+     {
+      "key": "front",
+      "title": "Title and abstract",
+      "name": "Title and abstract",
+      "suggested_bucket": "abstract",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "part": "front",
+      "comments": 0,
+      "written": 0,
+      "written_as": []
+     },
+     {
+      "key": "introduction",
+      "title": "1 Introduction",
+      "name": "Introduction",
+      "suggested_bucket": "introduction",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "part": "body",
+      "comments": 3,
+      "written": 3,
+      "written_as": [
+       {
+        "name": "Introduction",
+        "number": "1",
+        "written": 3
+       }
+      ]
+     },
+     {
+      "key": "methods",
+      "title": "2 Methods",
+      "name": "Methods",
+      "suggested_bucket": "method",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "part": "body",
+      "comments": 4,
+      "written": 4,
+      "written_as": [
+       {
+        "name": "Methods",
+        "number": "2",
+        "written": 4
+       }
+      ]
+     },
+     {
+      "key": "results",
+      "title": "3 Results",
+      "name": "Results",
+      "suggested_bucket": "results",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "part": "body",
+      "comments": 4,
+      "written": 4,
+      "written_as": [
+       {
+        "name": "Results",
+        "number": "3",
+        "written": 4
+       }
+      ]
+     },
+     {
+      "key": "discussion",
+      "title": "4 Discussion",
+      "name": "Discussion",
+      "suggested_bucket": "discussion",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "part": "body",
+      "comments": 3,
+      "written": 3,
+      "written_as": [
+       {
+        "name": "Discussion",
+        "number": "4",
+        "written": 3
+       }
+      ]
+     },
+     {
+      "key": "references",
+      "title": "References",
+      "name": "References",
+      "suggested_bucket": null,
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "part": "references",
+      "comments": 0,
+      "written": 0,
+      "written_as": []
+     },
+     {
+      "key": "station-details",
+      "title": "A Station details",
+      "name": "Station details",
+      "suggested_bucket": null,
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "part": "appendix",
+      "comments": 2,
+      "written": 2,
+      "written_as": [
+       {
+        "name": "Station details",
+        "number": "A",
+        "written": 2
+       }
+      ]
+     },
+     {
+      "key": "detector-settings",
+      "title": "B Detector settings",
+      "name": "Detector settings",
+      "suggested_bucket": null,
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "part": "appendix",
+      "comments": 1,
+      "written": 1,
+      "written_as": [
+       {
+        "name": "Detector settings",
+        "number": "B",
+        "written": 1
+       }
+      ]
+     },
+     {
+      "key": "extra-spectra",
+      "title": "C Extra spectra",
+      "name": "Extra spectra",
+      "suggested_bucket": null,
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "part": "appendix",
+      "comments": 0,
+      "written": 0,
+      "written_as": []
+     }
+    ],
+    "rounds": [
+     {
+      "n": 1,
+      "created": "2026-10-20T02:34:54+08:00",
+      "received": "2026-10-20T02:34:53+08:00",
+      "closed": true,
+      "closed_at": "2026-10-20T02:34:55+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 4
+      },
+      "pdf": null,
+      "final_pdf": null,
+      "email": null,
+      "prose": "ok",
+      "comments": {
+       "new": 13,
+       "carried": 0,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 0,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 13,
+       "revived": 0
+      },
+      "changes": {
+       "total": 0,
+       "requested": 0,
+       "unrequested": 0,
+       "to_check": 0
+      },
+      "words": {
+       "body": 1494,
+       "added": 0,
+       "deleted": 0
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.251,
+        "front"
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.251,
+        0.668,
+        "body"
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.668,
+        1.237,
+        "body"
+       ],
+       [
+        "results",
+        "3 Results",
+        1.237,
+        1.77,
+        "body"
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.77,
+        2.19,
+        "body"
+       ],
+       [
+        "references",
+        "References",
+        2.19,
+        2.366,
+        "references"
+       ],
+       [
+        "station-details",
+        "A Station details",
+        2.366,
+        2.892,
+        "appendix"
+       ],
+       [
+        "detector-settings",
+        "B Detector settings",
+        2.892,
+        3.418,
+        "appendix"
+       ],
+       [
+        "extra-spectra",
+        "C Extra spectra",
+        3.418,
+        3.934,
+        "appendix"
+       ]
+      ],
+      "match": null,
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        3,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "methods",
+        4,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "results",
+        4,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "discussion",
+        2,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "references",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "station-details",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "detector-settings",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "extra-spectra",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [],
+      "excerpts": {},
+      "pages": [
+       {
+        "page": 1,
+        "comments": 7,
+        "changes": 0
+       },
+       {
+        "page": 0,
+        "comments": 6,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 2,
+      "created": "2026-10-20T02:34:55+08:00",
+      "received": "2026-10-20T02:34:55+08:00",
+      "closed": true,
+      "closed_at": "2026-10-20T02:34:56+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 4
+      },
+      "pdf": null,
+      "final_pdf": null,
+      "email": null,
+      "prose": "ok",
+      "comments": {
+       "new": 3,
+       "carried": 13,
+       "edited": 6,
+       "note_only": 0,
+       "untouched": 7,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 5,
+       "follow_up": 3,
+       "kept": 1,
+       "left_open": 4,
+       "to_check": 0,
+       "open_after": 10,
+       "revived": 0
+      },
+      "changes": {
+       "total": 7,
+       "requested": 6,
+       "unrequested": 1,
+       "to_check": 0
+      },
+      "words": {
+       "body": 1494,
+       "added": 7,
+       "deleted": 7
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.251,
+        "front"
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.251,
+        0.668,
+        "body"
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.668,
+        1.237,
+        "body"
+       ],
+       [
+        "results",
+        "3 Results",
+        1.237,
+        1.77,
+        "body"
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.77,
+        2.19,
+        "body"
+       ],
+       [
+        "references",
+        "References",
+        2.19,
+        2.366,
+        "references"
+       ],
+       [
+        "station-details",
+        "A Station details",
+        2.366,
+        2.892,
+        "appendix"
+       ],
+       [
+        "detector-settings",
+        "B Detector settings",
+        2.892,
+        3.418,
+        "appendix"
+       ],
+       [
+        "extra-spectra",
+        "C Extra spectra",
+        3.418,
+        3.934,
+        "appendix"
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        0,
+        0
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        3,
+        3
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        5,
+        5
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        4,
+        4
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        3,
+        3
+       ],
+       [
+        "references",
+        "references",
+        "same",
+        3,
+        3
+       ],
+       [
+        "station-details",
+        "station-details",
+        "same",
+        4,
+        4
+       ],
+       [
+        "detector-settings",
+        "detector-settings",
+        "same",
+        4,
+        4
+       ],
+       [
+        "extra-spectra",
+        "extra-spectra",
+        "same",
+        4,
+        4
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        3,
+        0,
+        3,
+        3,
+        3
+       ],
+       [
+        "methods",
+        0,
+        4,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "results",
+        0,
+        4,
+        0,
+        3,
+        3,
+        3
+       ],
+       [
+        "discussion",
+        1,
+        2,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "references",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "station-details",
+        2,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "detector-settings",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "extra-spectra",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        0,
+        0.306,
+        "introduction",
+        [
+         "R1-01"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c02",
+        0,
+        0.418,
+        "introduction",
+        [
+         "R1-02"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c03",
+        0,
+        0.53,
+        "introduction",
+        [
+         "R1-03"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c04",
+        0,
+        0.857,
+        "methods",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c05",
+        1,
+        1.292,
+        "results",
+        [
+         "R1-07"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c06",
+        1,
+        1.405,
+        "results",
+        [
+         "R1-08"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c07",
+        1,
+        1.518,
+        "results",
+        [
+         "R1-09"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ]
+      ],
+      "excerpts": {
+       "c01": "shorter",
+       "c02": "the",
+       "c03": "asks",
+       "c04": "because",
+       "c05": "suggests",
+       "c06": "was",
+       "c07": "legend"
+      },
+      "pages": [
+       {
+        "page": 0,
+        "comments": 6,
+        "changes": 4
+       },
+       {
+        "page": 1,
+        "comments": 7,
+        "changes": 3
+       },
+       {
+        "page": 2,
+        "comments": 3,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 3,
+      "created": "2026-10-20T02:34:57+08:00",
+      "received": "2026-10-20T02:34:56+08:00",
+      "closed": true,
+      "closed_at": "2026-10-20T02:34:58+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 4
+      },
+      "pdf": null,
+      "final_pdf": null,
+      "email": null,
+      "prose": "ok",
+      "comments": {
+       "new": 1,
+       "carried": 10,
+       "edited": 3,
+       "note_only": 0,
+       "untouched": 3,
+       "moved_only": 0,
+       "waiting": 4,
+       "not_found": 0,
+       "resolved": 4,
+       "follow_up": 2,
+       "kept": 1,
+       "left_open": 3,
+       "to_check": 0,
+       "open_after": 6,
+       "revived": 0
+      },
+      "changes": {
+       "total": 9,
+       "requested": 3,
+       "unrequested": 6,
+       "to_check": 0
+      },
+      "words": {
+       "body": 1494,
+       "added": 9,
+       "deleted": 9
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.251,
+        "front"
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.251,
+        0.668,
+        "body"
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.668,
+        1.237,
+        "body"
+       ],
+       [
+        "results",
+        "3 Results",
+        1.237,
+        1.77,
+        "body"
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.77,
+        2.19,
+        "body"
+       ],
+       [
+        "references",
+        "References",
+        2.19,
+        2.366,
+        "references"
+       ],
+       [
+        "station-details",
+        "A Station details",
+        2.366,
+        2.892,
+        "appendix"
+       ],
+       [
+        "detector-settings",
+        "B Detector settings",
+        2.892,
+        3.418,
+        "appendix"
+       ],
+       [
+        "extra-spectra",
+        "C Extra spectra",
+        3.418,
+        3.934,
+        "appendix"
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        0,
+        0
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        3,
+        3
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        5,
+        5
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        4,
+        4
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        3,
+        3
+       ],
+       [
+        "references",
+        "references",
+        "same",
+        3,
+        3
+       ],
+       [
+        "station-details",
+        "station-details",
+        "same",
+        4,
+        4
+       ],
+       [
+        "detector-settings",
+        "detector-settings",
+        "same",
+        4,
+        4
+       ],
+       [
+        "extra-spectra",
+        "extra-spectra",
+        "same",
+        4,
+        4
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        1,
+        0,
+        3,
+        3,
+        3
+       ],
+       [
+        "methods",
+        0,
+        3,
+        0,
+        2,
+        2,
+        2
+       ],
+       [
+        "results",
+        0,
+        1,
+        0,
+        3,
+        3,
+        3
+       ],
+       [
+        "discussion",
+        0,
+        3,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "references",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "station-details",
+        0,
+        2,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "detector-settings",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "extra-spectra",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        0,
+        0.306,
+        "introduction",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c02",
+        0,
+        0.418,
+        "introduction",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c03",
+        0,
+        0.53,
+        "introduction",
+        [
+         "R1-03"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c04",
+        0,
+        0.722,
+        "methods",
+        [
+         "R1-04"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c05",
+        0,
+        0.857,
+        "methods",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c06",
+        1,
+        1.292,
+        "results",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c07",
+        1,
+        1.405,
+        "results",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c08",
+        1,
+        1.518,
+        "results",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c09",
+        2,
+        2.052,
+        "discussion",
+        [
+         "R2-01"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ]
+      ],
+      "excerpts": {
+       "c01": "record",
+       "c02": "sand",
+       "c03": "first",
+       "c04": "depth",
+       "c05": "may",
+       "c06": "proves",
+       "c07": "season",
+       "c08": "record",
+       "c09": "cite"
+      },
+      "pages": [
+       {
+        "page": 0,
+        "comments": 3,
+        "changes": 5
+       },
+       {
+        "page": 1,
+        "comments": 4,
+        "changes": 3
+       },
+       {
+        "page": 2,
+        "comments": 3,
+        "changes": 1
+       },
+       {
+        "page": 3,
+        "comments": 1,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 4,
+      "created": "2026-10-20T02:34:58+08:00",
+      "received": "2026-10-20T02:34:58+08:00",
+      "closed": false,
+      "closed_at": null,
+      "build": {
+       "status": "ok",
+       "pages": 4
+      },
+      "pdf": null,
+      "final_pdf": null,
+      "email": null,
+      "prose": "ok",
+      "comments": {
+       "new": 0,
+       "carried": 6,
+       "edited": 3,
+       "note_only": 0,
+       "untouched": 2,
+       "moved_only": 0,
+       "waiting": 1,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 6,
+       "open_after": 6,
+       "revived": 0
+      },
+      "changes": {
+       "total": 8,
+       "requested": 3,
+       "unrequested": 5,
+       "to_check": 5
+      },
+      "words": {
+       "body": 1494,
+       "added": 8,
+       "deleted": 8
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.251,
+        "front"
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.251,
+        0.668,
+        "body"
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.668,
+        1.237,
+        "body"
+       ],
+       [
+        "results",
+        "3 Results",
+        1.237,
+        1.77,
+        "body"
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.77,
+        2.19,
+        "body"
+       ],
+       [
+        "references",
+        "References",
+        2.19,
+        2.366,
+        "references"
+       ],
+       [
+        "station-details",
+        "A Station details",
+        2.366,
+        2.892,
+        "appendix"
+       ],
+       [
+        "detector-settings",
+        "B Detector settings",
+        2.892,
+        3.418,
+        "appendix"
+       ],
+       [
+        "extra-spectra",
+        "C Extra spectra",
+        3.418,
+        3.934,
+        "appendix"
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        0,
+        0
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        3,
+        3
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        5,
+        5
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        4,
+        4
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        3,
+        3
+       ],
+       [
+        "references",
+        "references",
+        "same",
+        3,
+        3
+       ],
+       [
+        "station-details",
+        "station-details",
+        "same",
+        4,
+        4
+       ],
+       [
+        "detector-settings",
+        "detector-settings",
+        "same",
+        4,
+        4
+       ],
+       [
+        "extra-spectra",
+        "extra-spectra",
+        "same",
+        4,
+        4
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "methods",
+        0,
+        2,
+        2,
+        2,
+        2,
+        2
+       ],
+       [
+        "results",
+        0,
+        0,
+        0,
+        2,
+        2,
+        2
+       ],
+       [
+        "discussion",
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        "references",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "station-details",
+        0,
+        2,
+        2,
+        1,
+        1,
+        1
+       ],
+       [
+        "detector-settings",
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        "extra-spectra",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        0,
+        0.53,
+        "introduction",
+        [],
+        true,
+        true,
+        false,
+        1,
+        1
+       ],
+       [
+        "c02",
+        0,
+        0.722,
+        "methods",
+        [],
+        true,
+        true,
+        false,
+        1,
+        1
+       ],
+       [
+        "c03",
+        0,
+        0.857,
+        "methods",
+        [],
+        true,
+        true,
+        false,
+        1,
+        1
+       ],
+       [
+        "c04",
+        1,
+        1.292,
+        "results",
+        [],
+        true,
+        true,
+        false,
+        1,
+        1
+       ],
+       [
+        "c05",
+        1,
+        1.563,
+        "results",
+        [],
+        true,
+        true,
+        false,
+        1,
+        1
+       ],
+       [
+        "c06",
+        2,
+        2.052,
+        "discussion",
+        [
+         "R2-01"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c07",
+        2,
+        2.42,
+        "station-details",
+        [
+         "R2-03"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c08",
+        3,
+        3.166,
+        "detector-settings",
+        [
+         "R3-01"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ]
+      ],
+      "excerpts": {
+       "c01": "dusk",
+       "c02": "tide",
+       "c03": "might",
+       "c04": "noise",
+       "c05": "brighter",
+       "c06": "reef",
+       "c07": "units",
+       "c08": "same"
+      },
+      "pages": [
+       {
+        "page": 2,
+        "comments": 3,
+        "changes": 2
+       },
+       {
+        "page": 0,
+        "comments": 1,
+        "changes": 3
+       },
+       {
+        "page": 1,
+        "comments": 1,
+        "changes": 2
+       },
+       {
+        "page": 3,
+        "comments": 1,
+        "changes": 1
+       }
+      ]
+     }
+    ],
+    "comments": [
+     {
+      "id": "R1-01",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "这句话太长，拆成两句。",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.306,
+        "introduction",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.306,
+        "introduction",
+        "edited",
+        "resolved"
+       ]
+      ],
+      "tags": [
+       "wording"
+      ],
+      "revived": [],
+      "revivable": true
+     },
+     {
+      "id": "R1-02",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Article: a reef or the reef?",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.418,
+        "introduction",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.418,
+        "introduction",
+        "edited",
+        "resolved"
+       ]
+      ],
+      "tags": [
+       "grammar"
+      ],
+      "revived": [],
+      "revivable": true
+     },
+     {
+      "id": "R1-03",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "研究问题不清楚：说清楚你要回答什么。",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.53,
+        "introduction",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.53,
+        "introduction",
+        "edited",
+        "follow_up"
+       ],
+       [
+        3,
+        "placed",
+        0,
+        0.53,
+        "introduction",
+        "edited",
+        "resolved"
+       ]
+      ],
+      "tags": [
+       "clarity",
+       "structure"
+      ],
+      "revived": [],
+      "revivable": true
+     },
+     {
+      "id": "R1-04",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Give the depth of each hydrophone.",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.722,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.722,
+        "methods",
+        "untouched",
+        "follow_up"
+       ],
+       [
+        3,
+        "placed",
+        0,
+        0.722,
+        "methods",
+        "edited",
+        "resolved"
+       ]
+      ],
+      "tags": [],
+      "revived": [],
+      "revivable": true
+     },
+     {
+      "id": "R1-05",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "这里的逻辑有跳跃，因果不成立。",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.834,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.834,
+        "methods",
+        "untouched",
+        "follow_up"
+       ],
+       [
+        3,
+        "placed",
+        0,
+        0.834,
+        "methods",
+        "untouched",
+        "follow_up"
+       ],
+       [
+        4,
+        "placed",
+        0,
+        0.834,
+        "methods",
+        "untouched",
+        "to_check"
+       ]
+      ],
+      "tags": [
+       "logic"
+      ],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R1-06",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Compare with the baseline detector from prior work.",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.946,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.946,
+        "methods",
+        "untouched",
+        "kept"
+       ]
+      ],
+      "tags": [
+       "evidence"
+      ],
+      "revived": [],
+      "revivable": true
+     },
+     {
+      "id": "R1-07",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "“demonstrate” 太强，改成 suggest。",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.292,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.292,
+        "results",
+        "edited",
+        "resolved"
+       ]
+      ],
+      "tags": [
+       "logic",
+       "wording"
+      ],
+      "revived": [],
+      "revivable": true
+     },
+     {
+      "id": "R1-08",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "时态：用过去时描述结果。",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.405,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.405,
+        "results",
+        "edited",
+        "resolved"
+       ]
+      ],
+      "tags": [
+       "grammar"
+      ],
+      "revived": [],
+      "revivable": true
+     },
+     {
+      "id": "R1-09",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "blue",
+      "note": "Fig. 3 needs a legend.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.518,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.518,
+        "results",
+        "edited",
+        "resolved"
+       ]
+      ],
+      "tags": [
+       "figures"
+      ],
+      "revived": [],
+      "revivable": true
+     },
+     {
+      "id": "R1-10",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Define SPL at first use.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.631,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.631,
+        "results",
+        "untouched",
+        "left_open"
+       ],
+       [
+        3,
+        "placed",
+        1,
+        1.631,
+        "results",
+        "waiting",
+        "resolved"
+       ]
+      ],
+      "tags": [
+       "clarity"
+      ],
+      "revived": [],
+      "revivable": true
+     },
+     {
+      "id": "R1-11",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "这一段应该挪到 Results。",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.825,
+        "discussion",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.825,
+        "discussion",
+        "untouched",
+        "left_open"
+       ],
+       [
+        3,
+        "placed",
+        1,
+        1.825,
+        "discussion",
+        "waiting",
+        "resolved"
+       ]
+      ],
+      "tags": [
+       "structure"
+      ],
+      "revived": [],
+      "revivable": true
+     },
+     {
+      "id": "R1-12",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Units in the formula.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.053,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.053,
+        "methods",
+        "untouched",
+        "left_open"
+       ],
+       [
+        3,
+        "placed",
+        1,
+        1.053,
+        "methods",
+        "waiting",
+        "follow_up"
+       ],
+       [
+        4,
+        "placed",
+        1,
+        1.053,
+        "methods",
+        "untouched",
+        "to_check"
+       ]
+      ],
+      "tags": [
+       "math"
+      ],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R1-13",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "teal",
+      "note": "Good point, well argued.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.938,
+        "discussion",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.938,
+        "discussion",
+        "untouched",
+        "left_open"
+       ],
+       [
+        3,
+        "placed",
+        1,
+        1.938,
+        "discussion",
+        "waiting",
+        "kept"
+       ]
+      ],
+      "tags": [
+       "praise"
+      ],
+      "revived": [],
+      "revivable": true
+     },
+     {
+      "id": "R2-01",
+      "created_round": 2,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Cite the kelp survey here.",
+      "path": [
+       [
+        2,
+        "placed",
+        2,
+        2.052,
+        "discussion",
+        "new",
+        null
+       ],
+       [
+        3,
+        "placed",
+        2,
+        2.052,
+        "discussion",
+        "edited",
+        "left_open"
+       ],
+       [
+        4,
+        "placed",
+        2,
+        2.052,
+        "discussion",
+        "edited",
+        "to_check"
+       ]
+      ],
+      "tags": [
+       "evidence"
+      ],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R2-02",
+      "created_round": 2,
+      "kind": "strikeout",
+      "color": "yellow",
+      "note": "Wordy: cut this sentence.",
+      "path": [
+       [
+        2,
+        "placed",
+        2,
+        2.643,
+        "station-details",
+        "new",
+        null
+       ],
+       [
+        3,
+        "placed",
+        2,
+        2.643,
+        "station-details",
+        "untouched",
+        "left_open"
+       ],
+       [
+        4,
+        "placed",
+        2,
+        2.643,
+        "station-details",
+        "waiting",
+        "to_check"
+       ]
+      ],
+      "tags": [
+       "wording"
+      ],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R2-03",
+      "created_round": 2,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Table 2 has no units.",
+      "path": [
+       [
+        2,
+        "placed",
+        2,
+        2.42,
+        "station-details",
+        "new",
+        null
+       ],
+       [
+        3,
+        "placed",
+        2,
+        2.42,
+        "station-details",
+        "untouched",
+        "left_open"
+       ],
+       [
+        4,
+        "placed",
+        2,
+        2.42,
+        "station-details",
+        "edited",
+        "to_check"
+       ]
+      ],
+      "tags": [],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R3-01",
+      "created_round": 3,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "这里的符号和正文不一致。",
+      "path": [
+       [
+        3,
+        "placed",
+        3,
+        3.166,
+        "detector-settings",
+        "new",
+        null
+       ],
+       [
+        4,
+        "placed",
+        3,
+        3.166,
+        "detector-settings",
+        "edited",
+        "to_check"
+       ]
+      ],
+      "tags": [
+       "math"
+      ],
+      "revived": [],
+      "revivable": false
+     }
+    ],
+    "threads": {
+     "comments": 17,
+     "resolved": 9,
+     "kept": 2,
+     "open": 6,
+     "followed_up": 4,
+     "untouched_after_follow_up": 2,
+     "revived": 0,
+     "closed_after": {
+      "1": 9,
+      "2": 2,
+      "3+": 0
+     }
+    },
+    "pending": [],
+    "key_page": {
+     "round": 4,
+     "page": 2,
+     "chosen": false,
+     "followed": null
+    },
+    "tags": {
+     "comments": 17,
+     "tagged": 15,
+     "open": 6,
+     "rounds": [
+      {
+       "n": 1,
+       "new": 13,
+       "untagged": 1,
+       "by_tag": {
+        "wording": 2,
+        "grammar": 2,
+        "clarity": 2,
+        "structure": 2,
+        "logic": 2,
+        "evidence": 1,
+        "figures": 1,
+        "math": 1,
+        "praise": 1
+       }
+      },
+      {
+       "n": 2,
+       "new": 3,
+       "untagged": 1,
+       "by_tag": {
+        "evidence": 1,
+        "wording": 1
+       }
+      },
+      {
+       "n": 3,
+       "new": 1,
+       "untagged": 0,
+       "by_tag": {
+        "math": 1
+       }
+      },
+      {
+       "n": 4,
+       "new": 0,
+       "untagged": 0,
+       "by_tag": {}
+      }
+     ],
+     "by_tag": {
+      "wording": {
+       "comments": 3,
+       "open": 1,
+       "closed_after": {
+        "1": 2,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "introduction",
+         1
+        ],
+        [
+         "results",
+         1
+        ],
+        [
+         "station-details",
+         1
+        ]
+       ]
+      },
+      "grammar": {
+       "comments": 2,
+       "open": 0,
+       "closed_after": {
+        "1": 2,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "introduction",
+         1
+        ],
+        [
+         "results",
+         1
+        ]
+       ]
+      },
+      "clarity": {
+       "comments": 2,
+       "open": 0,
+       "closed_after": {
+        "1": 1,
+        "2": 1,
+        "3+": 0
+       },
+       "followed_up": 1,
+       "revived": 0,
+       "written_in": [
+        [
+         "introduction",
+         1
+        ],
+        [
+         "results",
+         1
+        ]
+       ]
+      },
+      "structure": {
+       "comments": 2,
+       "open": 0,
+       "closed_after": {
+        "1": 1,
+        "2": 1,
+        "3+": 0
+       },
+       "followed_up": 1,
+       "revived": 0,
+       "written_in": [
+        [
+         "introduction",
+         1
+        ],
+        [
+         "discussion",
+         1
+        ]
+       ]
+      },
+      "logic": {
+       "comments": 2,
+       "open": 1,
+       "closed_after": {
+        "1": 1,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 1,
+       "revived": 0,
+       "written_in": [
+        [
+         "methods",
+         1
+        ],
+        [
+         "results",
+         1
+        ]
+       ]
+      },
+      "evidence": {
+       "comments": 2,
+       "open": 1,
+       "closed_after": {
+        "1": 1,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "methods",
+         1
+        ],
+        [
+         "discussion",
+         1
+        ]
+       ]
+      },
+      "figures": {
+       "comments": 1,
+       "open": 0,
+       "closed_after": {
+        "1": 1,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "results",
+         1
+        ]
+       ]
+      },
+      "math": {
+       "comments": 2,
+       "open": 2,
+       "closed_after": {
+        "1": 0,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 1,
+       "revived": 0,
+       "written_in": [
+        [
+         "methods",
+         1
+        ],
+        [
+         "detector-settings",
+         1
+        ]
+       ]
+      },
+      "praise": {
+       "comments": 1,
+       "open": 0,
+       "closed_after": {
+        "1": 1,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "discussion",
+         1
+        ]
+       ]
+      }
+     },
+     "untagged": {
+      "comments": 2,
+      "open": 1,
+      "closed_after": {
+       "1": 0,
+       "2": 1,
+       "3+": 0
+      },
+      "followed_up": 1,
+      "revived": 0,
+      "written_in": [
+       [
+        "methods",
+        1
+       ],
+       [
+        "station-details",
+        1
+       ]
+      ]
+     }
+    }
+   }
+  },
+  {
+   "path": "/synthetic/kelp",
+   "overview": {
+    "paper": {
+     "title": "Kelp holdfast survey",
+     "student": "Mei Lin",
+     "created": "2026-10-20T02:34:59+08:00"
+    },
+    "summary": {
+     "round": 2,
+     "closed": false,
+     "status": "ok",
+     "to_judge": 6,
+     "to_check": 0
+    },
+    "sections": [
+     {
+      "key": "front",
+      "title": "Title and abstract",
+      "name": "Title and abstract",
+      "suggested_bucket": "abstract",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "front",
+      "comments": 0,
+      "written": 0,
+      "written_as": []
+     },
+     {
+      "key": "introduction",
+      "title": "1 Introduction",
+      "name": "Introduction",
+      "suggested_bucket": "introduction",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "body",
+      "comments": 1,
+      "written": 1,
+      "written_as": [
+       {
+        "name": "Introduction",
+        "number": "1",
+        "written": 1
+       }
+      ]
+     },
+     {
+      "key": "methods",
+      "title": "2 Methods",
+      "name": "Methods",
+      "suggested_bucket": "method",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "body",
+      "comments": 3,
+      "written": 3,
+      "written_as": [
+       {
+        "name": "Methods",
+        "number": "2",
+        "written": 3
+       }
+      ]
+     },
+     {
+      "key": "results",
+      "title": "3 Results",
+      "name": "Results",
+      "suggested_bucket": "results",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "body",
+      "comments": 2,
+      "written": 2,
+      "written_as": [
+       {
+        "name": "Results",
+        "number": "3",
+        "written": 2
+       }
+      ]
+     },
+     {
+      "key": "discussion",
+      "title": "4 Discussion",
+      "name": "Discussion",
+      "suggested_bucket": "discussion",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "body",
+      "comments": 0,
+      "written": 0,
+      "written_as": []
+     },
+     {
+      "key": "references",
+      "title": "References",
+      "name": "References",
+      "suggested_bucket": null,
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "references",
+      "comments": 0,
+      "written": 0,
+      "written_as": []
+     },
+     {
+      "key": "station-details",
+      "title": "A Station details",
+      "name": "Station details",
+      "suggested_bucket": null,
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "appendix",
+      "comments": 0,
+      "written": 0,
+      "written_as": []
+     },
+     {
+      "key": "detector-settings",
+      "title": "B Detector settings",
+      "name": "Detector settings",
+      "suggested_bucket": null,
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "appendix",
+      "comments": 0,
+      "written": 0,
+      "written_as": []
+     },
+     {
+      "key": "extra-spectra",
+      "title": "C Extra spectra",
+      "name": "Extra spectra",
+      "suggested_bucket": null,
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "part": "appendix",
+      "comments": 0,
+      "written": 0,
+      "written_as": []
+     }
+    ],
+    "rounds": [
+     {
+      "n": 1,
+      "created": "2026-10-20T02:34:59+08:00",
+      "received": "2026-10-20T02:34:59+08:00",
+      "closed": true,
+      "closed_at": "2026-10-20T02:35:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 4
+      },
+      "pdf": null,
+      "final_pdf": null,
+      "email": null,
+      "prose": "ok",
+      "comments": {
+       "new": 6,
+       "carried": 0,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 0,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 6,
+       "revived": 0
+      },
+      "changes": {
+       "total": 0,
+       "requested": 0,
+       "unrequested": 0,
+       "to_check": 0
+      },
+      "words": {
+       "body": 1494,
+       "added": 0,
+       "deleted": 0
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.25,
+        "front"
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.25,
+        0.666,
+        "body"
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.666,
+        1.256,
+        "body"
+       ],
+       [
+        "results",
+        "3 Results",
+        1.256,
+        1.804,
+        "body"
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.804,
+        2.207,
+        "body"
+       ],
+       [
+        "references",
+        "References",
+        2.207,
+        2.379,
+        "references"
+       ],
+       [
+        "station-details",
+        "A Station details",
+        2.379,
+        2.895,
+        "appendix"
+       ],
+       [
+        "detector-settings",
+        "B Detector settings",
+        2.895,
+        3.414,
+        "appendix"
+       ],
+       [
+        "extra-spectra",
+        "C Extra spectra",
+        3.414,
+        3.901,
+        "appendix"
+       ]
+      ],
+      "match": null,
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "methods",
+        3,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "results",
+        2,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "discussion",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "references",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "station-details",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "detector-settings",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "extra-spectra",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [],
+      "excerpts": {},
+      "pages": [
+       {
+        "page": 0,
+        "comments": 4,
+        "changes": 0
+       },
+       {
+        "page": 1,
+        "comments": 2,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 2,
+      "created": "2026-10-20T02:35:01+08:00",
+      "received": "2026-10-20T02:35:00+08:00",
+      "closed": false,
+      "closed_at": null,
+      "build": {
+       "status": "ok",
+       "pages": 4
+      },
+      "pdf": null,
+      "final_pdf": null,
+      "email": null,
+      "prose": "ok",
+      "comments": {
+       "new": 0,
+       "carried": 6,
+       "edited": 2,
+       "note_only": 0,
+       "untouched": 4,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 6,
+       "open_after": 6,
+       "revived": 0
+      },
+      "changes": {
+       "total": 2,
+       "requested": 2,
+       "unrequested": 0,
+       "to_check": 0
+      },
+      "words": {
+       "body": 1494,
+       "added": 2,
+       "deleted": 2
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.25,
+        "front"
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.25,
+        0.666,
+        "body"
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.666,
+        1.256,
+        "body"
+       ],
+       [
+        "results",
+        "3 Results",
+        1.256,
+        1.804,
+        "body"
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.804,
+        2.207,
+        "body"
+       ],
+       [
+        "references",
+        "References",
+        2.207,
+        2.379,
+        "references"
+       ],
+       [
+        "station-details",
+        "A Station details",
+        2.379,
+        2.895,
+        "appendix"
+       ],
+       [
+        "detector-settings",
+        "B Detector settings",
+        2.895,
+        3.414,
+        "appendix"
+       ],
+       [
+        "extra-spectra",
+        "C Extra spectra",
+        3.414,
+        3.901,
+        "appendix"
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        0,
+        0
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        3,
+        3
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        5,
+        5
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        4,
+        4
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        3,
+        3
+       ],
+       [
+        "references",
+        "references",
+        "same",
+        3,
+        3
+       ],
+       [
+        "station-details",
+        "station-details",
+        "same",
+        4,
+        4
+       ],
+       [
+        "detector-settings",
+        "detector-settings",
+        "same",
+        4,
+        4
+       ],
+       [
+        "extra-spectra",
+        "extra-spectra",
+        "same",
+        4,
+        4
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        1,
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        "methods",
+        0,
+        3,
+        3,
+        1,
+        1,
+        1
+       ],
+       [
+        "results",
+        0,
+        2,
+        2,
+        0,
+        0,
+        0
+       ],
+       [
+        "discussion",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "references",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "station-details",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "detector-settings",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "extra-spectra",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        0,
+        0.305,
+        "introduction",
+        [
+         "R1-01"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c02",
+        0,
+        0.72,
+        "methods",
+        [
+         "R1-02"
+        ],
+        false,
+        false,
+        false,
+        1,
+        1
+       ]
+      ],
+      "excerpts": {
+       "c01": "a",
+       "c02": "transect"
+      },
+      "pages": [
+       {
+        "page": 0,
+        "comments": 4,
+        "changes": 2
+       },
+       {
+        "page": 1,
+        "comments": 2,
+        "changes": 0
+       }
+      ]
+     }
+    ],
+    "comments": [
+     {
+      "id": "R1-01",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Article missing before survey.",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.305,
+        "introduction",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.305,
+        "introduction",
+        "edited",
+        "to_check"
+       ]
+      ],
+      "tags": [
+       "grammar"
+      ],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R1-02",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Which transect? Define it.",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.72,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.72,
+        "methods",
+        "edited",
+        "to_check"
+       ]
+      ],
+      "tags": [
+       "clarity"
+      ],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R1-03",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "这个结论太强。",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.832,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.832,
+        "methods",
+        "untouched",
+        "to_check"
+       ]
+      ],
+      "tags": [
+       "logic"
+      ],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R1-04",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "引用前人的方法。",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.943,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.943,
+        "methods",
+        "untouched",
+        "to_check"
+       ]
+      ],
+      "tags": [
+       "evidence"
+      ],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R1-05",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Fig. 2 axis label.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.31,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.31,
+        "results",
+        "untouched",
+        "to_check"
+       ]
+      ],
+      "tags": [
+       "figures"
+      ],
+      "revived": [],
+      "revivable": false
+     },
+     {
+      "id": "R1-06",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Wording: “huge” is informal.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.421,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.421,
+        "results",
+        "untouched",
+        "to_check"
+       ]
+      ],
+      "tags": [
+       "wording"
+      ],
+      "revived": [],
+      "revivable": false
+     }
+    ],
+    "threads": {
+     "comments": 6,
+     "resolved": 0,
+     "kept": 0,
+     "open": 6,
+     "followed_up": 0,
+     "untouched_after_follow_up": 0,
+     "revived": 0,
+     "closed_after": {
+      "1": 0,
+      "2": 0,
+      "3+": 0
+     }
+    },
+    "pending": [],
+    "key_page": {
+     "round": 2,
+     "page": 0,
+     "chosen": false,
+     "followed": null
+    },
+    "tags": {
+     "comments": 6,
+     "tagged": 6,
+     "open": 6,
+     "rounds": [
+      {
+       "n": 1,
+       "new": 6,
+       "untagged": 0,
+       "by_tag": {
+        "grammar": 1,
+        "clarity": 1,
+        "logic": 1,
+        "evidence": 1,
+        "figures": 1,
+        "wording": 1
+       }
+      },
+      {
+       "n": 2,
+       "new": 0,
+       "untagged": 0,
+       "by_tag": {}
+      }
+     ],
+     "by_tag": {
+      "grammar": {
+       "comments": 1,
+       "open": 1,
+       "closed_after": {
+        "1": 0,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "introduction",
+         1
+        ]
+       ]
+      },
+      "clarity": {
+       "comments": 1,
+       "open": 1,
+       "closed_after": {
+        "1": 0,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "methods",
+         1
+        ]
+       ]
+      },
+      "logic": {
+       "comments": 1,
+       "open": 1,
+       "closed_after": {
+        "1": 0,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "methods",
+         1
+        ]
+       ]
+      },
+      "evidence": {
+       "comments": 1,
+       "open": 1,
+       "closed_after": {
+        "1": 0,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "methods",
+         1
+        ]
+       ]
+      },
+      "figures": {
+       "comments": 1,
+       "open": 1,
+       "closed_after": {
+        "1": 0,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "results",
+         1
+        ]
+       ]
+      },
+      "wording": {
+       "comments": 1,
+       "open": 1,
+       "closed_after": {
+        "1": 0,
+        "2": 0,
+        "3+": 0
+       },
+       "followed_up": 0,
+       "revived": 0,
+       "written_in": [
+        [
+         "results",
+         1
+        ]
+       ]
+      }
+     },
+     "untagged": {
+      "comments": 0,
+      "open": 0,
+      "closed_after": {
+       "1": 0,
+       "2": 0,
+       "3+": 0
+      },
+      "followed_up": 0,
+      "revived": 0,
+      "written_in": []
+     }
+    }
+   }
+  }
+ ],
+ "students": [
+  {
+   "student": "Mei Lin",
+   "papers": [
+    "/synthetic/shrimp",
+    "/synthetic/reef",
+    "/synthetic/kelp"
+   ],
+   "rounds": 8,
+   "comments": 32,
+   "land": {
+    "columns": [
+     {
+      "bucket": "abstract",
+      "title": "Abstract"
+     },
+     {
+      "bucket": "introduction",
+      "title": "Introduction"
+     },
+     {
+      "bucket": "method",
+      "title": "Methods"
+     },
+     {
+      "bucket": "results",
+      "title": "Results"
+     },
+     {
+      "bucket": "discussion",
+      "title": "Discussion"
+     },
+     {
+      "bucket": null,
+      "title": "Station details"
+     },
+     {
+      "bucket": null,
+      "title": "Detector settings"
+     }
+    ],
+    "papers": [
+     {
+      "path": "/synthetic/shrimp",
+      "counts": [
+       0,
+       2,
+       3,
+       3,
+       1,
+       0,
+       0
+      ]
+     },
+     {
+      "path": "/synthetic/reef",
+      "counts": [
+       0,
+       3,
+       4,
+       4,
+       3,
+       2,
+       1
+      ]
+     },
+     {
+      "path": "/synthetic/kelp",
+      "counts": [
+       0,
+       1,
+       3,
+       2,
+       0,
+       0,
+       0
+      ]
+     }
+    ],
+    "total": [
+     0,
+     6,
+     10,
+     9,
+     4,
+     2,
+     1
+    ]
+   },
+   "time": [
+    {
+     "path": "/synthetic/shrimp",
+     "round": 1,
+     "next": 2,
+     "open": false,
+     "you": 0,
+     "student": 0,
+     "received": 0
+    },
+    {
+     "path": "/synthetic/reef",
+     "round": 1,
+     "next": 2,
+     "open": false,
+     "you": 0,
+     "student": 0,
+     "received": 0
+    },
+    {
+     "path": "/synthetic/reef",
+     "round": 2,
+     "next": 3,
+     "open": false,
+     "you": 0,
+     "student": 0,
+     "received": 0
+    },
+    {
+     "path": "/synthetic/reef",
+     "round": 3,
+     "next": 4,
+     "open": false,
+     "you": 0,
+     "student": 0,
+     "received": 0
+    },
+    {
+     "path": "/synthetic/reef",
+     "round": 4,
+     "next": null,
+     "open": true,
+     "you": 0,
+     "student": null,
+     "received": null,
+     "failed": false
+    },
+    {
+     "path": "/synthetic/kelp",
+     "round": 1,
+     "next": 2,
+     "open": false,
+     "you": 0,
+     "student": 0,
+     "received": 0
+    },
+    {
+     "path": "/synthetic/kelp",
+     "round": 2,
+     "next": null,
+     "open": true,
+     "you": 0,
+     "student": null,
+     "received": null,
+     "failed": false
+    }
+   ],
+   "closed": {
+    "papers": [
+     {
+      "path": "/synthetic/shrimp",
+      "1": 9,
+      "2": 0,
+      "3+": 0,
+      "open": 0,
+      "followed_up": 0,
+      "untouched_after_follow_up": 0,
+      "revived": 0
+     },
+     {
+      "path": "/synthetic/reef",
+      "1": 9,
+      "2": 2,
+      "3+": 0,
+      "open": 6,
+      "followed_up": 4,
+      "untouched_after_follow_up": 2,
+      "revived": 0
+     },
+     {
+      "path": "/synthetic/kelp",
+      "1": 0,
+      "2": 0,
+      "3+": 0,
+      "open": 6,
+      "followed_up": 0,
+      "untouched_after_follow_up": 0,
+      "revived": 0
+     }
+    ],
+    "total": {
+     "1": 18,
+     "2": 2,
+     "3+": 0,
+     "open": 12,
+     "followed_up": 4,
+     "untouched_after_follow_up": 2,
+     "revived": 0
+    }
+   },
+   "tags": {
+    "comments": 32,
+    "tagged": 30,
+    "rounds": [
+     {
+      "path": "/synthetic/shrimp",
+      "n": 1,
+      "date": "2026-10-20",
+      "pages": 4,
+      "first": true,
+      "closed": true,
+      "added": 0,
+      "new": 9,
+      "untagged": 0,
+      "by_tag": {
+       "grammar": 3,
+       "clarity": 1,
+       "logic": 2,
+       "wording": 1,
+       "evidence": 1,
+       "figures": 1,
+       "math": 1
+      }
+     },
+     {
+      "path": "/synthetic/shrimp",
+      "n": 2,
+      "date": "2026-10-20",
+      "pages": 4,
+      "first": false,
+      "closed": true,
+      "added": 7,
+      "new": 0,
+      "untagged": 0,
+      "by_tag": {}
+     },
+     {
+      "path": "/synthetic/reef",
+      "n": 1,
+      "date": "2026-10-20",
+      "pages": 4,
+      "first": true,
+      "closed": true,
+      "added": 0,
+      "new": 13,
+      "untagged": 1,
+      "by_tag": {
+       "wording": 2,
+       "grammar": 2,
+       "clarity": 2,
+       "structure": 2,
+       "logic": 2,
+       "evidence": 1,
+       "figures": 1,
+       "math": 1,
+       "praise": 1
+      }
+     },
+     {
+      "path": "/synthetic/reef",
+      "n": 2,
+      "date": "2026-10-20",
+      "pages": 4,
+      "first": false,
+      "closed": true,
+      "added": 7,
+      "new": 3,
+      "untagged": 1,
+      "by_tag": {
+       "evidence": 1,
+       "wording": 1
+      }
+     },
+     {
+      "path": "/synthetic/reef",
+      "n": 3,
+      "date": "2026-10-20",
+      "pages": 4,
+      "first": false,
+      "closed": true,
+      "added": 9,
+      "new": 1,
+      "untagged": 0,
+      "by_tag": {
+       "math": 1
+      }
+     },
+     {
+      "path": "/synthetic/reef",
+      "n": 4,
+      "date": "2026-10-20",
+      "pages": 4,
+      "first": false,
+      "closed": false,
+      "added": 8,
+      "new": 0,
+      "untagged": 0,
+      "by_tag": {}
+     },
+     {
+      "path": "/synthetic/kelp",
+      "n": 1,
+      "date": "2026-10-20",
+      "pages": 4,
+      "first": true,
+      "closed": true,
+      "added": 0,
+      "new": 6,
+      "untagged": 0,
+      "by_tag": {
+       "grammar": 1,
+       "clarity": 1,
+       "logic": 1,
+       "evidence": 1,
+       "figures": 1,
+       "wording": 1
+      }
+     },
+     {
+      "path": "/synthetic/kelp",
+      "n": 2,
+      "date": "2026-10-20",
+      "pages": 4,
+      "first": false,
+      "closed": false,
+      "added": 2,
+      "new": 0,
+      "untagged": 0,
+      "by_tag": {}
+     }
+    ],
+    "by_tag": {
+     "grammar": {
+      "comments": 6,
+      "open": 1,
+      "closed_after": {
+       "1": 5,
+       "2": 0,
+       "3+": 0
+      },
+      "followed_up": 0,
+      "revived": 0,
+      "papers": {
+       "/synthetic/shrimp": 3,
+       "/synthetic/reef": 2,
+       "/synthetic/kelp": 1
+      }
+     },
+     "clarity": {
+      "comments": 4,
+      "open": 1,
+      "closed_after": {
+       "1": 2,
+       "2": 1,
+       "3+": 0
+      },
+      "followed_up": 1,
+      "revived": 0,
+      "papers": {
+       "/synthetic/shrimp": 1,
+       "/synthetic/reef": 2,
+       "/synthetic/kelp": 1
+      }
+     },
+     "logic": {
+      "comments": 5,
+      "open": 2,
+      "closed_after": {
+       "1": 3,
+       "2": 0,
+       "3+": 0
+      },
+      "followed_up": 1,
+      "revived": 0,
+      "papers": {
+       "/synthetic/shrimp": 2,
+       "/synthetic/reef": 2,
+       "/synthetic/kelp": 1
+      }
+     },
+     "wording": {
+      "comments": 5,
+      "open": 2,
+      "closed_after": {
+       "1": 3,
+       "2": 0,
+       "3+": 0
+      },
+      "followed_up": 0,
+      "revived": 0,
+      "papers": {
+       "/synthetic/shrimp": 1,
+       "/synthetic/reef": 3,
+       "/synthetic/kelp": 1
+      }
+     },
+     "evidence": {
+      "comments": 4,
+      "open": 2,
+      "closed_after": {
+       "1": 2,
+       "2": 0,
+       "3+": 0
+      },
+      "followed_up": 0,
+      "revived": 0,
+      "papers": {
+       "/synthetic/shrimp": 1,
+       "/synthetic/reef": 2,
+       "/synthetic/kelp": 1
+      }
+     },
+     "figures": {
+      "comments": 3,
+      "open": 1,
+      "closed_after": {
+       "1": 2,
+       "2": 0,
+       "3+": 0
+      },
+      "followed_up": 0,
+      "revived": 0,
+      "papers": {
+       "/synthetic/shrimp": 1,
+       "/synthetic/reef": 1,
+       "/synthetic/kelp": 1
+      }
+     },
+     "math": {
+      "comments": 3,
+      "open": 2,
+      "closed_after": {
+       "1": 1,
+       "2": 0,
+       "3+": 0
+      },
+      "followed_up": 1,
+      "revived": 0,
+      "papers": {
+       "/synthetic/shrimp": 1,
+       "/synthetic/reef": 2
+      }
+     },
+     "structure": {
+      "comments": 2,
+      "open": 0,
+      "closed_after": {
+       "1": 1,
+       "2": 1,
+       "3+": 0
+      },
+      "followed_up": 1,
+      "revived": 0,
+      "papers": {
+       "/synthetic/reef": 2
+      }
+     },
+     "praise": {
+      "comments": 1,
+      "open": 0,
+      "closed_after": {
+       "1": 1,
+       "2": 0,
+       "3+": 0
+      },
+      "followed_up": 0,
+      "revived": 0,
+      "papers": {
+       "/synthetic/reef": 1
+      }
+     }
+    },
+    "untagged": {
+     "comments": 2,
+     "open": 1,
+     "closed_after": {
+      "1": 0,
+      "2": 1,
+      "3+": 0
+     },
+     "followed_up": 1,
+     "revived": 0,
+     "papers": {
+      "/synthetic/reef": 2
+     }
+    },
+    "first_drafts": {
+     "points": [
+      "/synthetic/shrimp",
+      "/synthetic/reef",
+      "/synthetic/kelp"
+     ],
+     "skipped": [],
+     "trend": {
+      "grammar": {
+       "word": "mixed",
+       "why": null,
+       "counts": [
+        3,
+        2,
+        1
+       ]
+      },
+      "clarity": {
+       "word": "same",
+       "why": null,
+       "counts": [
+        1,
+        2,
+        1
+       ]
+      },
+      "logic": {
+       "word": "same",
+       "why": null,
+       "counts": [
+        2,
+        2,
+        1
+       ]
+      },
+      "wording": {
+       "word": "same",
+       "why": null,
+       "counts": [
+        1,
+        2,
+        1
+       ]
+      },
+      "evidence": {
+       "word": "same",
+       "why": null,
+       "counts": [
+        1,
+        1,
+        1
+       ]
+      },
+      "figures": {
+       "word": "same",
+       "why": null,
+       "counts": [
+        1,
+        1,
+        1
+       ]
+      },
+      "math": {
+       "word": "same",
+       "why": null,
+       "counts": [
+        1,
+        1,
+        0
+       ]
+      },
+      "structure": {
+       "word": "mixed",
+       "why": null,
+       "counts": [
+        0,
+        2,
+        0
+       ]
+      },
+      "praise": {
+       "word": "same",
+       "why": null,
+       "counts": [
+        0,
+        1,
+        0
+       ]
+      }
+     }
+    },
+    "facts": [
+     {
+      "tag": "wording",
+      "kind": "new_words",
+      "path": "/synthetic/reef",
+      "round": 3,
+      "n": 0,
+      "words": 9
+     },
+     {
+      "tag": "structure",
+      "kind": "none_since",
+      "path": "/synthetic/reef",
+      "round": 2
+     }
+    ],
+    "focus": [
+     {
+      "tag": "logic",
+      "comments": 5,
+      "open": 2,
+      "followed_up": 1,
+      "score": 3,
+      "example": {
+       "path": "/synthetic/kelp",
+       "id": "R1-03",
+       "round": 2,
+       "page": 0,
+       "note": "这个结论太强。",
+       "text": "Hydro hydrophone swell night"
+      }
+     },
+     {
+      "tag": "math",
+      "comments": 3,
+      "open": 2,
+      "followed_up": 1,
+      "score": 3,
+      "example": {
+       "path": "/synthetic/reef",
+       "id": "R3-01",
+       "round": 4,
+       "page": 3,
+       "note": "这里的符号和正文不一致。",
+       "text": "Windows level record record"
+      }
+     }
+    ],
+    "praise": {
+     "comments": 1,
+     "latest": {
+      "path": "/synthetic/reef",
+      "id": "R1-13",
+      "round": 3,
+      "page": 1,
+      "note": "Good point, well argued."
+     }
+    }
+   }
+  }
+ ]
+}

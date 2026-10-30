@@ -1,0 +1,41 @@
+\documentclass{article}
+\usepackage{natbib}
+\usepackage{cleveref}
+\input{macros}
+\newcommand{\method}{WarmCast\xspace}
+\newcommand{\pair}[2]{(#1, #2)}
+\newcommand{\opt}[2][low]{#1--#2}
+\def\R{\mathbb{R}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\loopy}{\loopy}
+\title{A Synthetic \emph{Prose} Paper}
+\begin{document}
+\maketitle
+\begin{abstract}
+We test the prose view. It reads ``quoted'' text -- and dashes --- well.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+The \method controller sizes pools~\citep{wang2026} as \citet{lee2024} showed.
+Prior work~\citep[see][p.~3]{wang2026,lee2024} and \cite{nokey} differ.
+
+% a comment line that is no paragraph break
+See \cref{fig:plot}, \Cref{tab:main,tab:other}, \autoref{sec:intro}, Eq.~\eqref{eq:one} and \ref{missing}.
+A pair \pair{a}{b}, \opt{high}, \opt[mid]{high}, $x \in \R$, \loopy{} and \unknowncmd.
+Accents: na\"ive, \'{e}t\'e, \c{c}a; a footnote\footnote{Said \emph{here}.} and \url{https://x.org/a_b}.
+
+\iffalse
+Hidden text that is never typeset.
+\fi
+\begin{comment}
+Also hidden.
+\end{comment}
+\input{sections/method}
+\input{sections/missing}
+
+\appendix
+\section{Extra}
+Text in the appendix.
+\bibliography{refs}
+\end{document}

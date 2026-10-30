@@ -1,0 +1,670 @@
+{
+ "schema": 1,
+ "paper": {
+  "path": "/Users/advisor/Reviews/zhou-warmcast",
+  "title": "Predictive Warm Pools for Serverless Cold-Start Reduction",
+  "student": "Lin Zhou",
+  "main": "main.tex",
+  "engine": "pdflatex"
+ },
+ "rounds": [
+  {
+   "n": 1,
+   "created": "2026-10-07T09:12:40+08:00",
+   "source": "/Users/advisor/Downloads/warmcast-v1",
+   "closed": true,
+   "closed_at": "2026-10-08T21:30:05+08:00",
+   "status": "ok"
+  },
+  {
+   "n": 2,
+   "created": "2026-10-14T10:02:11+08:00",
+   "source": "/Users/advisor/Downloads/warmcast-v2",
+   "closed": false,
+   "closed_at": null,
+   "status": "ok"
+  }
+ ],
+ "round": {
+  "n": 2,
+  "closed": false,
+  "created": "2026-10-14T10:02:11+08:00",
+  "closed_at": null,
+  "build": {
+   "status": "ok",
+   "pdf": "round2/main.pdf",
+   "pages": 4,
+   "warnings": [],
+   "errors": [],
+   "log_tail": "Output written on main.pdf (4 pages, 268373 bytes).\nSyncTeX written on main.synctex.gz."
+  },
+  "final_pdf": null,
+  "email": null
+ },
+ "comments": [
+  {
+   "id": "R1-01",
+   "kind": "highlight",
+   "note": "simple 不准确，改成 static 或 fixed。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "verified",
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.99,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     181.7,
+     391.04,
+     283.27,
+     401.0
+    ]
+   ],
+   "text": "static keep-alive policy",
+   "old_quote": "simple keep-alive policy",
+   "new_quote": "static keep-alive policy",
+   "file": "main.tex",
+   "line": 41,
+   "changes": [
+    "c01"
+   ],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ]
+  },
+  {
+   "id": "R2-02",
+   "kind": "highlight",
+   "note": "enough 需要论证。",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 1.0,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     131.56,
+     462.77,
+     366.56,
+     472.74
+    ]
+   ],
+   "text": "A short-term forecast of the rate is therefore enough",
+   "old_quote": null,
+   "new_quote": "A short-term forecast of the rate\nis therefore enough",
+   "file": "main.tex",
+   "line": 50,
+   "changes": [],
+   "history": []
+  },
+  {
+   "id": "R2-03",
+   "kind": "highlight",
+   "note": "标题改成 Background and Related Work。",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 1.0,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     95.67,
+     552.07,
+     191.78,
+     566.41
+    ]
+   ],
+   "text": "Related Work",
+   "old_quote": null,
+   "new_quote": "Related Work",
+   "file": "main.tex",
+   "line": 60,
+   "changes": [],
+   "history": []
+  },
+  {
+   "id": "R1-06",
+   "kind": "highlight",
+   "note": "125 ms 出自哪里？加引用。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "unchanged",
+   "confidence": 1.0,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     468.96,
+     589.27,
+     540.0,
+     599.23
+    ],
+    [
+     72.0,
+     601.22,
+     172.82,
+     611.18
+    ]
+   ],
+   "text": "boots a minimal microVM in about 125",
+   "old_quote": "boots a minimal microVM in about 125",
+   "new_quote": "boots a minimal\nmicroVM in about 125",
+   "file": "main.tex",
+   "line": 66,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ]
+  },
+  {
+   "id": "R1-02",
+   "kind": "highlight",
+   "note": "这句不准确：Hybrid 也决定预热窗口。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "reopened",
+   "verdict_note": "还是没说清楚和 Hybrid 的区别。",
+   "anchor_state": "changed",
+   "confidence": 0.91,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     408.71,
+     661.0,
+     539.95,
+     670.96
+    ],
+    [
+     72.0,
+     672.95,
+     485.64,
+     682.91
+    ]
+   ],
+   "text": "Both approaches reason about the lifetime of one instance and leave the number of concurrent instances to the autoscaler.",
+   "old_quote": "Both approaches decide when to keep a\nsingle instance alive.",
+   "new_quote": "Both approaches reason about the\nlifetime of one instance and leave the number of concurrent instances to the\nautoscaler.",
+   "file": "main.tex",
+   "line": 77,
+   "changes": [
+    "c02"
+   ],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ]
+  },
+  {
+   "id": "R2-04",
+   "kind": "strikeout",
+   "note": "",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 1.0,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     164.15,
+     696.86,
+     215.09,
+     706.82
+    ]
+   ],
+   "text": "deliberately",
+   "old_quote": null,
+   "new_quote": "deliberately",
+   "file": "main.tex",
+   "line": 82,
+   "changes": [],
+   "history": []
+  },
+  {
+   "id": "R1-07",
+   "kind": "note",
+   "note": "只用一天调参够吗？",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "wontfix",
+   "verdict_note": "这次先不改。",
+   "anchor_state": "unchanged",
+   "confidence": 1.0,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     202.26,
+     275.76,
+     432.84,
+     285.73
+    ]
+   ],
+   "text": "which performed best on a held-out day of the trace",
+   "old_quote": "which performed best on a held-out day of the trace",
+   "new_quote": "which performed best on a held-out day of the trace",
+   "file": "sections/method.tex",
+   "line": 20,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ]
+  },
+  {
+   "id": "R1-05",
+   "kind": "highlight",
+   "note": "式 (2) 里 c_m 的单位和 τ 对不上。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 1.0,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     72.0,
+     337.52,
+     223.15,
+     347.48
+    ]
+   ],
+   "text": "The expected cost of a pool of size",
+   "old_quote": "The expected cost of a pool of size",
+   "new_quote": "The expected cost of a pool of size",
+   "file": "sections/method.tex",
+   "line": 27,
+   "changes": [
+    "c07"
+   ],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ]
+  },
+  {
+   "id": "R1-09",
+   "kind": "strikeout",
+   "note": "only 的位置不对。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.68,
+   "method": "fuzzy",
+   "page": 1,
+   "rects": [
+    [
+     253.75,
+     504.87,
+     422.3,
+     514.83
+    ]
+   ],
+   "text": "Pre-warming uses spare capacity only",
+   "old_quote": "Pre-warming only uses spare capacity",
+   "new_quote": "Pre-warming uses spare capacity only",
+   "file": "sections/method.tex",
+   "line": 49,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ]
+  },
+  {
+   "id": "R2-01",
+   "kind": "highlight",
+   "note": "这个数为什么变了？重跑了还是笔误？",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 1.0,
+   "method": "selection",
+   "page": 2,
+   "rects": [
+    [
+     351.4,
+     136.8,
+     366.34,
+     146.76
+    ]
+   ],
+   "text": "671",
+   "old_quote": null,
+   "new_quote": "671",
+   "file": "main.tex",
+   "line": 118,
+   "changes": [],
+   "history": []
+  },
+  {
+   "id": "R1-03",
+   "kind": "strikeout",
+   "note": "多余，删掉。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "gone",
+   "confidence": 0.87,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     522.39,
+     455.71,
+     524.39,
+     465.67
+    ]
+   ],
+   "text": "",
+   "old_quote": "The memory footprint is two floating-point numbers\nper function.",
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 150,
+   "changes": [
+    "c04"
+   ],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ]
+  },
+  {
+   "id": "R1-04",
+   "kind": "highlight",
+   "note": "这段放到本节最后，作为局限讨论。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "verified",
+   "verdict_note": "",
+   "anchor_state": "moved",
+   "confidence": 1.0,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     86.94,
+     479.62,
+     217.25,
+     489.59
+    ]
+   ],
+   "text": "Our simulator is event-driven",
+   "old_quote": "Our simulator is event-driven",
+   "new_quote": "Our simulator is event-driven",
+   "file": "main.tex",
+   "line": 153,
+   "changes": [
+    "c05"
+   ],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ]
+  },
+  {
+   "id": "R1-08",
+   "kind": "highlight",
+   "note": "Fig. 1 的纵轴要写单位（%）。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "orphan",
+   "confidence": 0.0,
+   "method": "none",
+   "page": null,
+   "rects": [],
+   "text": "",
+   "old_quote": "as the bars in our preliminary measurement show",
+   "new_quote": null,
+   "file": null,
+   "line": null,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ]
+  }
+ ],
+ "changes": [
+  {
+   "id": "c01",
+   "kind": "replace",
+   "file": "main.tex",
+   "line": 41,
+   "old_text": "simple",
+   "new_text": "static",
+   "page": 0,
+   "rects": [
+    [
+     181.7,
+     391.04,
+     205.55,
+     401.0
+    ]
+   ],
+   "attached_to": [
+    "R1-01"
+   ],
+   "unrequested": false
+  },
+  {
+   "id": "c02",
+   "kind": "replace",
+   "file": "main.tex",
+   "line": 77,
+   "old_text": "decide when to keep a single instance alive",
+   "new_text": "reason about the lifetime of one instance and leave the number of concurrent instances to the autoscaler",
+   "page": 0,
+   "rects": [
+    [
+     484.04,
+     661.0,
+     539.95,
+     670.96
+    ],
+    [
+     72.0,
+     672.95,
+     485.64,
+     682.91
+    ]
+   ],
+   "attached_to": [
+    "R1-02"
+   ],
+   "unrequested": false
+  },
+  {
+   "id": "c03",
+   "kind": "replace",
+   "file": "main.tex",
+   "line": 118,
+   "old_text": "655",
+   "new_text": "671",
+   "page": 2,
+   "rects": [
+    [
+     351.4,
+     136.8,
+     366.34,
+     146.76
+    ]
+   ],
+   "attached_to": [],
+   "unrequested": true
+  },
+  {
+   "id": "c04",
+   "kind": "delete",
+   "file": "main.tex",
+   "line": 150,
+   "old_text": "The memory footprint is two floating-point numbers per function.",
+   "new_text": "",
+   "page": 2,
+   "rects": [
+    [
+     522.39,
+     455.71,
+     524.39,
+     465.67
+    ]
+   ],
+   "attached_to": [
+    "R1-03"
+   ],
+   "unrequested": false
+  },
+  {
+   "id": "c05",
+   "kind": "move",
+   "file": "main.tex",
+   "line": 153,
+   "old_text": "Our simulator is event-driven and models the memory of each host but not its CPU. It assumes that a warm instance serves a request immediately and that a cold start blocks the request for the full start duration. These assumptions favour no policy in particular, since all policies share them.",
+   "new_text": "Our simulator is event-driven and models the memory of each host but not its CPU. It assumes that a warm instance serves a request immediately and that a cold start blocks the request for the full start duration. These assumptions favour no policy in particular, since all policies share them.",
+   "page": 2,
+   "rects": [
+    [
+     86.94,
+     479.62,
+     539.96,
+     489.59
+    ],
+    [
+     72.0,
+     491.58,
+     539.99,
+     501.54
+    ],
+    [
+     72.0,
+     503.53,
+     460.12,
+     513.5
+    ]
+   ],
+   "attached_to": [
+    "R1-04"
+   ],
+   "unrequested": false
+  },
+  {
+   "id": "c06",
+   "kind": "insert",
+   "file": "main.tex",
+   "line": 162,
+   "old_text": "",
+   "new_text": "Because the controller needs no changes to the functions themselves, it can be deployed on existing platforms without involving developers.",
+   "page": 2,
+   "rects": [
+    [
+     193.15,
+     570.25,
+     539.96,
+     580.21
+    ],
+    [
+     72.0,
+     582.2,
+     333.62,
+     592.17
+    ]
+   ],
+   "attached_to": [],
+   "unrequested": true
+  },
+  {
+   "id": "c07",
+   "kind": "insert",
+   "file": "sections/method.tex",
+   "line": 29,
+   "old_text": "",
+   "new_text": "\\tau",
+   "page": 1,
+   "rects": [
+    [
+     282.18,
+     359.43,
+     286.53,
+     369.39
+    ]
+   ],
+   "attached_to": [
+    "R1-05"
+   ],
+   "unrequested": false
+  }
+ ]
+}

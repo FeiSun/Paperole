@@ -1,0 +1,55 @@
+# Paperole: source code, specs and a synthetic demo paper only. No real papers, reviews or other data.
+
+# --- Data: private papers, reviews made from them, raw research ---
+/samples/*
+!/samples/promo-demo/
+/samples/promo-demo/review/
+/samples/promo-demo/others/*/review/
+/research-raw/
+/*_test/
+
+# --- Kept local: design work and working notes (the advisor keeps their own backup) ---
+# Public from design/: only the traced handwriting the app icon is made from (CC BY-SA; see its SOURCE.md).
+/design/*
+!/design/brand/
+/design/brand/*
+!/design/brand/paperole/
+/design/brand/paperole/*
+!/design/brand/paperole/hand/
+/design/brand/paperole/hand/*.png
+/implementation-notes.md
+/BACKLOG.md
+/CLAUDE.md
+/DESIGN.md
+/CONCEPT.md
+/标记存放与改动识别.md
+
+# --- Safety net: a paper, review folder or archive dropped anywhere else ---
+*.zip
+*.pdf
+!/mac/Fixtures/round*/main.pdf
+!/samples/promo-demo/student/r*/figures/*.pdf
+ledger.json
+.lock
+*.synctex.gz
+*.mov
+*.mp4
+
+# --- Builds and environments (recreated on each Mac) ---
+/mac/.build/
+/mac/build/
+/engine/.venv/
+*.egg-info/
+__pycache__/
+*.pyc
+.pytest_cache/
+.swiftpm/
+
+# --- Secrets, personal and system files ---
+.env
+.env.*
+*.pem
+*.p12
+*.key
+/.claude/settings.local.json
+.DS_Store

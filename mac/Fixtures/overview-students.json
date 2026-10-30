@@ -1,0 +1,6290 @@
+{
+ "papers": [
+  {
+   "path": "/tmp/synthetic/students/reef",
+   "overview": {
+    "paper": {
+     "title": "Reef choruses",
+     "student": "Mei Lin",
+     "created": "2026-09-08T09:00:00+08:00"
+    },
+    "summary": {
+     "round": 4,
+     "closed": false,
+     "status": "ok",
+     "to_judge": 3,
+     "to_check": 5
+    },
+    "sections": [
+     {
+      "key": "front",
+      "title": "Title and abstract",
+      "name": "Title and abstract",
+      "suggested_bucket": "abstract",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 0,
+      "written": 0
+     },
+     {
+      "key": "introduction",
+      "title": "1 Introduction",
+      "name": "Introduction",
+      "suggested_bucket": "introduction",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "methods",
+      "title": "2 Methods",
+      "name": "Methods",
+      "suggested_bucket": "method",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 4,
+      "written": 4
+     },
+     {
+      "key": "results",
+      "title": "3 Results",
+      "name": "Results",
+      "suggested_bucket": "results",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 3,
+      "written": 3
+     },
+     {
+      "key": "discussion",
+      "title": "4 Discussion",
+      "name": "Discussion",
+      "suggested_bucket": "discussion",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 3,
+      "written": 3
+     }
+    ],
+    "rounds": [
+     {
+      "n": 1,
+      "created": "2026-09-08T10:00:00+08:00",
+      "received": "2026-09-07T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-09-10T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/reef/r1/build/main.pdf",
+      "final_pdf": "/tmp/synthetic/students/reef/r1/final.pdf",
+      "email": "/tmp/synthetic/students/reef/r1/email.txt",
+      "prose": "ok",
+      "comments": {
+       "new": 6,
+       "carried": 0,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 0,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 6
+      },
+      "changes": {
+       "total": 0,
+       "requested": 0,
+       "unrequested": 0,
+       "to_check": 0
+      },
+      "words": {
+       "body": 749,
+       "added": 0,
+       "deleted": 0
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.431
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.431,
+        0.847
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.847,
+        1.367
+       ],
+       [
+        "results",
+        "3 Results",
+        1.367,
+        1.915
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.915,
+        2.282
+       ]
+      ],
+      "match": null,
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "methods",
+        3,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "results",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "discussion",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [],
+      "excerpts": {},
+      "pages": [
+       {
+        "page": 1,
+        "comments": 4,
+        "changes": 0
+       },
+       {
+        "page": 0,
+        "comments": 2,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 2,
+      "created": "2026-09-19T10:00:00+08:00",
+      "received": "2026-09-18T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-09-22T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/reef/r2/build/main.pdf",
+      "final_pdf": "/tmp/synthetic/students/reef/r2/final.pdf",
+      "email": "/tmp/synthetic/students/reef/r2/email.txt",
+      "prose": "ok",
+      "comments": {
+       "new": 3,
+       "carried": 6,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 6,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 4,
+       "follow_up": 1,
+       "kept": 1,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 4
+      },
+      "changes": {
+       "total": 3,
+       "requested": 0,
+       "unrequested": 3,
+       "to_check": 0
+      },
+      "words": {
+       "body": 749,
+       "added": 3,
+       "deleted": 3
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.431
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.431,
+        0.847
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.847,
+        1.367
+       ],
+       [
+        "results",
+        "3 Results",
+        1.367,
+        1.915
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.915,
+        2.282
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        1,
+        1
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        3,
+        3
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        4,
+        4
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        4,
+        4
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        3,
+        3
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        1,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "methods",
+        1,
+        3,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "results",
+        1,
+        1,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "discussion",
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        0,
+        0.508,
+        "introduction",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c02",
+        0,
+        0.924,
+        "methods",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c03",
+        1,
+        1.444,
+        "results",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ]
+      ],
+      "excerpts": {
+       "c01": "carefully",
+       "c02": "carefully",
+       "c03": "carefully"
+      },
+      "pages": [
+       {
+        "page": 1,
+        "comments": 6,
+        "changes": 1
+       },
+       {
+        "page": 0,
+        "comments": 2,
+        "changes": 2
+       },
+       {
+        "page": 2,
+        "comments": 1,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 3,
+      "created": "2026-10-06T10:00:00+08:00",
+      "received": "2026-10-05T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-10-09T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/reef/r3/build/main.pdf",
+      "final_pdf": "/tmp/synthetic/students/reef/r3/final.pdf",
+      "email": "/tmp/synthetic/students/reef/r3/email.txt",
+      "prose": "ok",
+      "comments": {
+       "new": 2,
+       "carried": 4,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 4,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 3,
+       "follow_up": 1,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 3
+      },
+      "changes": {
+       "total": 4,
+       "requested": 0,
+       "unrequested": 4,
+       "to_check": 0
+      },
+      "words": {
+       "body": 749,
+       "added": 4,
+       "deleted": 4
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.431
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.431,
+        0.847
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.847,
+        1.367
+       ],
+       [
+        "results",
+        "3 Results",
+        1.367,
+        1.915
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.915,
+        2.282
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        1,
+        1
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        3,
+        3
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        4,
+        4
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        4,
+        4
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        3,
+        3
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "methods",
+        0,
+        2,
+        0,
+        2,
+        2,
+        2
+       ],
+       [
+        "results",
+        1,
+        1,
+        0,
+        2,
+        2,
+        2
+       ],
+       [
+        "discussion",
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        0,
+        0.924,
+        "methods",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c02",
+        1,
+        1.253,
+        "methods",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c03",
+        1,
+        1.444,
+        "results",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c04",
+        1,
+        1.555,
+        "results",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ]
+      ],
+      "excerpts": {
+       "c01": "carbon",
+       "c02": "carefully",
+       "c03": "tide",
+       "c04": "carefully"
+      },
+      "pages": [
+       {
+        "page": 1,
+        "comments": 3,
+        "changes": 3
+       },
+       {
+        "page": 0,
+        "comments": 1,
+        "changes": 1
+       },
+       {
+        "page": 2,
+        "comments": 2,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 4,
+      "created": "2026-10-16T10:00:00+08:00",
+      "received": "2026-10-15T10:00:00+08:00",
+      "closed": false,
+      "closed_at": null,
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/reef/r4/build/main.pdf",
+      "final_pdf": null,
+      "email": null,
+      "prose": "ok",
+      "comments": {
+       "new": 0,
+       "carried": 3,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 3,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 3,
+       "open_after": 3
+      },
+      "changes": {
+       "total": 5,
+       "requested": 0,
+       "unrequested": 5,
+       "to_check": 5
+      },
+      "words": {
+       "body": 749,
+       "added": 5,
+       "deleted": 5
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.431
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.431,
+        0.847
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.847,
+        1.367
+       ],
+       [
+        "results",
+        "3 Results",
+        1.367,
+        1.915
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.915,
+        2.282
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        1,
+        1
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        3,
+        3
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        4,
+        4
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        4,
+        4
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        3,
+        3
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "methods",
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "results",
+        0,
+        2,
+        2,
+        1,
+        1,
+        1
+       ],
+       [
+        "discussion",
+        0,
+        1,
+        1,
+        2,
+        2,
+        2
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        0,
+        0.508,
+        "introduction",
+        [],
+        true,
+        true,
+        false,
+        1,
+        1
+       ],
+       [
+        "c02",
+        1,
+        1.253,
+        "methods",
+        [],
+        true,
+        true,
+        false,
+        1,
+        1
+       ],
+       [
+        "c03",
+        1,
+        1.555,
+        "results",
+        [],
+        true,
+        true,
+        false,
+        1,
+        1
+       ],
+       [
+        "c04",
+        1,
+        1.991,
+        "discussion",
+        [],
+        true,
+        true,
+        false,
+        1,
+        1
+       ],
+       [
+        "c05",
+        2,
+        2.209,
+        "discussion",
+        [],
+        true,
+        true,
+        false,
+        1,
+        1
+       ]
+      ],
+      "excerpts": {
+       "c01": "drift",
+       "c02": "recovery",
+       "c03": "units",
+       "c04": "harbor",
+       "c05": "carefully"
+      },
+      "pages": [
+       {
+        "page": 1,
+        "comments": 2,
+        "changes": 3
+       },
+       {
+        "page": 2,
+        "comments": 1,
+        "changes": 1
+       },
+       {
+        "page": 0,
+        "comments": 0,
+        "changes": 1
+       }
+      ]
+     }
+    ],
+    "comments": [
+     {
+      "id": "R1-01",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Say what is new first.",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.486,
+        "introduction",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.486,
+        "introduction",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-02",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Which hydrophone?",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.902,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.902,
+        "methods",
+        "untouched",
+        "follow_up"
+       ],
+       [
+        3,
+        "placed",
+        0,
+        0.902,
+        "methods",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-03",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Give the band in Hz.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.008,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.008,
+        "methods",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-04",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "What does the trend show?",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.421,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.421,
+        "results",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-05",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Too strong.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.969,
+        "discussion",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.969,
+        "discussion",
+        "untouched",
+        "kept"
+       ]
+      ]
+     },
+     {
+      "id": "R1-06",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Define the grid.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.119,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.119,
+        "methods",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R2-01",
+      "created_round": 2,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Units?",
+      "path": [
+       [
+        2,
+        "placed",
+        1,
+        1.533,
+        "results",
+        "new",
+        null
+       ],
+       [
+        3,
+        "placed",
+        1,
+        1.533,
+        "results",
+        "untouched",
+        "follow_up"
+       ],
+       [
+        4,
+        "placed",
+        1,
+        1.533,
+        "results",
+        "untouched",
+        "to_check"
+       ]
+      ]
+     },
+     {
+      "id": "R2-02",
+      "created_round": 2,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Why this metric?",
+      "path": [
+       [
+        2,
+        "placed",
+        1,
+        1.23,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        3,
+        "placed",
+        1,
+        1.23,
+        "methods",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R2-03",
+      "created_round": 2,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Cite the survey.",
+      "path": [
+       [
+        2,
+        "placed",
+        2,
+        2.075,
+        "discussion",
+        "new",
+        null
+       ],
+       [
+        3,
+        "placed",
+        2,
+        2.075,
+        "discussion",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R3-01",
+      "created_round": 3,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Compare with site B.",
+      "path": [
+       [
+        3,
+        "placed",
+        1,
+        1.644,
+        "results",
+        "new",
+        null
+       ],
+       [
+        4,
+        "placed",
+        1,
+        1.644,
+        "results",
+        "untouched",
+        "to_check"
+       ]
+      ]
+     },
+     {
+      "id": "R3-02",
+      "created_round": 3,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Limitations?",
+      "path": [
+       [
+        3,
+        "placed",
+        2,
+        2.187,
+        "discussion",
+        "new",
+        null
+       ],
+       [
+        4,
+        "placed",
+        2,
+        2.187,
+        "discussion",
+        "untouched",
+        "to_check"
+       ]
+      ]
+     }
+    ],
+    "threads": {
+     "comments": 11,
+     "resolved": 7,
+     "kept": 1,
+     "open": 3,
+     "followed_up": 2,
+     "untouched_after_follow_up": 2,
+     "closed_after": {
+      "1": 7,
+      "2": 1,
+      "3+": 0
+     }
+    },
+    "pending": []
+   }
+  },
+  {
+   "path": "/tmp/synthetic/students/shrimp",
+   "overview": {
+    "paper": {
+     "title": "Shrimp snap detector",
+     "student": "Mei Lin",
+     "created": "2026-06-02T09:00:00+08:00"
+    },
+    "summary": {
+     "round": 2,
+     "closed": true,
+     "status": "ok",
+     "to_judge": 0,
+     "to_check": 0
+    },
+    "sections": [
+     {
+      "key": "front",
+      "title": "Title and abstract",
+      "name": "Title and abstract",
+      "suggested_bucket": "abstract",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "comments": 0,
+      "written": 0
+     },
+     {
+      "key": "introduction",
+      "title": "1 Introduction",
+      "name": "Introduction",
+      "suggested_bucket": "introduction",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "methods",
+      "title": "2 Methods",
+      "name": "Methods",
+      "suggested_bucket": "method",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "results",
+      "title": "3 Results",
+      "name": "Results",
+      "suggested_bucket": "results",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "discussion",
+      "title": "4 Discussion",
+      "name": "Discussion",
+      "suggested_bucket": "discussion",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     }
+    ],
+    "rounds": [
+     {
+      "n": 1,
+      "created": "2026-06-02T10:00:00+08:00",
+      "received": "2026-06-01T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-06-05T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/shrimp/r1/build/main.pdf",
+      "final_pdf": "/tmp/synthetic/students/shrimp/r1/final.pdf",
+      "email": "/tmp/synthetic/students/shrimp/r1/email.txt",
+      "prose": "ok",
+      "comments": {
+       "new": 4,
+       "carried": 0,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 0,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 4
+      },
+      "changes": {
+       "total": 0,
+       "requested": 0,
+       "unrequested": 0,
+       "to_check": 0
+      },
+      "words": {
+       "body": 745,
+       "added": 0,
+       "deleted": 0
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.401
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.401,
+        0.807
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.807,
+        1.33
+       ],
+       [
+        "results",
+        "3 Results",
+        1.33,
+        1.89
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.89,
+        2.264
+       ]
+      ],
+      "match": null,
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "methods",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "results",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "discussion",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [],
+      "excerpts": {},
+      "pages": [
+       {
+        "page": 0,
+        "comments": 2,
+        "changes": 0
+       },
+       {
+        "page": 1,
+        "comments": 2,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 2,
+      "created": "2026-07-14T10:00:00+08:00",
+      "received": "2026-07-13T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-07-20T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/shrimp/r2/build/main.pdf",
+      "final_pdf": "/tmp/synthetic/students/shrimp/r2/final.pdf",
+      "email": "/tmp/synthetic/students/shrimp/r2/email.txt",
+      "prose": "ok",
+      "comments": {
+       "new": 0,
+       "carried": 4,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 4,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 3,
+       "follow_up": 0,
+       "kept": 1,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 0
+      },
+      "changes": {
+       "total": 2,
+       "requested": 0,
+       "unrequested": 2,
+       "to_check": 0
+      },
+      "words": {
+       "body": 745,
+       "added": 2,
+       "deleted": 2
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.401
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.401,
+        0.807
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.807,
+        1.33
+       ],
+       [
+        "results",
+        "3 Results",
+        1.33,
+        1.89
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.89,
+        2.264
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        1,
+        1
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        3,
+        3
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        4,
+        4
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        4,
+        4
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        3,
+        3
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        1,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "methods",
+        0,
+        1,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "results",
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "discussion",
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        0,
+        0.476,
+        "introduction",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c02",
+        0,
+        0.882,
+        "methods",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ]
+      ],
+      "excerpts": {
+       "c01": "carefully",
+       "c02": "carefully"
+      },
+      "pages": [
+       {
+        "page": 0,
+        "comments": 2,
+        "changes": 2
+       },
+       {
+        "page": 1,
+        "comments": 2,
+        "changes": 0
+       }
+      ]
+     }
+    ],
+    "comments": [
+     {
+      "id": "R1-01",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Shorter.",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.454,
+        "introduction",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.454,
+        "introduction",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-02",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Filter order?",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.86,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.86,
+        "methods",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-03",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Show the false alarms.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.386,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.386,
+        "results",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-04",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "What about boats?",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.945,
+        "discussion",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.945,
+        "discussion",
+        "untouched",
+        "kept"
+       ]
+      ]
+     }
+    ],
+    "threads": {
+     "comments": 4,
+     "resolved": 3,
+     "kept": 1,
+     "open": 0,
+     "followed_up": 0,
+     "untouched_after_follow_up": 0,
+     "closed_after": {
+      "1": 4,
+      "2": 0,
+      "3+": 0
+     }
+    },
+    "pending": []
+   }
+  },
+  {
+   "path": "/tmp/synthetic/students/kelp",
+   "overview": {
+    "paper": {
+     "title": "Kelp forest drift",
+     "student": "Tomás Ruiz",
+     "created": "2026-06-22T09:00:00+08:00"
+    },
+    "summary": {
+     "round": 4,
+     "closed": false,
+     "status": "ok",
+     "to_judge": 2,
+     "to_check": 3
+    },
+    "sections": [
+     {
+      "key": "front",
+      "title": "Title and abstract",
+      "name": "Title and abstract",
+      "suggested_bucket": "abstract",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 0,
+      "written": 0
+     },
+     {
+      "key": "introduction",
+      "title": "1 Introduction",
+      "name": "Introduction",
+      "suggested_bucket": "introduction",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "study-area",
+      "title": "2 Study area",
+      "name": "Study area",
+      "suggested_bucket": "method",
+      "first": 1,
+      "last": 1,
+      "gone": true,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "methods",
+      "title": "2 Materials and methods",
+      "name": "Materials and methods",
+      "suggested_bucket": "method",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 3,
+      "written": 2
+     },
+     {
+      "key": "results",
+      "title": "3 Results",
+      "name": "Results",
+      "suggested_bucket": "results",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 2,
+      "written": 2
+     },
+     {
+      "key": "discussion",
+      "title": "4 Discussion",
+      "name": "Discussion",
+      "suggested_bucket": "discussion",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 0,
+      "written": 0
+     },
+     {
+      "key": "extra",
+      "title": "5 Conclusion",
+      "name": "Conclusion",
+      "suggested_bucket": "conclusion",
+      "first": 1,
+      "last": 4,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     }
+    ],
+    "rounds": [
+     {
+      "n": 1,
+      "created": "2026-06-22T10:00:00+08:00",
+      "received": "2026-06-21T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-06-26T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/kelp/r1/build/main.pdf",
+      "final_pdf": "/tmp/synthetic/students/kelp/r1/final.pdf",
+      "email": "/tmp/synthetic/students/kelp/r1/email.txt",
+      "prose": "ok",
+      "comments": {
+       "new": 5,
+       "carried": 0,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 0,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 5
+      },
+      "changes": {
+       "total": 0,
+       "requested": 0,
+       "unrequested": 0,
+       "to_check": 0
+      },
+      "words": {
+       "body": 840,
+       "added": 0,
+       "deleted": 0
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.401
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.401,
+        0.698
+       ],
+       [
+        "study-area",
+        "2 Study area",
+        0.698,
+        1.094
+       ],
+       [
+        "methods",
+        "3 Methods",
+        1.094,
+        1.48
+       ],
+       [
+        "results",
+        "4 Results",
+        1.48,
+        1.989
+       ],
+       [
+        "discussion",
+        "5 Discussion",
+        1.989,
+        2.374
+       ],
+       [
+        "extra",
+        "6 Extra",
+        2.374,
+        2.632
+       ]
+      ],
+      "match": null,
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "study-area",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "methods",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "results",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "discussion",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "extra",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [],
+      "excerpts": {},
+      "pages": [
+       {
+        "page": 0,
+        "comments": 2,
+        "changes": 0
+       },
+       {
+        "page": 1,
+        "comments": 2,
+        "changes": 0
+       },
+       {
+        "page": 2,
+        "comments": 1,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 2,
+      "created": "2026-07-20T10:00:00+08:00",
+      "received": "2026-07-19T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-07-23T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/kelp/r2/build/main.pdf",
+      "final_pdf": "/tmp/synthetic/students/kelp/r2/final.pdf",
+      "email": "/tmp/synthetic/students/kelp/r2/email.txt",
+      "prose": "ok",
+      "comments": {
+       "new": 1,
+       "carried": 5,
+       "edited": 1,
+       "note_only": 0,
+       "untouched": 4,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 2,
+       "follow_up": 1,
+       "kept": 0,
+       "left_open": 2,
+       "to_check": 0,
+       "open_after": 4
+      },
+      "changes": {
+       "total": 3,
+       "requested": 1,
+       "unrequested": 2,
+       "to_check": 0
+      },
+      "words": {
+       "body": 838,
+       "added": 2,
+       "deleted": 4
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.401
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.401,
+        0.698
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.698,
+        1.461
+       ],
+       [
+        "results",
+        "3 Results",
+        1.461,
+        2.0
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        2.0,
+        2.319
+       ],
+       [
+        "extra",
+        "5 Extra",
+        2.319,
+        2.597
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        1,
+        1
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        2,
+        2
+       ],
+       [
+        "study-area",
+        "methods",
+        "merged",
+        3,
+        3
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        3,
+        3
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        4,
+        4
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        2,
+        2
+       ],
+       [
+        "extra",
+        "extra",
+        "same",
+        2,
+        2
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        1,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "methods",
+        1,
+        2,
+        0,
+        2,
+        1,
+        3
+       ],
+       [
+        "results",
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "discussion",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "extra",
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        0,
+        0.476,
+        "introduction",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c02",
+        0,
+        0.709,
+        "methods",
+        [],
+        true,
+        false,
+        false,
+        1,
+        2
+       ],
+       [
+        "c03",
+        0,
+        0.991,
+        "methods",
+        [
+         "R1-04"
+        ],
+        false,
+        false,
+        false,
+        0,
+        1
+       ]
+      ],
+      "excerpts": {
+       "c01": "lagoon",
+       "c02": "Methods",
+       "c03": "\\section{Methods}"
+      },
+      "pages": [
+       {
+        "page": 0,
+        "comments": 2,
+        "changes": 3
+       },
+       {
+        "page": 1,
+        "comments": 3,
+        "changes": 0
+       },
+       {
+        "page": 2,
+        "comments": 1,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 3,
+      "created": "2026-08-24T10:00:00+08:00",
+      "received": "2026-08-23T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-08-28T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/kelp/r3/build/main.pdf",
+      "final_pdf": "/tmp/synthetic/students/kelp/r3/final.pdf",
+      "email": "/tmp/synthetic/students/kelp/r3/email.txt",
+      "prose": "ok",
+      "comments": {
+       "new": 1,
+       "carried": 4,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 2,
+       "moved_only": 0,
+       "waiting": 2,
+       "not_found": 0,
+       "resolved": 2,
+       "follow_up": 0,
+       "kept": 1,
+       "left_open": 1,
+       "to_check": 0,
+       "open_after": 2
+      },
+      "changes": {
+       "total": 3,
+       "requested": 0,
+       "unrequested": 3,
+       "to_check": 0
+      },
+      "words": {
+       "body": 840,
+       "added": 5,
+       "deleted": 3
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.401
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.401,
+        0.698
+       ],
+       [
+        "methods",
+        "2 Materials and methods",
+        0.698,
+        1.461
+       ],
+       [
+        "results",
+        "3 Results",
+        1.461,
+        2.0
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        2.0,
+        2.319
+       ],
+       [
+        "extra",
+        "5 Extra",
+        2.319,
+        2.597
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        1,
+        1
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        2,
+        2
+       ],
+       [
+        "methods",
+        "methods",
+        "renamed",
+        6,
+        6
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        4,
+        4
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        2,
+        2
+       ],
+       [
+        "extra",
+        "extra",
+        "same",
+        2,
+        2
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "methods",
+        0,
+        2,
+        0,
+        1,
+        3,
+        1
+       ],
+       [
+        "results",
+        1,
+        1,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "discussion",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "extra",
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        0,
+        0.476,
+        "introduction",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c02",
+        0,
+        0.709,
+        "methods",
+        [],
+        true,
+        false,
+        false,
+        3,
+        1
+       ],
+       [
+        "c03",
+        1,
+        1.778,
+        "results",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ]
+      ],
+      "excerpts": {
+       "c01": "drift",
+       "c02": "Materials and methods",
+       "c03": "carefully"
+      },
+      "pages": [
+       {
+        "page": 1,
+        "comments": 3,
+        "changes": 1
+       },
+       {
+        "page": 0,
+        "comments": 1,
+        "changes": 2
+       },
+       {
+        "page": 2,
+        "comments": 1,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 4,
+      "created": "2026-10-15T10:00:00+08:00",
+      "received": "2026-10-14T10:00:00+08:00",
+      "closed": false,
+      "closed_at": null,
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/kelp/r4/build/main.pdf",
+      "final_pdf": null,
+      "email": null,
+      "prose": "ok",
+      "comments": {
+       "new": 0,
+       "carried": 2,
+       "edited": 1,
+       "note_only": 0,
+       "untouched": 1,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 2,
+       "open_after": 2
+      },
+      "changes": {
+       "total": 4,
+       "requested": 1,
+       "unrequested": 3,
+       "to_check": 3
+      },
+      "words": {
+       "body": 797,
+       "added": 53,
+       "deleted": 96
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.401
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.401,
+        0.698
+       ],
+       [
+        "methods",
+        "2 Materials and methods",
+        0.698,
+        1.461
+       ],
+       [
+        "results",
+        "3 Results",
+        1.461,
+        2.0
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        2.0,
+        2.319
+       ],
+       [
+        "extra",
+        "5 Conclusion",
+        2.319,
+        2.479
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        1,
+        1
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        2,
+        2
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        6,
+        6
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        4,
+        4
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        2,
+        2
+       ],
+       [
+        "extra",
+        "extra",
+        "renamed",
+        0,
+        2
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "methods",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "results",
+        0,
+        1,
+        1,
+        2,
+        2,
+        2
+       ],
+       [
+        "discussion",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "extra",
+        0,
+        1,
+        1,
+        2,
+        51,
+        94
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        1,
+        1.778,
+        "results",
+        [],
+        true,
+        true,
+        false,
+        1,
+        1
+       ],
+       [
+        "c02",
+        1,
+        1.92,
+        "results",
+        [],
+        true,
+        true,
+        false,
+        1,
+        1
+       ],
+       [
+        "c03",
+        2,
+        2.331,
+        "extra",
+        [],
+        true,
+        true,
+        false,
+        1,
+        1
+       ],
+       [
+        "c04",
+        2,
+        2.376,
+        "extra",
+        [
+         "R1-05"
+        ],
+        false,
+        false,
+        false,
+        50,
+        93
+       ]
+      ],
+      "excerpts": {
+       "c01": "night",
+       "c02": "bars",
+       "c03": "Conclusion",
+       "c04": "Close winter hydrophone core sediment coral reef tide core…"
+      },
+      "pages": [
+       {
+        "page": 1,
+        "comments": 1,
+        "changes": 2
+       },
+       {
+        "page": 2,
+        "comments": 1,
+        "changes": 2
+       }
+      ]
+     }
+    ],
+    "comments": [
+     {
+      "id": "R1-01",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Shorter.",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.454,
+        "introduction",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.454,
+        "introduction",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-02",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Which beach?",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.86,
+        "study-area",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.86,
+        "methods",
+        "untouched",
+        "left_open"
+       ],
+       [
+        3,
+        "placed",
+        0,
+        0.86,
+        "methods",
+        "waiting",
+        "kept"
+       ]
+      ]
+     },
+     {
+      "id": "R1-03",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Say what the trend shows.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.738,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.754,
+        "results",
+        "untouched",
+        "follow_up"
+       ],
+       [
+        3,
+        "placed",
+        1,
+        1.754,
+        "results",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-04",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Drift model?",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.144,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.079,
+        "methods",
+        "edited",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-05",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Needed?",
+      "path": [
+       [
+        1,
+        "placed",
+        2,
+        2.426,
+        "extra",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        2,
+        2.376,
+        "extra",
+        "untouched",
+        "left_open"
+       ],
+       [
+        3,
+        "placed",
+        2,
+        2.376,
+        "extra",
+        "waiting",
+        "left_open"
+       ],
+       [
+        4,
+        "placed",
+        2,
+        2.376,
+        "extra",
+        "edited",
+        "to_check"
+       ]
+      ]
+     },
+     {
+      "id": "R2-01",
+      "created_round": 2,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Grid size?",
+      "path": [
+       [
+        2,
+        "placed",
+        1,
+        1.315,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        3,
+        "placed",
+        1,
+        1.315,
+        "methods",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R3-01",
+      "created_round": 3,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Error bars.",
+      "path": [
+       [
+        3,
+        "placed",
+        1,
+        1.896,
+        "results",
+        "new",
+        null
+       ],
+       [
+        4,
+        "placed",
+        1,
+        1.896,
+        "results",
+        "untouched",
+        "to_check"
+       ]
+      ]
+     }
+    ],
+    "threads": {
+     "comments": 7,
+     "resolved": 4,
+     "kept": 1,
+     "open": 2,
+     "followed_up": 1,
+     "untouched_after_follow_up": 1,
+     "closed_after": {
+      "1": 4,
+      "2": 1,
+      "3+": 0
+     }
+    },
+    "pending": []
+   }
+  },
+  {
+   "path": "/tmp/synthetic/students/urchin",
+   "overview": {
+    "paper": {
+     "title": "Urchin barrens survey",
+     "student": "Tomás Ruiz",
+     "created": "2026-03-09T09:00:00+08:00"
+    },
+    "summary": {
+     "round": 3,
+     "closed": true,
+     "status": "ok",
+     "to_judge": 0,
+     "to_check": 0
+    },
+    "sections": [
+     {
+      "key": "front",
+      "title": "Title and abstract",
+      "name": "Title and abstract",
+      "suggested_bucket": "abstract",
+      "first": 1,
+      "last": 3,
+      "gone": false,
+      "comments": 0,
+      "written": 0
+     },
+     {
+      "key": "introduction",
+      "title": "1 Introduction",
+      "name": "Introduction",
+      "suggested_bucket": "introduction",
+      "first": 1,
+      "last": 3,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "methods",
+      "title": "2 Methods",
+      "name": "Methods",
+      "suggested_bucket": "method",
+      "first": 1,
+      "last": 3,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "results",
+      "title": "3 Results",
+      "name": "Results",
+      "suggested_bucket": "results",
+      "first": 1,
+      "last": 3,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "discussion",
+      "title": "4 Discussion",
+      "name": "Discussion",
+      "suggested_bucket": "discussion",
+      "first": 1,
+      "last": 3,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     }
+    ],
+    "rounds": [
+     {
+      "n": 1,
+      "created": "2026-03-09T10:00:00+08:00",
+      "received": "2026-03-08T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-03-12T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/urchin/r1/build/main.pdf",
+      "final_pdf": "/tmp/synthetic/students/urchin/r1/final.pdf",
+      "email": "/tmp/synthetic/students/urchin/r1/email.txt",
+      "prose": "ok",
+      "comments": {
+       "new": 4,
+       "carried": 0,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 0,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 4
+      },
+      "changes": {
+       "total": 0,
+       "requested": 0,
+       "unrequested": 0,
+       "to_check": 0
+      },
+      "words": {
+       "body": 748,
+       "added": 0,
+       "deleted": 0
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.401
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.401,
+        0.807
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.807,
+        1.33
+       ],
+       [
+        "results",
+        "3 Results",
+        1.33,
+        1.89
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.89,
+        2.264
+       ]
+      ],
+      "match": null,
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "methods",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "results",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "discussion",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [],
+      "excerpts": {},
+      "pages": [
+       {
+        "page": 0,
+        "comments": 2,
+        "changes": 0
+       },
+       {
+        "page": 1,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 2,
+        "comments": 1,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 2,
+      "created": "2026-04-01T10:00:00+08:00",
+      "received": "2026-03-31T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-04-04T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/urchin/r2/build/main.pdf",
+      "final_pdf": "/tmp/synthetic/students/urchin/r2/final.pdf",
+      "email": "/tmp/synthetic/students/urchin/r2/email.txt",
+      "prose": "ok",
+      "comments": {
+       "new": 0,
+       "carried": 4,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 4,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 3,
+       "follow_up": 1,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 1
+      },
+      "changes": {
+       "total": 2,
+       "requested": 0,
+       "unrequested": 2,
+       "to_check": 0
+      },
+      "words": {
+       "body": 748,
+       "added": 2,
+       "deleted": 2
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.401
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.401,
+        0.807
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.807,
+        1.33
+       ],
+       [
+        "results",
+        "3 Results",
+        1.33,
+        1.89
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.89,
+        2.264
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        1,
+        1
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        3,
+        3
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        4,
+        4
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        4,
+        4
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        3,
+        3
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        1,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "methods",
+        0,
+        1,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "results",
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "discussion",
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        0,
+        0.476,
+        "introduction",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c02",
+        0,
+        0.991,
+        "methods",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ]
+      ],
+      "excerpts": {
+       "c01": "carefully",
+       "c02": "carefully"
+      },
+      "pages": [
+       {
+        "page": 0,
+        "comments": 2,
+        "changes": 2
+       },
+       {
+        "page": 1,
+        "comments": 1,
+        "changes": 0
+       },
+       {
+        "page": 2,
+        "comments": 1,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 3,
+      "created": "2026-04-21T10:00:00+08:00",
+      "received": "2026-04-20T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-04-24T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/urchin/r3/build/main.pdf",
+      "final_pdf": "/tmp/synthetic/students/urchin/r3/final.pdf",
+      "email": "/tmp/synthetic/students/urchin/r3/email.txt",
+      "prose": "ok",
+      "comments": {
+       "new": 0,
+       "carried": 1,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 1,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 1,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 0
+      },
+      "changes": {
+       "total": 3,
+       "requested": 0,
+       "unrequested": 3,
+       "to_check": 0
+      },
+      "words": {
+       "body": 748,
+       "added": 3,
+       "deleted": 3
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.401
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.401,
+        0.807
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.807,
+        1.33
+       ],
+       [
+        "results",
+        "3 Results",
+        1.33,
+        1.89
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.89,
+        2.264
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        1,
+        1
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        3,
+        3
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        4,
+        4
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        4,
+        4
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        3,
+        3
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "methods",
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "results",
+        0,
+        1,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "discussion",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        0,
+        0.476,
+        "introduction",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c02",
+        0,
+        0.991,
+        "methods",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c03",
+        1,
+        1.522,
+        "results",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ]
+      ],
+      "excerpts": {
+       "c01": "drift",
+       "c02": "grazing",
+       "c03": "site"
+      },
+      "pages": [
+       {
+        "page": 0,
+        "comments": 0,
+        "changes": 2
+       },
+       {
+        "page": 1,
+        "comments": 1,
+        "changes": 1
+       }
+      ]
+     }
+    ],
+    "comments": [
+     {
+      "id": "R1-01",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Motivation first.",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.454,
+        "introduction",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.454,
+        "introduction",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-02",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Quadrat size?",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.969,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.969,
+        "methods",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-03",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Per site?",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.499,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.499,
+        "results",
+        "untouched",
+        "follow_up"
+       ],
+       [
+        3,
+        "placed",
+        1,
+        1.499,
+        "results",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-04",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Overstated.",
+      "path": [
+       [
+        1,
+        "placed",
+        2,
+        2.167,
+        "discussion",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        2,
+        2.167,
+        "discussion",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     }
+    ],
+    "threads": {
+     "comments": 4,
+     "resolved": 4,
+     "kept": 0,
+     "open": 0,
+     "followed_up": 1,
+     "untouched_after_follow_up": 1,
+     "closed_after": {
+      "1": 3,
+      "2": 1,
+      "3+": 0
+     }
+    },
+    "pending": []
+   }
+  },
+  {
+   "path": "/tmp/synthetic/students/mangrove",
+   "overview": {
+    "paper": {
+     "title": "Mangrove sediment cores",
+     "student": "Priya Nair",
+     "created": "2026-08-18T09:00:00+08:00"
+    },
+    "summary": {
+     "round": 3,
+     "closed": false,
+     "status": "ok",
+     "to_judge": 0,
+     "to_check": 0
+    },
+    "sections": [
+     {
+      "key": "front",
+      "title": "Title and abstract",
+      "name": "Title and abstract",
+      "suggested_bucket": "abstract",
+      "first": 1,
+      "last": 3,
+      "gone": false,
+      "comments": 0,
+      "written": 0
+     },
+     {
+      "key": "introduction",
+      "title": "1 Introduction",
+      "name": "Introduction",
+      "suggested_bucket": "introduction",
+      "first": 1,
+      "last": 3,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "methods",
+      "title": "2 Methods",
+      "name": "Methods",
+      "suggested_bucket": "method",
+      "first": 1,
+      "last": 3,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "results",
+      "title": "3 Results",
+      "name": "Results",
+      "suggested_bucket": "results",
+      "first": 1,
+      "last": 3,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "discussion",
+      "title": "4 Discussion",
+      "name": "Discussion",
+      "suggested_bucket": "discussion",
+      "first": 1,
+      "last": 3,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     }
+    ],
+    "rounds": [
+     {
+      "n": 1,
+      "created": "2026-08-18T10:00:00+08:00",
+      "received": "2026-08-17T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-08-21T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/mangrove/r1/build/main.pdf",
+      "final_pdf": "/tmp/synthetic/students/mangrove/r1/final.pdf",
+      "email": "/tmp/synthetic/students/mangrove/r1/email.txt",
+      "prose": "ok",
+      "comments": {
+       "new": 3,
+       "carried": 0,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 0,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 3
+      },
+      "changes": {
+       "total": 0,
+       "requested": 0,
+       "unrequested": 0,
+       "to_check": 0
+      },
+      "words": {
+       "body": 747,
+       "added": 0,
+       "deleted": 0
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.431
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.431,
+        0.847
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.847,
+        1.367
+       ],
+       [
+        "results",
+        "3 Results",
+        1.367,
+        1.915
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.915,
+        2.282
+       ]
+      ],
+      "match": null,
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "methods",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "results",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "discussion",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [],
+      "excerpts": {},
+      "pages": [
+       {
+        "page": 0,
+        "comments": 2,
+        "changes": 0
+       },
+       {
+        "page": 1,
+        "comments": 1,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 2,
+      "created": "2026-09-15T10:00:00+08:00",
+      "received": "2026-09-14T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-09-17T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/mangrove/r2/build/main.pdf",
+      "final_pdf": "/tmp/synthetic/students/mangrove/r2/final.pdf",
+      "email": "/tmp/synthetic/students/mangrove/r2/email.txt",
+      "prose": "ok",
+      "comments": {
+       "new": 1,
+       "carried": 3,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 3,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 2,
+       "follow_up": 1,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 2
+      },
+      "changes": {
+       "total": 2,
+       "requested": 0,
+       "unrequested": 2,
+       "to_check": 0
+      },
+      "words": {
+       "body": 747,
+       "added": 2,
+       "deleted": 2
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.431
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.431,
+        0.847
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.847,
+        1.367
+       ],
+       [
+        "results",
+        "3 Results",
+        1.367,
+        1.915
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.915,
+        2.282
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        1,
+        1
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        3,
+        3
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        4,
+        4
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        4,
+        4
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        3,
+        3
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        1,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "methods",
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "results",
+        0,
+        1,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "discussion",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        0,
+        0.508,
+        "introduction",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c02",
+        1,
+        1.8,
+        "results",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ]
+      ],
+      "excerpts": {
+       "c01": "carefully",
+       "c02": "carefully"
+      },
+      "pages": [
+       {
+        "page": 0,
+        "comments": 2,
+        "changes": 1
+       },
+       {
+        "page": 1,
+        "comments": 1,
+        "changes": 1
+       },
+       {
+        "page": 2,
+        "comments": 1,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 3,
+      "created": "2026-10-13T10:00:00+08:00",
+      "received": "2026-10-12T10:00:00+08:00",
+      "closed": false,
+      "closed_at": null,
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/mangrove/r3/build/main.pdf",
+      "final_pdf": null,
+      "email": null,
+      "prose": "ok",
+      "comments": {
+       "new": 0,
+       "carried": 2,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 2,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 2,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 0
+      },
+      "changes": {
+       "total": 4,
+       "requested": 0,
+       "unrequested": 4,
+       "to_check": 0
+      },
+      "words": {
+       "body": 747,
+       "added": 4,
+       "deleted": 4
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.431
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.431,
+        0.847
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.847,
+        1.367
+       ],
+       [
+        "results",
+        "3 Results",
+        1.367,
+        1.915
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.915,
+        2.282
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        1,
+        1
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        3,
+        3
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        4,
+        4
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        4,
+        4
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        3,
+        3
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "methods",
+        0,
+        1,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "results",
+        0,
+        0,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "discussion",
+        0,
+        1,
+        0,
+        1,
+        1,
+        1
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        0,
+        0.508,
+        "introduction",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c02",
+        0,
+        0.924,
+        "methods",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c03",
+        1,
+        1.8,
+        "results",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c04",
+        2,
+        2.097,
+        "discussion",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ]
+      ],
+      "excerpts": {
+       "c01": "drift",
+       "c02": "centimetres",
+       "c03": "site",
+       "c04": "carefully"
+      },
+      "pages": [
+       {
+        "page": 0,
+        "comments": 1,
+        "changes": 2
+       },
+       {
+        "page": 2,
+        "comments": 1,
+        "changes": 1
+       },
+       {
+        "page": 1,
+        "comments": 0,
+        "changes": 1
+       }
+      ]
+     }
+    ],
+    "comments": [
+     {
+      "id": "R1-01",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Which coast?",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.486,
+        "introduction",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.486,
+        "introduction",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-02",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Core depth?",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.902,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.902,
+        "methods",
+        "untouched",
+        "follow_up"
+       ],
+       [
+        3,
+        "placed",
+        0,
+        0.902,
+        "methods",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-03",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Dating method?",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.778,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.778,
+        "results",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R2-01",
+      "created_round": 2,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Compare with the global mean.",
+      "path": [
+       [
+        2,
+        "placed",
+        2,
+        2.075,
+        "discussion",
+        "new",
+        null
+       ],
+       [
+        3,
+        "placed",
+        2,
+        2.075,
+        "discussion",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     }
+    ],
+    "threads": {
+     "comments": 4,
+     "resolved": 4,
+     "kept": 0,
+     "open": 0,
+     "followed_up": 1,
+     "untouched_after_follow_up": 1,
+     "closed_after": {
+      "1": 3,
+      "2": 1,
+      "3+": 0
+     }
+    },
+    "pending": []
+   }
+  },
+  {
+   "path": "/tmp/synthetic/students/blue",
+   "overview": {
+    "paper": {
+     "title": "Blue carbon review",
+     "student": "Priya Nair",
+     "created": "2026-10-01T09:00:00+08:00"
+    },
+    "summary": {
+     "round": 1,
+     "closed": true,
+     "status": "ok",
+     "to_judge": 0,
+     "to_check": 0
+    },
+    "sections": [
+     {
+      "key": "front",
+      "title": "Title and abstract",
+      "name": "Title and abstract",
+      "suggested_bucket": "abstract",
+      "first": 1,
+      "last": 1,
+      "gone": false,
+      "comments": 0,
+      "written": 0
+     },
+     {
+      "key": "introduction",
+      "title": "1 Introduction",
+      "name": "Introduction",
+      "suggested_bucket": "introduction",
+      "first": 1,
+      "last": 1,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "methods",
+      "title": "2 Methods",
+      "name": "Methods",
+      "suggested_bucket": "method",
+      "first": 1,
+      "last": 1,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "results",
+      "title": "3 Results",
+      "name": "Results",
+      "suggested_bucket": "results",
+      "first": 1,
+      "last": 1,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "discussion",
+      "title": "4 Discussion",
+      "name": "Discussion",
+      "suggested_bucket": "discussion",
+      "first": 1,
+      "last": 1,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     }
+    ],
+    "rounds": [
+     {
+      "n": 1,
+      "created": "2026-10-01T10:00:00+08:00",
+      "received": "2026-09-30T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-10-03T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/blue/r1/build/main.pdf",
+      "final_pdf": "/tmp/synthetic/students/blue/r1/final.pdf",
+      "email": "/tmp/synthetic/students/blue/r1/email.txt",
+      "prose": "ok",
+      "comments": {
+       "new": 4,
+       "carried": 0,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 0,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 4
+      },
+      "changes": {
+       "total": 0,
+       "requested": 0,
+       "unrequested": 0,
+       "to_check": 0
+      },
+      "words": {
+       "body": 753,
+       "added": 0,
+       "deleted": 0
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.431
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.431,
+        0.847
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.847,
+        1.367
+       ],
+       [
+        "results",
+        "3 Results",
+        1.367,
+        1.915
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.915,
+        2.282
+       ]
+      ],
+      "match": null,
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "methods",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "results",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "discussion",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [],
+      "excerpts": {},
+      "pages": [
+       {
+        "page": 0,
+        "comments": 2,
+        "changes": 0
+       },
+       {
+        "page": 1,
+        "comments": 2,
+        "changes": 0
+       }
+      ]
+     }
+    ],
+    "comments": [
+     {
+      "id": "R1-01",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Scope?",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.486,
+        "introduction",
+        "new",
+        null
+       ]
+      ]
+     },
+     {
+      "id": "R1-02",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Which databases?",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.902,
+        "methods",
+        "new",
+        null
+       ]
+      ]
+     },
+     {
+      "id": "R1-03",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Table of studies.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.421,
+        "results",
+        "new",
+        null
+       ]
+      ]
+     },
+     {
+      "id": "R1-04",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Gaps first.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.969,
+        "discussion",
+        "new",
+        null
+       ]
+      ]
+     }
+    ],
+    "threads": {
+     "comments": 4,
+     "resolved": 0,
+     "kept": 0,
+     "open": 4,
+     "followed_up": 0,
+     "untouched_after_follow_up": 0,
+     "closed_after": {
+      "1": 0,
+      "2": 0,
+      "3+": 0
+     }
+    },
+    "pending": []
+   }
+  },
+  {
+   "path": "/tmp/synthetic/students/seagrass",
+   "overview": {
+    "paper": {
+     "title": "Seagrass carbon budget",
+     "student": "Jonas Berg",
+     "created": "2026-05-11T09:00:00+08:00"
+    },
+    "summary": {
+     "round": 3,
+     "closed": false,
+     "status": "failed",
+     "to_judge": 0,
+     "to_check": 0
+    },
+    "sections": [
+     {
+      "key": "front",
+      "title": "Title and abstract",
+      "name": "Title and abstract",
+      "suggested_bucket": "abstract",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "comments": 0,
+      "written": 0
+     },
+     {
+      "key": "introduction",
+      "title": "1 Introduction",
+      "name": "Introduction",
+      "suggested_bucket": "introduction",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "comments": 0,
+      "written": 0
+     },
+     {
+      "key": "methods",
+      "title": "2 Methods",
+      "name": "Methods",
+      "suggested_bucket": "method",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "results",
+      "title": "3 Results",
+      "name": "Results",
+      "suggested_bucket": "results",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "comments": 2,
+      "written": 2
+     },
+     {
+      "key": "discussion",
+      "title": "4 Discussion",
+      "name": "Discussion",
+      "suggested_bucket": "discussion",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     }
+    ],
+    "rounds": [
+     {
+      "n": 1,
+      "created": "2026-05-11T10:00:00+08:00",
+      "received": "2026-05-10T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-05-14T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/seagrass/r1/build/main.pdf",
+      "final_pdf": "/tmp/synthetic/students/seagrass/r1/final.pdf",
+      "email": "/tmp/synthetic/students/seagrass/r1/email.txt",
+      "prose": "ok",
+      "comments": {
+       "new": 3,
+       "carried": 0,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 0,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 3
+      },
+      "changes": {
+       "total": 0,
+       "requested": 0,
+       "unrequested": 0,
+       "to_check": 0
+      },
+      "words": {
+       "body": 748,
+       "added": 0,
+       "deleted": 0
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.401
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.401,
+        0.807
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.807,
+        1.33
+       ],
+       [
+        "results",
+        "3 Results",
+        1.33,
+        1.89
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.89,
+        2.264
+       ]
+      ],
+      "match": null,
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "methods",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "results",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "discussion",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [],
+      "excerpts": {},
+      "pages": [
+       {
+        "page": 1,
+        "comments": 2,
+        "changes": 0
+       },
+       {
+        "page": 0,
+        "comments": 1,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 2,
+      "created": "2026-06-20T10:00:00+08:00",
+      "received": "2026-06-19T10:00:00+08:00",
+      "closed": true,
+      "closed_at": "2026-06-24T10:00:00+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/seagrass/r2/build/main.pdf",
+      "final_pdf": "/tmp/synthetic/students/seagrass/r2/final.pdf",
+      "email": "/tmp/synthetic/students/seagrass/r2/email.txt",
+      "prose": "ok",
+      "comments": {
+       "new": 1,
+       "carried": 3,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 3,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 2,
+       "follow_up": 1,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 2
+      },
+      "changes": {
+       "total": 2,
+       "requested": 0,
+       "unrequested": 2,
+       "to_check": 0
+      },
+      "words": {
+       "body": 748,
+       "added": 2,
+       "deleted": 2
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.401
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.401,
+        0.807
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.807,
+        1.33
+       ],
+       [
+        "results",
+        "3 Results",
+        1.33,
+        1.89
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.89,
+        2.264
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        1,
+        1
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        3,
+        3
+       ],
+       [
+        "methods",
+        "methods",
+        "same",
+        4,
+        4
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        4,
+        4
+       ],
+       [
+        "discussion",
+        "discussion",
+        "same",
+        3,
+        3
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "methods",
+        0,
+        1,
+        0,
+        1,
+        1,
+        1
+       ],
+       [
+        "results",
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "discussion",
+        0,
+        1,
+        0,
+        1,
+        1,
+        1
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        0,
+        0.882,
+        "methods",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ],
+       [
+        "c02",
+        1,
+        1.968,
+        "discussion",
+        [],
+        true,
+        false,
+        false,
+        1,
+        1
+       ]
+      ],
+      "excerpts": {
+       "c01": "carefully",
+       "c02": "carefully"
+      },
+      "pages": [
+       {
+        "page": 1,
+        "comments": 3,
+        "changes": 1
+       },
+       {
+        "page": 0,
+        "comments": 1,
+        "changes": 1
+       }
+      ]
+     },
+     {
+      "n": 3,
+      "created": "2026-10-17T10:00:00+08:00",
+      "received": "2026-10-16T10:00:00+08:00",
+      "closed": false,
+      "closed_at": null,
+      "build": {
+       "status": "failed",
+       "pages": 0
+      },
+      "pdf": null,
+      "final_pdf": null,
+      "email": null,
+      "prose": "unavailable",
+      "comments": {
+       "new": 0,
+       "carried": 0,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 0,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 0
+      },
+      "changes": {
+       "total": 0,
+       "requested": 0,
+       "unrequested": 0,
+       "to_check": 0
+      },
+      "words": null,
+      "unplaced": 0,
+      "spans": null,
+      "match": null,
+      "heat": null,
+      "edits": [],
+      "excerpts": {},
+      "pages": []
+     }
+    ],
+    "comments": [
+     {
+      "id": "R1-01",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Plot size?",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.86,
+        "methods",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.86,
+        "methods",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R1-02",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Mean and spread.",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.386,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.386,
+        "results",
+        "untouched",
+        "follow_up"
+       ]
+      ]
+     },
+     {
+      "id": "R1-03",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Uncertainty?",
+      "path": [
+       [
+        1,
+        "placed",
+        1,
+        1.945,
+        "discussion",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        1,
+        1.945,
+        "discussion",
+        "untouched",
+        "resolved"
+       ]
+      ]
+     },
+     {
+      "id": "R2-01",
+      "created_round": 2,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Which season?",
+      "path": [
+       [
+        2,
+        "placed",
+        1,
+        1.499,
+        "results",
+        "new",
+        null
+       ]
+      ]
+     }
+    ],
+    "threads": {
+     "comments": 4,
+     "resolved": 2,
+     "kept": 0,
+     "open": 2,
+     "followed_up": 1,
+     "untouched_after_follow_up": 0,
+     "closed_after": {
+      "1": 2,
+      "2": 0,
+      "3+": 0
+     }
+    },
+    "pending": []
+   }
+  },
+  {
+   "path": "/tmp/synthetic/students/draft",
+   "overview": {
+    "paper": {
+     "title": "Untitled draft",
+     "student": "",
+     "created": "2026-10-18T09:00:00+08:00"
+    },
+    "summary": {
+     "round": 1,
+     "closed": false,
+     "status": "ok",
+     "to_judge": 0,
+     "to_check": 0
+    },
+    "sections": [
+     {
+      "key": "front",
+      "title": "Title and abstract",
+      "name": "Title and abstract",
+      "suggested_bucket": "abstract",
+      "first": 1,
+      "last": 1,
+      "gone": false,
+      "comments": 0,
+      "written": 0
+     },
+     {
+      "key": "introduction",
+      "title": "1 Introduction",
+      "name": "Introduction",
+      "suggested_bucket": "introduction",
+      "first": 1,
+      "last": 1,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "methods",
+      "title": "2 Methods",
+      "name": "Methods",
+      "suggested_bucket": "method",
+      "first": 1,
+      "last": 1,
+      "gone": false,
+      "comments": 0,
+      "written": 0
+     },
+     {
+      "key": "results",
+      "title": "3 Results",
+      "name": "Results",
+      "suggested_bucket": "results",
+      "first": 1,
+      "last": 1,
+      "gone": false,
+      "comments": 0,
+      "written": 0
+     },
+     {
+      "key": "discussion",
+      "title": "4 Discussion",
+      "name": "Discussion",
+      "suggested_bucket": "discussion",
+      "first": 1,
+      "last": 1,
+      "gone": false,
+      "comments": 0,
+      "written": 0
+     }
+    ],
+    "rounds": [
+     {
+      "n": 1,
+      "created": "2026-10-18T10:00:00+08:00",
+      "received": "2026-10-17T10:00:00+08:00",
+      "closed": false,
+      "closed_at": null,
+      "build": {
+       "status": "ok",
+       "pages": 3
+      },
+      "pdf": "/tmp/synthetic/students/draft/r1/build/main.pdf",
+      "final_pdf": null,
+      "email": null,
+      "prose": "ok",
+      "comments": {
+       "new": 1,
+       "carried": 0,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 0,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 1
+      },
+      "changes": {
+       "total": 0,
+       "requested": 0,
+       "unrequested": 0,
+       "to_check": 0
+      },
+      "words": {
+       "body": 752,
+       "added": 0,
+       "deleted": 0
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.431
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.431,
+        0.847
+       ],
+       [
+        "methods",
+        "2 Methods",
+        0.847,
+        1.367
+       ],
+       [
+        "results",
+        "3 Results",
+        1.367,
+        1.915
+       ],
+       [
+        "discussion",
+        "4 Discussion",
+        1.915,
+        2.282
+       ]
+      ],
+      "match": null,
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "methods",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "results",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "discussion",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [],
+      "excerpts": {},
+      "pages": [
+       {
+        "page": 0,
+        "comments": 1,
+        "changes": 0
+       }
+      ]
+     }
+    ],
+    "comments": [
+     {
+      "id": "R1-01",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Start with the question.",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.486,
+        "introduction",
+        "new",
+        null
+       ]
+      ]
+     }
+    ],
+    "threads": {
+     "comments": 1,
+     "resolved": 0,
+     "kept": 0,
+     "open": 1,
+     "followed_up": 0,
+     "untouched_after_follow_up": 0,
+     "closed_after": {
+      "1": 0,
+      "2": 0,
+      "3+": 0
+     }
+    },
+    "pending": []
+   }
+  }
+ ],
+ "students": [
+  {
+   "student": "Mei Lin",
+   "papers": [
+    "/tmp/synthetic/students/reef",
+    "/tmp/synthetic/students/shrimp"
+   ],
+   "rounds": 6,
+   "comments": 15,
+   "land": {
+    "columns": [
+     {
+      "bucket": "abstract",
+      "title": "Abstract"
+     },
+     {
+      "bucket": "introduction",
+      "title": "Introduction"
+     },
+     {
+      "bucket": "method",
+      "title": "Methods"
+     },
+     {
+      "bucket": "results",
+      "title": "Results"
+     },
+     {
+      "bucket": "discussion",
+      "title": "Discussion"
+     }
+    ],
+    "papers": [
+     {
+      "path": "/tmp/synthetic/students/reef",
+      "counts": [
+       0,
+       1,
+       4,
+       3,
+       3
+      ]
+     },
+     {
+      "path": "/tmp/synthetic/students/shrimp",
+      "counts": [
+       0,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "total": [
+     0,
+     2,
+     5,
+     4,
+     4
+    ]
+   },
+   "time": [
+    {
+     "path": "/tmp/synthetic/students/reef",
+     "round": 1,
+     "next": 2,
+     "open": false,
+     "you": 2,
+     "student": 9,
+     "received": 8
+    },
+    {
+     "path": "/tmp/synthetic/students/reef",
+     "round": 2,
+     "next": 3,
+     "open": false,
+     "you": 3,
+     "student": 14,
+     "received": 13
+    },
+    {
+     "path": "/tmp/synthetic/students/reef",
+     "round": 3,
+     "next": 4,
+     "open": false,
+     "you": 3,
+     "student": 7,
+     "received": 6
+    },
+    {
+     "path": "/tmp/synthetic/students/reef",
+     "round": 4,
+     "next": null,
+     "open": true,
+     "you": 3,
+     "student": null,
+     "received": null
+    },
+    {
+     "path": "/tmp/synthetic/students/shrimp",
+     "round": 1,
+     "next": 2,
+     "open": false,
+     "you": 3,
+     "student": 39,
+     "received": 38
+    }
+   ],
+   "closed": {
+    "papers": [
+     {
+      "path": "/tmp/synthetic/students/reef",
+      "1": 7,
+      "2": 1,
+      "3+": 0,
+      "open": 3,
+      "followed_up": 2,
+      "untouched_after_follow_up": 2
+     },
+     {
+      "path": "/tmp/synthetic/students/shrimp",
+      "1": 4,
+      "2": 0,
+      "3+": 0,
+      "open": 0,
+      "followed_up": 0,
+      "untouched_after_follow_up": 0
+     }
+    ],
+    "total": {
+     "1": 11,
+     "2": 1,
+     "3+": 0,
+     "open": 3,
+     "followed_up": 2,
+     "untouched_after_follow_up": 2
+    }
+   }
+  },
+  {
+   "student": "Tomás Ruiz",
+   "papers": [
+    "/tmp/synthetic/students/kelp",
+    "/tmp/synthetic/students/urchin"
+   ],
+   "rounds": 7,
+   "comments": 11,
+   "land": {
+    "columns": [
+     {
+      "bucket": "abstract",
+      "title": "Abstract"
+     },
+     {
+      "bucket": "introduction",
+      "title": "Introduction"
+     },
+     {
+      "bucket": "method",
+      "title": "Methods"
+     },
+     {
+      "bucket": "results",
+      "title": "Results"
+     },
+     {
+      "bucket": "discussion",
+      "title": "Discussion"
+     },
+     {
+      "bucket": "conclusion",
+      "title": "Conclusion"
+     }
+    ],
+    "papers": [
+     {
+      "path": "/tmp/synthetic/students/kelp",
+      "counts": [
+       0,
+       1,
+       3,
+       2,
+       0,
+       1
+      ]
+     },
+     {
+      "path": "/tmp/synthetic/students/urchin",
+      "counts": [
+       0,
+       1,
+       1,
+       1,
+       1,
+       0
+      ]
+     }
+    ],
+    "total": [
+     0,
+     2,
+     4,
+     3,
+     1,
+     1
+    ]
+   },
+   "time": [
+    {
+     "path": "/tmp/synthetic/students/kelp",
+     "round": 1,
+     "next": 2,
+     "open": false,
+     "you": 4,
+     "student": 24,
+     "received": 23
+    },
+    {
+     "path": "/tmp/synthetic/students/kelp",
+     "round": 2,
+     "next": 3,
+     "open": false,
+     "you": 3,
+     "student": 32,
+     "received": 31
+    },
+    {
+     "path": "/tmp/synthetic/students/kelp",
+     "round": 3,
+     "next": 4,
+     "open": false,
+     "you": 4,
+     "student": 48,
+     "received": 47
+    },
+    {
+     "path": "/tmp/synthetic/students/kelp",
+     "round": 4,
+     "next": null,
+     "open": true,
+     "you": 4,
+     "student": null,
+     "received": null
+    },
+    {
+     "path": "/tmp/synthetic/students/urchin",
+     "round": 1,
+     "next": 2,
+     "open": false,
+     "you": 3,
+     "student": 20,
+     "received": 19
+    },
+    {
+     "path": "/tmp/synthetic/students/urchin",
+     "round": 2,
+     "next": 3,
+     "open": false,
+     "you": 3,
+     "student": 17,
+     "received": 16
+    }
+   ],
+   "closed": {
+    "papers": [
+     {
+      "path": "/tmp/synthetic/students/kelp",
+      "1": 4,
+      "2": 1,
+      "3+": 0,
+      "open": 2,
+      "followed_up": 1,
+      "untouched_after_follow_up": 1
+     },
+     {
+      "path": "/tmp/synthetic/students/urchin",
+      "1": 3,
+      "2": 1,
+      "3+": 0,
+      "open": 0,
+      "followed_up": 1,
+      "untouched_after_follow_up": 1
+     }
+    ],
+    "total": {
+     "1": 7,
+     "2": 2,
+     "3+": 0,
+     "open": 2,
+     "followed_up": 2,
+     "untouched_after_follow_up": 2
+    }
+   }
+  },
+  {
+   "student": "Priya Nair",
+   "papers": [
+    "/tmp/synthetic/students/mangrove",
+    "/tmp/synthetic/students/blue"
+   ],
+   "rounds": 4,
+   "comments": 8,
+   "land": {
+    "columns": [
+     {
+      "bucket": "abstract",
+      "title": "Abstract"
+     },
+     {
+      "bucket": "introduction",
+      "title": "Introduction"
+     },
+     {
+      "bucket": "method",
+      "title": "Methods"
+     },
+     {
+      "bucket": "results",
+      "title": "Results"
+     },
+     {
+      "bucket": "discussion",
+      "title": "Discussion"
+     }
+    ],
+    "papers": [
+     {
+      "path": "/tmp/synthetic/students/mangrove",
+      "counts": [
+       0,
+       1,
+       1,
+       1,
+       1
+      ]
+     },
+     {
+      "path": "/tmp/synthetic/students/blue",
+      "counts": [
+       0,
+       1,
+       1,
+       1,
+       1
+      ]
+     }
+    ],
+    "total": [
+     0,
+     2,
+     2,
+     2,
+     2
+    ]
+   },
+   "time": [
+    {
+     "path": "/tmp/synthetic/students/mangrove",
+     "round": 1,
+     "next": 2,
+     "open": false,
+     "you": 3,
+     "student": 25,
+     "received": 24
+    },
+    {
+     "path": "/tmp/synthetic/students/mangrove",
+     "round": 2,
+     "next": 3,
+     "open": false,
+     "you": 2,
+     "student": 26,
+     "received": 25
+    },
+    {
+     "path": "/tmp/synthetic/students/mangrove",
+     "round": 3,
+     "next": null,
+     "open": true,
+     "you": 6,
+     "student": null,
+     "received": null
+    }
+   ],
+   "closed": {
+    "papers": [
+     {
+      "path": "/tmp/synthetic/students/mangrove",
+      "1": 3,
+      "2": 1,
+      "3+": 0,
+      "open": 0,
+      "followed_up": 1,
+      "untouched_after_follow_up": 1
+     },
+     {
+      "path": "/tmp/synthetic/students/blue",
+      "1": 0,
+      "2": 0,
+      "3+": 0,
+      "open": 4,
+      "followed_up": 0,
+      "untouched_after_follow_up": 0
+     }
+    ],
+    "total": {
+     "1": 3,
+     "2": 1,
+     "3+": 0,
+     "open": 4,
+     "followed_up": 1,
+     "untouched_after_follow_up": 1
+    }
+   }
+  },
+  {
+   "student": "Jonas Berg",
+   "papers": [
+    "/tmp/synthetic/students/seagrass"
+   ],
+   "rounds": 3,
+   "comments": 4,
+   "land": {
+    "columns": [
+     {
+      "bucket": "abstract",
+      "title": "Abstract"
+     },
+     {
+      "bucket": "introduction",
+      "title": "Introduction"
+     },
+     {
+      "bucket": "method",
+      "title": "Methods"
+     },
+     {
+      "bucket": "results",
+      "title": "Results"
+     },
+     {
+      "bucket": "discussion",
+      "title": "Discussion"
+     }
+    ],
+    "papers": [
+     {
+      "path": "/tmp/synthetic/students/seagrass",
+      "counts": [
+       0,
+       0,
+       1,
+       2,
+       1
+      ]
+     }
+    ],
+    "total": [
+     0,
+     0,
+     1,
+     2,
+     1
+    ]
+   },
+   "time": [
+    {
+     "path": "/tmp/synthetic/students/seagrass",
+     "round": 1,
+     "next": 2,
+     "open": false,
+     "you": 3,
+     "student": 37,
+     "received": 36
+    }
+   ],
+   "closed": {
+    "papers": [
+     {
+      "path": "/tmp/synthetic/students/seagrass",
+      "1": 2,
+      "2": 0,
+      "3+": 0,
+      "open": 2,
+      "followed_up": 1,
+      "untouched_after_follow_up": 0
+     }
+    ],
+    "total": {
+     "1": 2,
+     "2": 0,
+     "3+": 0,
+     "open": 2,
+     "followed_up": 1,
+     "untouched_after_follow_up": 0
+    }
+   }
+  },
+  {
+   "student": "",
+   "papers": [
+    "/tmp/synthetic/students/draft"
+   ],
+   "rounds": 1,
+   "comments": 1,
+   "land": {
+    "columns": [
+     {
+      "bucket": "abstract",
+      "title": "Abstract"
+     },
+     {
+      "bucket": "introduction",
+      "title": "Introduction"
+     },
+     {
+      "bucket": "method",
+      "title": "Methods"
+     },
+     {
+      "bucket": "results",
+      "title": "Results"
+     },
+     {
+      "bucket": "discussion",
+      "title": "Discussion"
+     }
+    ],
+    "papers": [
+     {
+      "path": "/tmp/synthetic/students/draft",
+      "counts": [
+       0,
+       1,
+       0,
+       0,
+       0
+      ]
+     }
+    ],
+    "total": [
+     0,
+     1,
+     0,
+     0,
+     0
+    ]
+   },
+   "time": [
+    {
+     "path": "/tmp/synthetic/students/draft",
+     "round": 1,
+     "next": null,
+     "open": true,
+     "you": 1,
+     "student": null,
+     "received": null
+    }
+   ],
+   "closed": {
+    "papers": [
+     {
+      "path": "/tmp/synthetic/students/draft",
+      "1": 0,
+      "2": 0,
+      "3+": 0,
+      "open": 1,
+      "followed_up": 0,
+      "untouched_after_follow_up": 0
+     }
+    ],
+    "total": {
+     "1": 0,
+     "2": 0,
+     "3+": 0,
+     "open": 1,
+     "followed_up": 0,
+     "untouched_after_follow_up": 0
+    }
+   }
+  }
+ ]
+}

@@ -1,0 +1,85 @@
+\documentclass{article}
+\usepackage{iclr2027_conference,times}
+
+\input{math_commands.tex}
+
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsmath}
+
+\title{Retrieval-Augmented Docstring Generation \\ for Legacy Fortran Code}
+
+\author{Anonymous Authors}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Scientific programs written in Fortran decades ago are still in daily use, but most of their routines have no documentation.
+We study docstring generation for such routines with a small code model, and ask whether retrieving documented routines from the same code base helps.
+We build a benchmark of 2,400 documented Fortran routines from six open-source scientific packages and generate docstrings for them with and without retrieval.
+Retrieval with BM25 over the same package improves BLEU from 18.2 to 23.9, and its docstrings are preferred by two domain experts in 64\% of pairwise comparisons.
+Retrieval across packages helps much less.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+Fortran is a dead language, yet climate models, solvers for partial differential equations and quantum chemistry packages still depend on hundreds of thousands of lines of it.
+New maintainers of such code often have to read a routine line by line to learn what its arguments mean, because the original authors have left.
+Code models can write docstrings for popular languages, where training data is plentiful \citep{husain2019codesearchnet}, but they see little Fortran, and almost none of the conventions of a given package.
+
+Retrieval-augmented generation \citep{lewis2020retrieval} offers a cheap fix: before writing a docstring, show the model documented routines that resemble the one at hand.
+In this short paper we ask where those routines should come from.
+We compare retrieval from the same package with retrieval from other packages, and find that the same package is far more useful.
+
+\section{Method}
+\label{sec:method}
+
+Given an undocumented routine $x$, we retrieve the $k$ most similar documented routines $\mathcal{R}_k(x)$ with BM25 \citep{robertson2009probabilistic}, using identifiers and comments as the query.
+The model then generates the docstring
+\begin{equation}
+\hat{y} = \argmax_{y} \; p_\theta\bigl(y \mid x, \mathcal{R}_k(x)\bigr),
+\label{eq:rag}
+\end{equation}
+where the retrieved routines and their docstrings are prepended to the prompt.
+We decode greedily and cut the docstring at the first blank line.
+
+\section{Experiments}
+\label{sec:experiments}
+
+Our benchmark holds 2,400 routines with docstrings written by their original authors, taken from six packages for climate, fluid dynamics and chemistry.
+We hide each docstring, generate a new one, and compare it with the original using BLEU \citep{papineni2002bleu}.
+Two domain experts also compared 200 pairs of docstrings, one with and one without retrieval, without knowing which was which.
+
+\begin{table}[t]
+\caption{Docstring quality on 2,400 Fortran routines. Preference: share of pairwise comparisons won against no retrieval.}
+\label{tab:results}
+\centering
+\begin{tabular}{lcc}
+\toprule
+Retrieval & BLEU & Preference (\%) \\
+\midrule
+None & 18.2 & --- \\
+Other packages & 19.6 & 53 \\
+Same package & \textbf{23.9} & \textbf{64} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:results} shows the results.
+Retrieval from the same package gains 5.7 BLEU points, while retrieval from other packages gains only 1.4.
+The retrieved routines often share argument names and units with the routine at hand, and the model copies these conventions into its docstrings.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+Retrieving documented routines from the same package is a simple way to help a small code model document legacy Fortran.
+The gap between same-package and cross-package retrieval shows that local naming conventions matter most.
+
+\bibliography{references}
+\bibliographystyle{iclr2027_conference}
+
+\end{document}

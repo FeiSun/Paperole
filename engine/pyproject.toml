@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "paperole"
+version = "0.1.0"
+description = "Paperole engine: reads, compares and renders review PDFs"
+requires-python = ">=3.9"
+dependencies = ["pymupdf>=1.24"]
+
+[tool.setuptools]
+packages = ["paperole"]
+
+[project.scripts]
+paperole = "paperole.cli:main"

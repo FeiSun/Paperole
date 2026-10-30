@@ -1,0 +1,616 @@
+{
+ "papers": [
+  {
+   "path": "/tmp/synthetic/tides",
+   "overview": {
+    "paper": {
+     "title": "Tidal Mixing in Synthetic Estuaries",
+     "student": "Ana Example",
+     "created": "2026-10-19T14:08:25+08:00"
+    },
+    "summary": {
+     "round": 2,
+     "closed": false,
+     "status": "ok",
+     "to_judge": 3,
+     "to_check": 1
+    },
+    "sections": [
+     {
+      "key": "front",
+      "title": "Title and abstract",
+      "name": "Title and abstract",
+      "suggested_bucket": "abstract",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "comments": 0,
+      "written": 0
+     },
+     {
+      "key": "introduction",
+      "title": "1 Introduction",
+      "name": "Introduction",
+      "suggested_bucket": "introduction",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "method",
+      "title": "2 Method",
+      "name": "Method",
+      "suggested_bucket": "method",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "results",
+      "title": "3 Results",
+      "name": "Results",
+      "suggested_bucket": "results",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "comments": 1,
+      "written": 1
+     },
+     {
+      "key": "conclusion",
+      "title": "4 Conclusion",
+      "name": "Conclusion",
+      "suggested_bucket": "conclusion",
+      "first": 1,
+      "last": 2,
+      "gone": false,
+      "comments": 0,
+      "written": 0
+     }
+    ],
+    "rounds": [
+     {
+      "n": 1,
+      "created": "2026-10-19T14:08:26+08:00",
+      "received": "2026-10-19T14:08:25+08:00",
+      "closed": true,
+      "closed_at": "2026-10-19T14:08:39+08:00",
+      "build": {
+       "status": "ok",
+       "pages": 1
+      },
+      "pdf": "/tmp/synthetic/tides/r1/build/main.pdf",
+      "final_pdf": "/tmp/synthetic/tides/r1/final.pdf",
+      "email": "/tmp/synthetic/tides/r1/email.txt",
+      "prose": "ok",
+      "comments": {
+       "new": 3,
+       "carried": 0,
+       "edited": 0,
+       "note_only": 0,
+       "untouched": 0,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 0,
+       "open_after": 3
+      },
+      "changes": {
+       "total": 0,
+       "requested": 0,
+       "unrequested": 0,
+       "to_check": 0
+      },
+      "words": {
+       "body": 171,
+       "added": 0,
+       "deleted": 0
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.117
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.117,
+        0.38
+       ],
+       [
+        "method",
+        "2 Method",
+        0.38,
+        0.644
+       ],
+       [
+        "results",
+        "3 Results",
+        0.644,
+        0.873
+       ],
+       [
+        "conclusion",
+        "4 Conclusion",
+        0.873,
+        1.0
+       ]
+      ],
+      "match": null,
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "method",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "results",
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "conclusion",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ]
+      ],
+      "edits": [],
+      "excerpts": {},
+      "pages": [
+       {
+        "page": 0,
+        "comments": 3,
+        "changes": 0
+       }
+      ]
+     },
+     {
+      "n": 2,
+      "created": "2026-10-19T14:08:40+08:00",
+      "received": "2026-10-19T14:08:39+08:00",
+      "closed": false,
+      "closed_at": null,
+      "build": {
+       "status": "ok",
+       "pages": 1
+      },
+      "pdf": "/tmp/synthetic/tides/r2/build/main.pdf",
+      "final_pdf": null,
+      "email": null,
+      "prose": "ok",
+      "comments": {
+       "new": 0,
+       "carried": 3,
+       "edited": 2,
+       "note_only": 0,
+       "untouched": 1,
+       "moved_only": 0,
+       "waiting": 0,
+       "not_found": 0,
+       "resolved": 0,
+       "follow_up": 0,
+       "kept": 0,
+       "left_open": 0,
+       "to_check": 3,
+       "open_after": 3
+      },
+      "changes": {
+       "total": 3,
+       "requested": 2,
+       "unrequested": 1,
+       "to_check": 1
+      },
+      "words": {
+       "body": 191,
+       "added": 21,
+       "deleted": 1
+      },
+      "unplaced": 0,
+      "spans": [
+       [
+        "front",
+        "Title and abstract",
+        0.0,
+        0.116
+       ],
+       [
+        "introduction",
+        "1 Introduction",
+        0.116,
+        0.378
+       ],
+       [
+        "method",
+        "2 Method",
+        0.378,
+        0.64
+       ],
+       [
+        "results",
+        "3 Results",
+        0.64,
+        0.868
+       ],
+       [
+        "conclusion",
+        "4 Conclusion",
+        0.868,
+        1.0
+       ]
+      ],
+      "match": [
+       [
+        "front",
+        "front",
+        "same",
+        1,
+        1
+       ],
+       [
+        "introduction",
+        "introduction",
+        "same",
+        1,
+        1
+       ],
+       [
+        "method",
+        "method",
+        "same",
+        1,
+        1
+       ],
+       [
+        "results",
+        "results",
+        "same",
+        1,
+        1
+       ],
+       [
+        "conclusion",
+        "conclusion",
+        "same",
+        1,
+        1
+       ]
+      ],
+      "heat": [
+       [
+        "front",
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       [
+        "introduction",
+        0,
+        1,
+        1,
+        0,
+        0,
+        0
+       ],
+       [
+        "method",
+        0,
+        1,
+        1,
+        1,
+        11,
+        1
+       ],
+       [
+        "results",
+        0,
+        1,
+        1,
+        1,
+        4,
+        0
+       ],
+       [
+        "conclusion",
+        0,
+        0,
+        0,
+        1,
+        6,
+        0
+       ]
+      ],
+      "edits": [
+       [
+        "c01",
+        0,
+        0.531,
+        "method",
+        [
+         "R1-01"
+        ],
+        false,
+        false,
+        false,
+        11,
+        1
+       ],
+       [
+        "c02",
+        0,
+        0.759,
+        "results",
+        [
+         "R1-02"
+        ],
+        false,
+        false,
+        false,
+        4,
+        0
+       ],
+       [
+        "c03",
+        0,
+        0.986,
+        "conclusion",
+        [],
+        true,
+        true,
+        false,
+        6,
+        0
+       ]
+      ],
+      "excerpts": {
+       "c01": "mixing coefficient that depends on the Richardson number, a…",
+       "c02": "(E07, E21 and E33)",
+       "c03": ", which we add in future work"
+      },
+      "pages": [
+       {
+        "page": 0,
+        "comments": 3,
+        "changes": 3
+       }
+      ]
+     }
+    ],
+    "comments": [
+     {
+      "id": "R1-01",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Justify a constant coefficient.",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.534,
+        "method",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.531,
+        "method",
+        "edited",
+        "to_check"
+       ]
+      ]
+     },
+     {
+      "id": "R1-02",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Name the three estuaries.",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.763,
+        "results",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.759,
+        "results",
+        "edited",
+        "to_check"
+       ]
+      ]
+     },
+     {
+      "id": "R1-03",
+      "created_round": 1,
+      "kind": "highlight",
+      "color": "yellow",
+      "note": "Cite them.",
+      "path": [
+       [
+        1,
+        "placed",
+        0,
+        0.271,
+        "introduction",
+        "new",
+        null
+       ],
+       [
+        2,
+        "placed",
+        0,
+        0.269,
+        "introduction",
+        "untouched",
+        "to_check"
+       ]
+      ]
+     }
+    ],
+    "threads": {
+     "comments": 3,
+     "resolved": 0,
+     "kept": 0,
+     "open": 3,
+     "followed_up": 0,
+     "untouched_after_follow_up": 0,
+     "closed_after": {
+      "1": 0,
+      "2": 0,
+      "3+": 0
+     }
+    },
+    "pending": []
+   }
+  }
+ ],
+ "students": [
+  {
+   "student": "Ana Example",
+   "papers": [
+    "/tmp/synthetic/tides"
+   ],
+   "rounds": 2,
+   "comments": 3,
+   "land": {
+    "columns": [
+     {
+      "bucket": "abstract",
+      "title": "Abstract"
+     },
+     {
+      "bucket": "introduction",
+      "title": "Introduction"
+     },
+     {
+      "bucket": "method",
+      "title": "Methods"
+     },
+     {
+      "bucket": "results",
+      "title": "Results"
+     },
+     {
+      "bucket": "conclusion",
+      "title": "Conclusion"
+     }
+    ],
+    "papers": [
+     {
+      "path": "/tmp/synthetic/tides",
+      "counts": [
+       0,
+       1,
+       1,
+       1,
+       0
+      ]
+     }
+    ],
+    "total": [
+     0,
+     1,
+     1,
+     1,
+     0
+    ]
+   },
+   "time": [
+    {
+     "path": "/tmp/synthetic/tides",
+     "round": 1,
+     "next": 2,
+     "open": false,
+     "you": 0,
+     "student": 0,
+     "received": 0
+    },
+    {
+     "path": "/tmp/synthetic/tides",
+     "round": 2,
+     "next": null,
+     "open": true,
+     "you": 0,
+     "student": null,
+     "received": null
+    }
+   ],
+   "closed": {
+    "papers": [
+     {
+      "path": "/tmp/synthetic/tides",
+      "1": 0,
+      "2": 0,
+      "3+": 0,
+      "open": 3,
+      "followed_up": 0,
+      "untouched_after_follow_up": 0
+     }
+    ],
+    "total": {
+     "1": 0,
+     "2": 0,
+     "3+": 0,
+     "open": 3,
+     "followed_up": 0,
+     "untouched_after_follow_up": 0
+    }
+   }
+  }
+ ]
+}

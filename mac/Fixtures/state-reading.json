@@ -1,0 +1,1400 @@
+{
+ "schema": 1,
+ "paper": {
+  "path": "/Users/advisor/Reviews/zhou-warmcast",
+  "title": "Predictive Warm Pools for Serverless Cold-Start Reduction",
+  "student": "Lin Zhou",
+  "main": "main.tex",
+  "engine": "pdflatex"
+ },
+ "rounds": [
+  {
+   "n": 1,
+   "created": "2026-10-07T09:12:40+08:00",
+   "source": "/Users/advisor/Downloads/warmcast-v1",
+   "closed": true,
+   "closed_at": "2026-10-08T21:30:05+08:00",
+   "status": "ok",
+   "pdf": "round1/main.pdf"
+  },
+  {
+   "n": 2,
+   "created": "2026-10-14T10:02:11+08:00",
+   "source": "/Users/advisor/Downloads/warmcast-v2",
+   "closed": false,
+   "closed_at": null,
+   "status": "ok",
+   "pdf": "round2/main.pdf"
+  }
+ ],
+ "round": {
+  "n": 2,
+  "closed": false,
+  "created": "2026-10-14T10:02:11+08:00",
+  "closed_at": null,
+  "build": {
+   "status": "ok",
+   "pdf": "round2/main.pdf",
+   "pages": 4,
+   "warnings": [],
+   "errors": [],
+   "log_tail": "Output written on main.pdf (4 pages, 268373 bytes).\nSyncTeX written on main.synctex.gz."
+  },
+  "final_pdf": null,
+  "email": null
+ },
+ "comments": [
+  {
+   "id": "R1-01",
+   "kind": "highlight",
+   "note": "simple 不准确，改成 static 或 fixed。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "verified",
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.99,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     181.7,
+     391.04,
+     283.27,
+     401.0
+    ]
+   ],
+   "text": "static keep-alive policy",
+   "old_quote": "simple keep-alive policy",
+   "new_quote": "static keep-alive policy",
+   "file": "main.tex",
+   "line": 41,
+   "changes": [
+    "c01"
+   ],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ],
+   "paragraph": 4
+  },
+  {
+   "id": "R2-02",
+   "kind": "highlight",
+   "note": "enough 需要论证。",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 1.0,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     131.56,
+     462.77,
+     366.56,
+     472.74
+    ]
+   ],
+   "text": "A short-term forecast of the rate is therefore enough",
+   "old_quote": null,
+   "new_quote": "A short-term forecast of the rate\nis therefore enough",
+   "file": "main.tex",
+   "line": 50,
+   "changes": [],
+   "history": [],
+   "paragraph": 5
+  },
+  {
+   "id": "R2-03",
+   "kind": "highlight",
+   "note": "标题改成 Background and Related Work。",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 1.0,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     95.67,
+     552.07,
+     191.78,
+     566.41
+    ]
+   ],
+   "text": "Related Work",
+   "old_quote": null,
+   "new_quote": "Related Work",
+   "file": "main.tex",
+   "line": 60,
+   "changes": [],
+   "history": [],
+   "paragraph": 6
+  },
+  {
+   "id": "R1-06",
+   "kind": "highlight",
+   "note": "125 ms 出自哪里？加引用。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "unchanged",
+   "confidence": 1.0,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     468.96,
+     589.27,
+     540.0,
+     599.23
+    ],
+    [
+     72.0,
+     601.22,
+     172.82,
+     611.18
+    ]
+   ],
+   "text": "boots a minimal microVM in about 125",
+   "old_quote": "boots a minimal microVM in about 125",
+   "new_quote": "boots a minimal\nmicroVM in about 125",
+   "file": "main.tex",
+   "line": 66,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ],
+   "paragraph": 7
+  },
+  {
+   "id": "R1-02",
+   "kind": "highlight",
+   "note": "这句不准确：Hybrid 也决定预热窗口。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "reopened",
+   "verdict_note": "还是没说清楚和 Hybrid 的区别。",
+   "anchor_state": "changed",
+   "confidence": 0.91,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     408.71,
+     661.0,
+     539.95,
+     670.96
+    ],
+    [
+     72.0,
+     672.95,
+     485.64,
+     682.91
+    ]
+   ],
+   "text": "Both approaches reason about the lifetime of one instance and leave the number of concurrent instances to the autoscaler.",
+   "old_quote": "Both approaches decide when to keep a\nsingle instance alive.",
+   "new_quote": "Both approaches reason about the\nlifetime of one instance and leave the number of concurrent instances to the\nautoscaler.",
+   "file": "main.tex",
+   "line": 77,
+   "changes": [
+    "c02"
+   ],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ],
+   "paragraph": 8
+  },
+  {
+   "id": "R2-04",
+   "kind": "strikeout",
+   "note": "",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 1.0,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     164.15,
+     696.86,
+     215.09,
+     706.82
+    ]
+   ],
+   "text": "deliberately",
+   "old_quote": null,
+   "new_quote": "deliberately",
+   "file": "main.tex",
+   "line": 82,
+   "changes": [],
+   "history": [],
+   "paragraph": 9
+  },
+  {
+   "id": "R1-07",
+   "kind": "note",
+   "note": "只用一天调参够吗？",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "wontfix",
+   "verdict_note": "这次先不改。",
+   "anchor_state": "unchanged",
+   "confidence": 1.0,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     202.26,
+     275.76,
+     432.84,
+     285.73
+    ]
+   ],
+   "text": "which performed best on a held-out day of the trace",
+   "old_quote": "which performed best on a held-out day of the trace",
+   "new_quote": "which performed best on a held-out day of the trace",
+   "file": "sections/method.tex",
+   "line": 20,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ],
+   "paragraph": 15
+  },
+  {
+   "id": "R1-05",
+   "kind": "highlight",
+   "note": "式 (2) 里 c_m 的单位和 τ 对不上。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 1.0,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     72.0,
+     337.52,
+     223.15,
+     347.48
+    ]
+   ],
+   "text": "The expected cost of a pool of size",
+   "old_quote": "The expected cost of a pool of size",
+   "new_quote": "The expected cost of a pool of size",
+   "file": "sections/method.tex",
+   "line": 27,
+   "changes": [
+    "c07"
+   ],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ],
+   "paragraph": 17
+  },
+  {
+   "id": "R1-09",
+   "kind": "strikeout",
+   "note": "only 的位置不对。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.68,
+   "method": "fuzzy",
+   "page": 1,
+   "rects": [
+    [
+     253.75,
+     504.87,
+     422.3,
+     514.83
+    ]
+   ],
+   "text": "Pre-warming uses spare capacity only",
+   "old_quote": "Pre-warming only uses spare capacity",
+   "new_quote": "Pre-warming uses spare capacity only",
+   "file": "sections/method.tex",
+   "line": 49,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ],
+   "paragraph": 23
+  },
+  {
+   "id": "R2-01",
+   "kind": "highlight",
+   "note": "这个数为什么变了？重跑了还是笔误？",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 1.0,
+   "method": "selection",
+   "page": 2,
+   "rects": [
+    [
+     351.4,
+     136.8,
+     366.34,
+     146.76
+    ]
+   ],
+   "text": "671",
+   "old_quote": null,
+   "new_quote": "671",
+   "file": "main.tex",
+   "line": 118,
+   "changes": [],
+   "history": [],
+   "paragraph": null
+  },
+  {
+   "id": "R1-03",
+   "kind": "strikeout",
+   "note": "多余，删掉。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "gone",
+   "confidence": 0.87,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     522.39,
+     455.71,
+     524.39,
+     465.67
+    ]
+   ],
+   "text": "",
+   "old_quote": "The memory footprint is two floating-point numbers\nper function.",
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 150,
+   "changes": [
+    "c04"
+   ],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ],
+   "paragraph": 31
+  },
+  {
+   "id": "R1-04",
+   "kind": "highlight",
+   "note": "这段放到本节最后，作为局限讨论。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "verified",
+   "verdict_note": "",
+   "anchor_state": "moved",
+   "confidence": 1.0,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     86.94,
+     479.62,
+     217.25,
+     489.59
+    ]
+   ],
+   "text": "Our simulator is event-driven",
+   "old_quote": "Our simulator is event-driven",
+   "new_quote": "Our simulator is event-driven",
+   "file": "main.tex",
+   "line": 153,
+   "changes": [
+    "c05"
+   ],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ],
+   "paragraph": 32
+  },
+  {
+   "id": "R1-08",
+   "kind": "highlight",
+   "note": "Fig. 1 的纵轴要写单位（%）。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "orphan",
+   "confidence": 0.0,
+   "method": "none",
+   "page": null,
+   "rects": [],
+   "text": "",
+   "old_quote": "as the bars in our preliminary measurement show",
+   "new_quote": null,
+   "file": null,
+   "line": null,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": ""
+    }
+   ],
+   "paragraph": null
+  }
+ ],
+ "changes": [
+  {
+   "id": "c01",
+   "kind": "replace",
+   "file": "main.tex",
+   "line": 41,
+   "old_text": "simple",
+   "new_text": "static",
+   "page": 0,
+   "rects": [
+    [
+     181.7,
+     391.04,
+     205.55,
+     401.0
+    ]
+   ],
+   "attached_to": [
+    "R1-01"
+   ],
+   "unrequested": false,
+   "blocks": [
+    4
+   ],
+   "read": false
+  },
+  {
+   "id": "c02",
+   "kind": "replace",
+   "file": "main.tex",
+   "line": 77,
+   "old_text": "decide when to keep a single instance alive",
+   "new_text": "reason about the lifetime of one instance and leave the number of concurrent instances to the autoscaler",
+   "page": 0,
+   "rects": [
+    [
+     484.04,
+     661.0,
+     539.95,
+     670.96
+    ],
+    [
+     72.0,
+     672.95,
+     485.64,
+     682.91
+    ]
+   ],
+   "attached_to": [
+    "R1-02"
+   ],
+   "unrequested": false,
+   "blocks": [
+    8
+   ],
+   "read": false
+  },
+  {
+   "id": "c03",
+   "kind": "replace",
+   "file": "main.tex",
+   "line": 118,
+   "old_text": "655",
+   "new_text": "671",
+   "page": 2,
+   "rects": [
+    [
+     351.4,
+     136.8,
+     366.34,
+     146.76
+    ]
+   ],
+   "attached_to": [],
+   "unrequested": true,
+   "blocks": [
+    27
+   ],
+   "read": false
+  },
+  {
+   "id": "c04",
+   "kind": "delete",
+   "file": "main.tex",
+   "line": 150,
+   "old_text": "The memory footprint is two floating-point numbers per function.",
+   "new_text": "",
+   "page": 2,
+   "rects": [
+    [
+     522.39,
+     455.71,
+     524.39,
+     465.67
+    ]
+   ],
+   "attached_to": [
+    "R1-03"
+   ],
+   "unrequested": false,
+   "blocks": [
+    31
+   ],
+   "read": false
+  },
+  {
+   "id": "c05",
+   "kind": "move",
+   "file": "main.tex",
+   "line": 153,
+   "old_text": "Our simulator is event-driven and models the memory of each host but not its CPU. It assumes that a warm instance serves a request immediately and that a cold start blocks the request for the full start duration. These assumptions favour no policy in particular, since all policies share them.",
+   "new_text": "Our simulator is event-driven and models the memory of each host but not its CPU. It assumes that a warm instance serves a request immediately and that a cold start blocks the request for the full start duration. These assumptions favour no policy in particular, since all policies share them.",
+   "page": 2,
+   "rects": [
+    [
+     86.94,
+     479.62,
+     539.96,
+     489.59
+    ],
+    [
+     72.0,
+     491.58,
+     539.99,
+     501.54
+    ],
+    [
+     72.0,
+     503.53,
+     460.12,
+     513.5
+    ]
+   ],
+   "attached_to": [
+    "R1-04"
+   ],
+   "unrequested": false,
+   "blocks": [
+    32
+   ],
+   "read": false
+  },
+  {
+   "id": "c06",
+   "kind": "insert",
+   "file": "main.tex",
+   "line": 162,
+   "old_text": "",
+   "new_text": "Because the controller needs no changes to the functions themselves, it can be deployed on existing platforms without involving developers.",
+   "page": 2,
+   "rects": [
+    [
+     193.15,
+     570.25,
+     539.96,
+     580.21
+    ],
+    [
+     72.0,
+     582.2,
+     333.62,
+     592.17
+    ]
+   ],
+   "attached_to": [],
+   "unrequested": true,
+   "blocks": [
+    34
+   ],
+   "read": false
+  },
+  {
+   "id": "c07",
+   "kind": "insert",
+   "file": "sections/method.tex",
+   "line": 29,
+   "old_text": "",
+   "new_text": "\\tau",
+   "page": 1,
+   "rects": [
+    [
+     282.18,
+     359.43,
+     286.53,
+     369.39
+    ]
+   ],
+   "attached_to": [
+    "R1-05"
+   ],
+   "unrequested": false,
+   "blocks": [
+    18
+   ],
+   "read": false
+  }
+ ],
+ "reading": {
+  "read": [
+   1,
+   3,
+   5,
+   7,
+   9,
+   11,
+   13,
+   14,
+   15,
+   17,
+   19,
+   21,
+   23,
+   25,
+   26,
+   28,
+   29,
+   30,
+   32,
+   36,
+   37,
+   38,
+   39,
+   40,
+   41,
+   42,
+   43,
+   44,
+   45
+  ],
+  "count": 35,
+  "unread": 6,
+  "paragraphs": [
+   {
+    "block": 1,
+    "section": -1,
+    "parts": [
+     [
+      0,
+      [
+       96.91,
+       212.35,
+       515.09,
+       286.02
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 3,
+    "section": 2,
+    "parts": [
+     [
+      0,
+      [
+       72.0,
+       331.57,
+       540.0,
+       389.35
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 4,
+    "section": 2,
+    "parts": [
+     [
+      0,
+      [
+       72.0,
+       391.95,
+       540.0,
+       436.62
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 5,
+    "section": 2,
+    "parts": [
+     [
+      0,
+      [
+       72.0,
+       451.73,
+       540.0,
+       532.81
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 7,
+    "section": 6,
+    "parts": [
+     [
+      0,
+      [
+       72.0,
+       578.22,
+       540.0,
+       634.84
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 8,
+    "section": 6,
+    "parts": [
+     [
+      0,
+      [
+       72.0,
+       637.39,
+       540.0,
+       694.62
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 9,
+    "section": 6,
+    "parts": [
+     [
+      0,
+      [
+       72.0,
+       697.16,
+       540.0,
+       718.53
+      ]
+     ],
+     [
+      1,
+      [
+       72.0,
+       74.49,
+       540.0,
+       95.85
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 11,
+    "section": 10,
+    "parts": [
+     [
+      1,
+      [
+       72.0,
+       141.82,
+       540.0,
+       186.48
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 13,
+    "section": 10,
+    "parts": [
+     [
+      1,
+      [
+       72.0,
+       203.56,
+       540.0,
+       224.33
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 14,
+    "section": 10,
+    "parts": [
+     [
+      1,
+      [
+       251.15,
+       235.29,
+       540.0,
+       253.15
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 15,
+    "section": 10,
+    "parts": [
+     [
+      1,
+      [
+       72.0,
+       264.11,
+       540.0,
+       285.47
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 17,
+    "section": 10,
+    "parts": [
+     [
+      1,
+      [
+       72.0,
+       302.55,
+       540.0,
+       347.23
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 18,
+    "section": 10,
+    "parts": [
+     [
+      1,
+      [
+       235.93,
+       358.74,
+       540.0,
+       370.7
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 19,
+    "section": 10,
+    "parts": [
+     [
+      1,
+      [
+       72.0,
+       381.66,
+       540.0,
+       403.58
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 21,
+    "section": 10,
+    "parts": [
+     [
+      1,
+      [
+       72.0,
+       420.1,
+       540.0,
+       464.78
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 23,
+    "section": 10,
+    "parts": [
+     [
+      1,
+      [
+       72.0,
+       481.82,
+       540.0,
+       526.54
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 25,
+    "section": 24,
+    "parts": [
+     [
+      1,
+      [
+       72.0,
+       571.89,
+       540.0,
+       605.76
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 26,
+    "section": 24,
+    "parts": [
+     [
+      1,
+      [
+       72.0,
+       607.76,
+       540.0,
+       641.07
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 27,
+    "section": 24,
+    "parts": [
+     [
+      2,
+      [
+       72.0,
+       81.96,
+       540.0,
+       162.63
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 28,
+    "section": 24,
+    "parts": [
+     [
+      1,
+      [
+       72.0,
+       643.62,
+       540.0,
+       688.9
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 29,
+    "section": 24,
+    "parts": [
+     [
+      2,
+      [
+       72.0,
+       174.58,
+       540.0,
+       397.73
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 30,
+    "section": 24,
+    "parts": [
+     [
+      1,
+      [
+       72.0,
+       692.05,
+       540.0,
+       712.81
+      ]
+     ],
+     [
+      2,
+      [
+       72.0,
+       420.76,
+       540.0,
+       441.51
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 31,
+    "section": 24,
+    "parts": [
+     [
+      2,
+      [
+       72.0,
+       444.06,
+       540.0,
+       477.38
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 32,
+    "section": 24,
+    "parts": [
+     [
+      2,
+      [
+       72.0,
+       480.54,
+       540.0,
+       513.24
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 34,
+    "section": 33,
+    "parts": [
+     [
+      2,
+      [
+       72.0,
+       559.21,
+       540.0,
+       637.8
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 36,
+    "section": 35,
+    "parts": [
+     [
+      2,
+      [
+       72.0,
+       685.09,
+       540.0,
+       706.45
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 37,
+    "section": 35,
+    "parts": [
+     [
+      3,
+      [
+       72.0,
+       74.49,
+       540.0,
+       95.85
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 38,
+    "section": 35,
+    "parts": [
+     [
+      3,
+      [
+       72.0,
+       106.37,
+       540.0,
+       127.73
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 39,
+    "section": 35,
+    "parts": [
+     [
+      3,
+      [
+       72.0,
+       138.25,
+       540.0,
+       159.62
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 40,
+    "section": 35,
+    "parts": [
+     [
+      3,
+      [
+       72.0,
+       170.13,
+       540.0,
+       191.5
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 41,
+    "section": 35,
+    "parts": [
+     [
+      3,
+      [
+       72.0,
+       202.01,
+       540.0,
+       211.97
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 42,
+    "section": 35,
+    "parts": [
+     [
+      3,
+      [
+       72.0,
+       233.89,
+       540.0,
+       279.17
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 43,
+    "section": 35,
+    "parts": [
+     [
+      3,
+      [
+       72.0,
+       289.69,
+       540.0,
+       311.05
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 44,
+    "section": 35,
+    "parts": [
+     [
+      3,
+      [
+       72.0,
+       333.52,
+       540.0,
+       366.84
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 45,
+    "section": 35,
+    "parts": [
+     [
+      3,
+      [
+       72.0,
+       377.36,
+       540.0,
+       398.72
+      ]
+     ]
+    ]
+   }
+  ],
+  "headings": [
+   {
+    "block": 2,
+    "level": 1,
+    "title": "1 Introduction",
+    "parts": [
+     [
+      0,
+      [
+       72.0,
+       307.32,
+       540.0,
+       317.22
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 6,
+    "level": 1,
+    "title": "2 Related Work",
+    "parts": [
+     [
+      0,
+      [
+       72.0,
+       553.36,
+       540.0,
+       563.26
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 10,
+    "level": 1,
+    "title": "3 Method",
+    "parts": [
+     [
+      0,
+      [
+       72.0,
+       743.5,
+       540.0,
+       749.89
+      ]
+     ],
+     [
+      1,
+      [
+       72.0,
+       116.96,
+       540.0,
+       126.86
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 24,
+    "level": 1,
+    "title": "4 Evaluation",
+    "parts": [
+     [
+      1,
+      [
+       72.0,
+       547.64,
+       540.0,
+       557.54
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 33,
+    "level": 1,
+    "title": "5 Conclusion",
+    "parts": [
+     [
+      2,
+      [
+       72.0,
+       534.35,
+       540.0,
+       544.25
+      ]
+     ]
+    ]
+   },
+   {
+    "block": 35,
+    "level": 1,
+    "title": "References",
+    "parts": [
+     [
+      2,
+      [
+       72.0,
+       660.84,
+       540.0,
+       670.74
+      ]
+     ]
+    ]
+   }
+  ]
+ }
+}

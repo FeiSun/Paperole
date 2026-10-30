@@ -1,0 +1,118 @@
+\documentclass[10pt,twocolumn]{article}
+\usepackage[margin=0.8in]{geometry}
+\usepackage{times}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{natbib}
+
+\title{Confidence-Gated Early Exit for On-Device Speech Recognition}
+\author{Anonymous Authors}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Speech recognisers on phones and watches must answer within tens of milliseconds while sharing a small battery with everything else.
+We add exit heads to a Conformer encoder and stop computing as soon as a CTC head is confident about the current chunk of audio.
+On LibriSpeech, the gated model keeps the word error rate of the full model within 0.2 points on test-clean while running 38\% fewer encoder layers on average.
+\end{abstract}
+
+\section{Introduction}
+
+On-device speech recognition keeps audio private and works without a network, but the device sets a hard budget for latency and energy.
+Most utterances are easy: clear speech, common words and little noise.
+A recogniser that spends the same computation on every chunk of audio therefore wastes most of it.
+
+Early exit \citep{teerapittayanon2016branchynet} attaches small classifiers to intermediate layers and stops when one of them is confident.
+It is widely used for image classification but less so for streaming speech recognition, where the output is a sequence and the decision must be made chunk by chunk.
+We show that a simple confidence gate on CTC heads \citep{graves2006connectionist} works well for a Conformer encoder \citep{gulati2020conformer}.
+
+\section{Related Work}
+
+Early exit was first studied for image classifiers, where each exit head predicts the class and the network stops at the first confident head \citep{teerapittayanon2016branchynet}.
+For sequence outputs the decision is harder, since one confident frame says little about the rest of the utterance.
+Streaming recognisers process audio in chunks, which gives a natural unit for the decision: the whole chunk exits at the same layer.
+Our gate follows this design and uses the CTC posteriors \citep{graves2006connectionist} that the heads already compute, so it adds no parameters.
+
+\section{Method}
+
+The encoder has $L = 16$ Conformer layers.
+After layers 4, 8 and 12 we add a linear CTC head that predicts a distribution $q_\ell(\cdot \mid t)$ over tokens for every frame $t$ of the current chunk.
+We exit after layer $\ell$ if the mean maximum probability over the chunk exceeds a threshold:
+\begin{equation}
+\frac{1}{|C|} \sum_{t \in C} \max_{v} \, q_\ell(v \mid t) \;\ge\; \gamma,
+\label{eq:gate}
+\end{equation}
+where $C$ is the set of frames in the chunk.
+All heads are trained jointly with the sum of their CTC losses.
+
+\section{Experiments}
+
+We train on the 960 hours of LibriSpeech \citep{panayotov2015librispeech} and report the word error rate (WER) on test-clean and test-other.
+Chunks are 640\,ms long, and $\gamma = 0.9$ unless stated otherwise.
+
+\begin{table}[t]
+\centering
+\caption{WER (\%) on LibriSpeech and mean number of encoder layers run per chunk.}
+\label{tab:wer}
+\begin{tabular}{lccc}
+\toprule
+Model & clean & other & Layers \\
+\midrule
+Full (16 layers) & 3.1 & 7.4 & 16.0 \\
+Static exit at 8 & 4.6 & 10.9 & 8.0 \\
+Gated, $\gamma = 0.9$ & 3.3 & 7.9 & 9.9 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:wer} shows that the gate keeps most of the accuracy of the full model while running far fewer layers.
+On test-other the gap is larger, because noisy chunks exit late or not at all.
+The gated model is also faster than every other on-device recogniser.
+
+\paragraph{Effect of the threshold.}
+Lowering $\gamma$ trades accuracy for speed.
+With $\gamma = 0.8$ the model runs 7.6 layers per chunk on average and reaches 3.6\% WER on test-clean; with $\gamma = 0.95$ it runs 12.1 layers and reaches 3.2\%.
+Between these values the WER changes smoothly, so the threshold can be set at run time to match the battery level of the device.
+
+\paragraph{Where do chunks exit?}
+On test-clean, 41\% of the chunks exit after layer 4, 27\% after layer 8, 12\% after layer 12, and the remaining 20\% run all 16 layers.
+Chunks that run the full encoder are mostly silence followed by speech, rare names, and overlapping speakers.
+Silence alone exits early, since the blank token dominates every frame.
+
+\paragraph{Latency.}
+On a mid-range phone CPU, a 640\,ms chunk takes 31\,ms with the full encoder and 19\,ms on average with the gate, including the cost of the exit heads.
+
+\section{Conclusion}
+
+A confidence gate on intermediate CTC heads makes a Conformer encoder cheaper on easy audio without retraining it for every budget.
+
+Our gate has two limitations.
+It decides per chunk, so a chunk that is easy at the start and hard at the end runs to the layer its hard part needs.
+And we have tested it only on read English speech; spontaneous and accented speech may exit much later.
+
+\begin{thebibliography}{4}
+\bibitem[Graves et~al.(2006)]{graves2006connectionist}
+Alex Graves, Santiago Fern{\'a}ndez, Faustino Gomez, and J{\"u}rgen Schmidhuber.
+\newblock Connectionist temporal classification: labelling unsegmented sequence data with recurrent neural networks.
+\newblock In \emph{Proceedings of the 23rd International Conference on Machine Learning}, 2006.
+
+\bibitem[Gulati et~al.(2020)]{gulati2020conformer}
+Anmol Gulati, James Qin, Chung-Cheng Chiu, Niki Parmar, Yu~Zhang, Jiahui Yu, Wei Han, Shibo Wang, Zhengdong Zhang, Yonghui Wu, and Ruoming Pang.
+\newblock Conformer: Convolution-augmented transformer for speech recognition.
+\newblock In \emph{Proceedings of Interspeech}, 2020.
+
+\bibitem[Panayotov et~al.(2015)]{panayotov2015librispeech}
+Vassil Panayotov, Guoguo Chen, Daniel Povey, and Sanjeev Khudanpur.
+\newblock Librispeech: an {ASR} corpus based on public domain audio books.
+\newblock In \emph{IEEE International Conference on Acoustics, Speech and Signal Processing (ICASSP)}, 2015.
+
+\bibitem[Teerapittayanon et~al.(2016)]{teerapittayanon2016branchynet}
+Surat Teerapittayanon, Bradley McDanel, and H.~T. Kung.
+\newblock {BranchyNet}: Fast inference via early exiting from deep neural networks.
+\newblock In \emph{International Conference on Pattern Recognition (ICPR)}, 2016.
+\end{thebibliography}
+
+\end{document}

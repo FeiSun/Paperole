@@ -1,0 +1,51 @@
+\section{Method}
+\label{sec:method}
+
+WarmCast runs as a controller next to the platform scheduler. Time is divided
+into intervals of length $\tau$, which we set to one minute. At the start of
+each interval the controller updates a rate estimate for every function,
+computes a target pool size, and starts or stops pre-warmed instances to
+reach it. Requests are routed to warm instances first; a request that finds
+none triggers a cold start as before.
+
+\paragraph{Rate estimation.}
+Let $x_t$ be the number of requests a function received in interval $t$. We
+estimate its arrival rate with exponential smoothing,
+\begin{equation}
+  \hat{\lambda}_t = \alpha \, \frac{x_t}{\tau} + (1 - \alpha) \, \hat{\lambda}_{t-1},
+  \label{eq:ewma}
+\end{equation}
+where $\alpha \in (0, 1]$ controls how quickly the estimate follows a change
+in load. A large $\alpha$ reacts to bursts but also to noise; we use
+$\alpha = 0.3$, which performed best on a held-out day of the trace.
+
+\paragraph{Pool sizing.}
+Given the rate, we model the number of arrivals $N$ in the next interval as a
+Poisson variable with mean $\mu = \hat{\lambda}_t \tau$. If $k$ instances are
+warm, every arrival beyond the $k$-th concurrent one causes a cold start. Let
+$c_m$ be the cost of keeping one instance in memory for an interval and $c_s$
+the cost of one cold start. The expected cost of a pool of size $k$ is
+\begin{equation}
+  C(k) = c_m \, k + c_s \, \mathbb{E}\big[(N - k)^{+}\big],
+  \label{eq:cost}
+\end{equation}
+and the controller chooses $k^{*} = \arg\min_{k \ge 0} C(k)$. Because $C$ is
+convex in $k$, the minimiser is the smallest $k$ for which
+$\Pr[N > k] \le c_m / c_s$, which we find by evaluating the Poisson tail from
+$k = 0$ upward.
+
+\paragraph{Cost parameters.}
+We express both costs in GB-seconds of memory. The memory cost $c_m$ is the
+memory size of the function times $\tau$, and the start cost $c_s$ is the
+memory size times the measured cold-start duration, multiplied by a weight
+$w$ that encodes how much the operator values latency over memory. With
+$w = 1$ the controller minimises total memory time; larger values buy lower
+latency with more memory.
+
+\paragraph{Safety limits.}
+To avoid holding memory for a function whose traffic has stopped, the
+controller caps $k^{*}$ at the largest number of concurrent requests observed
+in the last hour and releases all instances of a function that received no
+request for 30 minutes. Pre-warming uses spare capacity only; when a host
+runs short of memory, pre-warmed instances are evicted before instances that
+serve requests.

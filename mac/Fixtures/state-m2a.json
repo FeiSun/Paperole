@@ -1,0 +1,1351 @@
+{
+ "schema": 1,
+ "paper": {
+  "path": "/Users/advisor/Reviews/zhou-warmcast",
+  "title": "Predictive Warm Pools for Serverless Cold-Start Reduction",
+  "student": "Lin Zhou",
+  "main": "main.tex",
+  "engine": "pdflatex"
+ },
+ "rounds": [
+  {
+   "n": 1,
+   "created": "2026-10-07T09:12:40+08:00",
+   "source": "/Users/advisor/Downloads/warmcast-v1",
+   "closed": true,
+   "closed_at": "2026-10-08T21:30:05+08:00",
+   "status": "ok",
+   "pdf": "round1/main.pdf"
+  },
+  {
+   "n": 2,
+   "created": "2026-10-14T10:02:11+08:00",
+   "source": "/Users/advisor/Downloads/warmcast-v2",
+   "closed": false,
+   "closed_at": null,
+   "status": "ok",
+   "pdf": "round2/main.pdf"
+  }
+ ],
+ "round": {
+  "n": 2,
+  "closed": false,
+  "created": "2026-10-14T10:02:11+08:00",
+  "closed_at": null,
+  "build": {
+   "status": "ok",
+   "pdf": "round2/main.pdf",
+   "pages": 4,
+   "warnings": [],
+   "errors": [],
+   "log_tail": "Output written on main.pdf (4 pages, 268373 bytes).\nSyncTeX written on main.synctex.gz."
+  },
+  "final_pdf": null,
+  "email": null
+ },
+ "comments": [
+  {
+   "id": "R1-01",
+   "kind": "highlight",
+   "note": "simple 不准确，改成 static 或 fixed。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "verified",
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.99,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     181.7,
+     391.04,
+     283.27,
+     401.0
+    ]
+   ],
+   "text": "static keep-alive policy",
+   "old_quote": "simple keep-alive policy",
+   "new_quote": "static keep-alive policy",
+   "file": "main.tex",
+   "line": 41,
+   "changes": [
+    "c01"
+   ],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "Most platforms use a simple keep-alive policy: after an instance finishes a request, it stays in memory for a fixed period, typically ten minutes, in case another request arrives [9].",
+      "sel": [
+       [
+        21,
+        46
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        184.37,
+        391.04,
+        288.37,
+        401.0
+       ]
+      ]
+     }
+    }
+   ],
+   "context": {
+    "text": "Most platforms use a static keep-alive policy: after an instance finishes a request, it stays in memory for a fixed period, typically ten minutes, in case another request arrives [9].",
+    "sel": [
+     [
+      21,
+      46
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      181.7,
+      391.04,
+      283.27,
+      401.0
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-02",
+   "kind": "highlight",
+   "note": "enough 需要论证。",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 1.0,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     131.56,
+     462.77,
+     366.56,
+     472.74
+    ]
+   ],
+   "text": "A short-term forecast of the rate is therefore enough",
+   "old_quote": null,
+   "new_quote": "A short-term forecast of the rate\nis therefore enough",
+   "file": "main.tex",
+   "line": 50,
+   "changes": [],
+   "history": [],
+   "color": "green",
+   "context": {
+    "text": "A short-term forecast of the rate is therefore enough to decide how many instances to keep ready.",
+    "sel": [
+     [
+      0,
+      53
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      131.56,
+      462.77,
+      366.56,
+      472.74
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-03",
+   "kind": "highlight",
+   "note": "标题改成 Background and Related Work。",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 1.0,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     95.67,
+     552.07,
+     191.78,
+     566.41
+    ]
+   ],
+   "text": "Related Work",
+   "old_quote": null,
+   "new_quote": "Related Work",
+   "file": "main.tex",
+   "line": 60,
+   "changes": [],
+   "history": [],
+   "color": "blue",
+   "context": {
+    "text": "2 Related Work",
+    "sel": [
+     [
+      2,
+      14
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      95.67,
+      552.07,
+      191.78,
+      566.41
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-06",
+   "kind": "highlight",
+   "note": "125 ms 出自哪里？加引用。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "unchanged",
+   "confidence": 1.0,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     468.96,
+     589.27,
+     540.0,
+     599.23
+    ],
+    [
+     72.0,
+     601.22,
+     172.82,
+     611.18
+    ]
+   ],
+   "text": "boots a minimal microVM in about 125",
+   "old_quote": "boots a minimal microVM in about 125",
+   "new_quote": "boots a minimal\nmicroVM in about 125",
+   "file": "main.tex",
+   "line": 66,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "On the first front, SOCK [8] caches imported packages in a zygote process, Firecracker [1] boots a minimal microVM in about 125 ms, and Catalyzer [3] restores an initialised instance from a checkpoint.",
+      "sel": [
+       [
+        91,
+        127
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        468.96,
+        589.27,
+        540.0,
+        599.23
+       ],
+       [
+        72.0,
+        601.22,
+        172.82,
+        611.18
+       ]
+      ]
+     }
+    }
+   ],
+   "color": "yellow",
+   "context": {
+    "text": "On the first front, SOCK [8] caches imported packages in a zygote process, Firecracker [1] boots a minimal microVM in about 125 ms, and Catalyzer [3] restores an initialised instance from a checkpoint.",
+    "sel": [
+     [
+      91,
+      127
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      468.96,
+      589.27,
+      540.0,
+      599.23
+     ],
+     [
+      72.0,
+      601.22,
+      172.82,
+      611.18
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-02",
+   "kind": "highlight",
+   "note": "这句不准确：Hybrid 也决定预热窗口。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "reopened",
+   "verdict_note": "还是没说清楚和 Hybrid 的区别。",
+   "anchor_state": "changed",
+   "confidence": 0.91,
+   "method": "diff",
+   "page": 0,
+   "rects": [
+    [
+     408.71,
+     661.0,
+     539.95,
+     670.96
+    ],
+    [
+     72.0,
+     672.95,
+     485.64,
+     682.91
+    ]
+   ],
+   "text": "Both approaches reason about the lifetime of one instance and leave the number of concurrent instances to the autoscaler.",
+   "old_quote": "Both approaches decide when to keep a\nsingle instance alive.",
+   "new_quote": "Both approaches reason about the\nlifetime of one instance and leave the number of concurrent instances to the\nautoscaler.",
+   "file": "main.tex",
+   "line": 77,
+   "changes": [
+    "c02"
+   ],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 0,
+     "context": {
+      "text": "Both approaches decide when to keep a single instance alive.",
+      "sel": [
+       [
+        0,
+        60
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 0,
+      "rects": [
+       [
+        411.22,
+        661.0,
+        539.93,
+        670.96
+       ],
+       [
+        72.0,
+        672.95,
+        206.38,
+        682.91
+       ]
+      ]
+     }
+    }
+   ],
+   "color": "pink",
+   "context": {
+    "text": "Both approaches reason about the lifetime of one instance and leave the number of concurrent instances to the autoscaler.",
+    "sel": [
+     [
+      0,
+      121
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      408.71,
+      661.0,
+      539.95,
+      670.96
+     ],
+     [
+      72.0,
+      672.95,
+      485.64,
+      682.91
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-04",
+   "kind": "strikeout",
+   "note": "",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 1.0,
+   "method": "selection",
+   "page": 0,
+   "rects": [
+    [
+     164.15,
+     696.86,
+     215.09,
+     706.82
+    ]
+   ],
+   "text": "deliberately",
+   "old_quote": null,
+   "new_quote": "deliberately",
+   "file": "main.tex",
+   "line": 82,
+   "changes": [],
+   "history": [],
+   "color": "pink",
+   "context": {
+    "text": "Our forecaster is deliberately lightweight.",
+    "sel": [
+     [
+      18,
+      30
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 0,
+    "rects": [
+     [
+      164.15,
+      696.86,
+      215.09,
+      706.82
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-07",
+   "kind": "note",
+   "note": "只用一天调参够吗？",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "wontfix",
+   "verdict_note": "这次先不改。",
+   "anchor_state": "unchanged",
+   "confidence": 1.0,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     202.26,
+     275.76,
+     432.84,
+     285.73
+    ]
+   ],
+   "text": "which performed best on a held-out day of the trace",
+   "old_quote": "which performed best on a held-out day of the trace",
+   "new_quote": "which performed best on a held-out day of the trace",
+   "file": "sections/method.tex",
+   "line": 20,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "A large α reacts to bursts but also to noise; we use α = 0.3, which performed best on a held-out day of the trace.",
+      "sel": [
+       [
+        62,
+        114
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        202.26,
+        274.45,
+        430.07,
+        284.41
+       ]
+      ]
+     }
+    }
+   ],
+   "color": "purple",
+   "context": {
+    "text": "A large α reacts to bursts but also to noise; we use α = 0.3, which performed best on a held-out day of the trace.",
+    "sel": [
+     [
+      62,
+      114
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      202.26,
+      275.76,
+      432.84,
+      285.73
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-05",
+   "kind": "highlight",
+   "note": "式 (2) 里 c_m 的单位和 τ 对不上。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 1.0,
+   "method": "diff",
+   "page": 1,
+   "rects": [
+    [
+     72.0,
+     337.52,
+     223.15,
+     347.48
+    ]
+   ],
+   "text": "The expected cost of a pool of size",
+   "old_quote": "The expected cost of a pool of size",
+   "new_quote": "The expected cost of a pool of size",
+   "file": "sections/method.tex",
+   "line": 27,
+   "changes": [
+    "c07"
+   ],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "The expected cost of a pool of size k is",
+      "sel": [
+       [
+        0,
+        35
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        72.0,
+        336.11,
+        223.15,
+        346.07
+       ]
+      ]
+     }
+    }
+   ],
+   "color": "blue",
+   "context": {
+    "text": "The expected cost of a pool of size k is",
+    "sel": [
+     [
+      0,
+      35
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      72.0,
+      337.52,
+      223.15,
+      347.48
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-06",
+   "kind": "underline",
+   "note": "Say once, at the start of §3, that every cost is in GB-seconds.",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 1.0,
+   "method": "selection",
+   "page": 1,
+   "rects": [
+    [
+     167.6,
+     419.2,
+     380.07,
+     429.17
+    ]
+   ],
+   "text": "We express both costs in GB-seconds of memory.",
+   "old_quote": null,
+   "new_quote": "We express both costs in GB-seconds of memory.",
+   "file": "sections/method.tex",
+   "line": 36,
+   "changes": [],
+   "history": [],
+   "color": "green",
+   "context": {
+    "text": "We express both costs in GB-seconds of memory.",
+    "sel": [
+     [
+      0,
+      46
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      167.6,
+      419.2,
+      380.07,
+      429.17
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-09",
+   "kind": "strikeout",
+   "note": "only 的位置不对。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.68,
+   "method": "fuzzy",
+   "page": 1,
+   "rects": [
+    [
+     253.75,
+     504.87,
+     422.3,
+     514.83
+    ]
+   ],
+   "text": "Pre-warming uses spare capacity only",
+   "old_quote": "Pre-warming only uses spare capacity",
+   "new_quote": "Pre-warming uses spare capacity only",
+   "file": "sections/method.tex",
+   "line": 49,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "Pre-warming only uses spare capacity; when a host runs short of memory, pre-warmed instances are evicted before instances that serve requests.",
+      "sel": [
+       [
+        12,
+        36
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        253.75,
+        504.87,
+        422.3,
+        514.83
+       ]
+      ]
+     }
+    }
+   ],
+   "color": "orange",
+   "context": {
+    "text": "Pre-warming uses spare capacity only; when a host runs short of memory, pre-warmed instances are evicted before instances that serve requests.",
+    "sel": [
+     [
+      0,
+      37
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 1,
+    "rects": [
+     [
+      253.75,
+      504.87,
+      422.3,
+      514.83
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-10",
+   "kind": "box",
+   "note": "表格加上标准差，三次运行的平均值不够。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "changed",
+   "confidence": 0.97,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     147.59,
+     92.94,
+     464.44,
+     161.72
+    ]
+   ],
+   "text": "Policy Cold starts (%) P99 latency (ms) Idle memory (TB) KA-10 18.4 1240 2.31 KA-60 6.8 410 7.02 Hybrid 9.7 671 2.05 WarmCast 6.1 388 1.80",
+   "old_quote": "\\begin{tabular}{lrrr}…",
+   "new_quote": "\\begin{tabular}{lrrr}…",
+   "file": "main.tex",
+   "line": 112,
+   "changes": [
+    "c03"
+   ],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "Policy Cold starts (%) P99 latency (ms) Idle memory (TB) KA-10 18.4 1240 2.31 KA-60 6.8 410 7.02 Hybrid 9.7 655 2.05 WarmCast 6.1 388 1.80",
+      "sel": [],
+      "cut": null,
+      "display": "image",
+      "page": 2,
+      "rects": [
+       [
+        147.59,
+        92.94,
+        464.44,
+        161.72
+       ]
+      ]
+     }
+    }
+   ],
+   "color": "purple",
+   "context": {
+    "text": "Policy Cold starts (%) P99 latency (ms) Idle memory (TB) KA-10 18.4 1240 2.31 KA-60 6.8 410 7.02 Hybrid 9.7 671 2.05 WarmCast 6.1 388 1.80",
+    "sel": [],
+    "cut": null,
+    "display": "image",
+    "page": 2,
+    "rects": [
+     [
+      147.59,
+      92.94,
+      464.44,
+      161.72
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-01",
+   "kind": "highlight",
+   "note": "这个数为什么变了？重跑了还是笔误？",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 1.0,
+   "method": "selection",
+   "page": 2,
+   "rects": [
+    [
+     351.4,
+     136.8,
+     366.34,
+     146.76
+    ]
+   ],
+   "text": "671",
+   "old_quote": null,
+   "new_quote": "671",
+   "file": "main.tex",
+   "line": 118,
+   "changes": [],
+   "history": [],
+   "color": "yellow",
+   "context": {
+    "text": "KA-10 18.4 1240 2.31 KA-60 6.8 410 7.02 Hybrid 9.7 671 2.05 WarmCast 6.1 388 1.80",
+    "sel": [
+     [
+      51,
+      54
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 2,
+    "rects": [
+     [
+      351.4,
+      136.8,
+      366.34,
+      146.76
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-05",
+   "kind": "box",
+   "note": "图太小，坐标轴的字看不清。",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 1.0,
+   "method": "selection",
+   "page": 2,
+   "rects": [
+    [
+     118.8,
+     174.58,
+     493.22,
+     361.92
+    ]
+   ],
+   "text": "",
+   "old_quote": null,
+   "new_quote": "\\includegraphics[width=0.75\\linewidth]{figures/coldstart}",
+   "file": "main.tex",
+   "line": 126,
+   "changes": [],
+   "history": [],
+   "color": "blue",
+   "context": {
+    "text": "",
+    "sel": [],
+    "cut": null,
+    "display": "image",
+    "page": 2,
+    "rects": [
+     [
+      118.8,
+      174.58,
+      493.22,
+      361.92
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-03",
+   "kind": "strikeout",
+   "note": "多余，删掉。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "gone",
+   "confidence": 0.87,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     522.39,
+     455.71,
+     524.39,
+     465.67
+    ]
+   ],
+   "text": "",
+   "old_quote": "The memory footprint is two floating-point numbers\nper function.",
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 150,
+   "changes": [
+    "c04"
+   ],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "Updating the estimate in Eq. (1) and searching for k∗take 3.2 µs per function on one core, so a single controller thread handles all 46 413 functions within 0.2 s per interval. The memory footprint is two floating-point numbers per function.",
+      "sel": [
+       [
+        177,
+        241
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 2,
+      "rects": [
+       [
+        522.84,
+        479.62,
+        539.98,
+        489.59
+       ],
+       [
+        72.0,
+        491.58,
+        340.7,
+        501.54
+       ]
+      ]
+     }
+    }
+   ],
+   "color": "orange",
+   "context": {
+    "text": "The controller adds little overhead. Updating the estimate in Eq. (1) and searching for k∗take 3.2 µs per function on one core, so a single controller thread handles all 46 413 functions within 0.2 s per interval. We did not observe any measurable effect of the controller on request latency in a prototype deployment.",
+    "sel": [],
+    "cut": 213,
+    "display": "text",
+    "page": 2,
+    "rects": [
+     [
+      522.39,
+      455.71,
+      524.39,
+      465.67
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-04",
+   "kind": "highlight",
+   "note": "这段放到本节最后，作为局限讨论。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": "verified",
+   "verdict_note": "",
+   "anchor_state": "moved",
+   "confidence": 1.0,
+   "method": "diff",
+   "page": 2,
+   "rects": [
+    [
+     86.94,
+     479.62,
+     217.25,
+     489.59
+    ]
+   ],
+   "text": "Our simulator is event-driven",
+   "old_quote": "Our simulator is event-driven",
+   "new_quote": "Our simulator is event-driven",
+   "file": "main.tex",
+   "line": 153,
+   "changes": [
+    "c05"
+   ],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 1,
+     "context": {
+      "text": "Our simulator is event-driven and models the memory of each host but not its CPU.",
+      "sel": [
+       [
+        0,
+        29
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 1,
+      "rects": [
+       [
+        86.94,
+        640.5,
+        217.26,
+        650.46
+       ]
+      ]
+     }
+    }
+   ],
+   "color": "green",
+   "context": {
+    "text": "Our simulator is event-driven and models the memory of each host but not its CPU.",
+    "sel": [
+     [
+      0,
+      29
+     ]
+    ],
+    "cut": null,
+    "display": "text",
+    "page": 2,
+    "rects": [
+     [
+      86.94,
+      479.62,
+      217.25,
+      489.59
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R2-07",
+   "kind": "note",
+   "note": "这一段和 §4 开头重复，合并成一段。",
+   "source": "app",
+   "created_round": 2,
+   "carried": false,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "new",
+   "confidence": 0.5,
+   "method": "line",
+   "page": 2,
+   "rects": [
+    [
+     300.0,
+     616.0,
+     300.0,
+     616.0
+    ]
+   ],
+   "text": "",
+   "old_quote": null,
+   "new_quote": "",
+   "file": "main.tex",
+   "line": 171,
+   "changes": [],
+   "history": [],
+   "color": "pink",
+   "context": {
+    "text": "On a production trace it reduces cold starts by a factor of three compared with the default keep-alive policy while holding less idle memory.",
+    "sel": [],
+    "cut": null,
+    "display": "text",
+    "page": 2,
+    "rects": [
+     [
+      300.0,
+      616.0,
+      300.0,
+      616.0
+     ]
+    ]
+   }
+  },
+  {
+   "id": "R1-08",
+   "kind": "highlight",
+   "note": "Fig. 1 的纵轴要写单位（%）。",
+   "source": "app",
+   "created_round": 1,
+   "carried": true,
+   "verdict": null,
+   "verdict_note": "",
+   "anchor_state": "orphan",
+   "confidence": 0.0,
+   "method": "none",
+   "page": null,
+   "rects": [],
+   "text": "",
+   "old_quote": "as the bars in our preliminary measurement show",
+   "new_quote": null,
+   "file": null,
+   "line": null,
+   "changes": [],
+   "history": [
+    {
+     "round": 1,
+     "anchor_state": "new",
+     "verdict": null,
+     "verdict_note": "",
+     "page": 2,
+     "context": {
+      "text": "Most cold starts come from functions invoked a few times an hour, as the bars in our preliminary measurement show.",
+      "sel": [
+       [
+        66,
+        113
+       ]
+      ],
+      "cut": null,
+      "display": "text",
+      "page": 2,
+      "rects": [
+       [
+        180.2,
+        430.1,
+        420.6,
+        440.0
+       ]
+      ]
+     }
+    }
+   ],
+   "color": "yellow",
+   "context": null
+  }
+ ],
+ "changes": [
+  {
+   "id": "c01",
+   "kind": "replace",
+   "file": "main.tex",
+   "line": 41,
+   "old_text": "simple",
+   "new_text": "static",
+   "page": 0,
+   "rects": [
+    [
+     181.7,
+     391.04,
+     205.55,
+     401.0
+    ]
+   ],
+   "attached_to": [
+    "R1-01"
+   ],
+   "unrequested": false
+  },
+  {
+   "id": "c02",
+   "kind": "replace",
+   "file": "main.tex",
+   "line": 77,
+   "old_text": "decide when to keep a single instance alive",
+   "new_text": "reason about the lifetime of one instance and leave the number of concurrent instances to the autoscaler",
+   "page": 0,
+   "rects": [
+    [
+     484.04,
+     661.0,
+     539.95,
+     670.96
+    ],
+    [
+     72.0,
+     672.95,
+     485.64,
+     682.91
+    ]
+   ],
+   "attached_to": [
+    "R1-02"
+   ],
+   "unrequested": false
+  },
+  {
+   "id": "c03",
+   "kind": "replace",
+   "file": "main.tex",
+   "line": 118,
+   "old_text": "655",
+   "new_text": "671",
+   "page": 2,
+   "rects": [
+    [
+     351.4,
+     136.8,
+     366.34,
+     146.76
+    ]
+   ],
+   "attached_to": [
+    "R1-10"
+   ],
+   "unrequested": false
+  },
+  {
+   "id": "c04",
+   "kind": "delete",
+   "file": "main.tex",
+   "line": 150,
+   "old_text": "The memory footprint is two floating-point numbers per function.",
+   "new_text": "",
+   "page": 2,
+   "rects": [
+    [
+     522.39,
+     455.71,
+     524.39,
+     465.67
+    ]
+   ],
+   "attached_to": [
+    "R1-03"
+   ],
+   "unrequested": false
+  },
+  {
+   "id": "c05",
+   "kind": "move",
+   "file": "main.tex",
+   "line": 153,
+   "old_text": "Our simulator is event-driven and models the memory of each host but not its CPU. It assumes that a warm instance serves a request immediately and that a cold start blocks the request for the full start duration. These assumptions favour no policy in particular, since all policies share them.",
+   "new_text": "Our simulator is event-driven and models the memory of each host but not its CPU. It assumes that a warm instance serves a request immediately and that a cold start blocks the request for the full start duration. These assumptions favour no policy in particular, since all policies share them.",
+   "page": 2,
+   "rects": [
+    [
+     86.94,
+     479.62,
+     539.96,
+     489.59
+    ],
+    [
+     72.0,
+     491.58,
+     539.99,
+     501.54
+    ],
+    [
+     72.0,
+     503.53,
+     460.12,
+     513.5
+    ]
+   ],
+   "attached_to": [
+    "R1-04"
+   ],
+   "unrequested": false
+  },
+  {
+   "id": "c06",
+   "kind": "insert",
+   "file": "main.tex",
+   "line": 162,
+   "old_text": "",
+   "new_text": "Because the controller needs no changes to the functions themselves, it can be deployed on existing platforms without involving developers.",
+   "page": 2,
+   "rects": [
+    [
+     193.15,
+     570.25,
+     539.96,
+     580.21
+    ],
+    [
+     72.0,
+     582.2,
+     333.62,
+     592.17
+    ]
+   ],
+   "attached_to": [],
+   "unrequested": true
+  },
+  {
+   "id": "c07",
+   "kind": "insert",
+   "file": "sections/method.tex",
+   "line": 29,
+   "old_text": "",
+   "new_text": "\\tau",
+   "page": 1,
+   "rects": [
+    [
+     282.18,
+     359.43,
+     286.53,
+     369.39
+    ]
+   ],
+   "attached_to": [
+    "R1-05"
+   ],
+   "unrequested": false
+  }
+ ]
+}
