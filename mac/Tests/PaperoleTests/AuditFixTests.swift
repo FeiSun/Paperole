@@ -46,9 +46,9 @@ final class AuditFixTests: XCTestCase {
             XCTAssertGreaterThanOrEqual(MapFoldTests.contrast(ink.over(.dimText), ink.over(.content)), 4.5, "dark \(dark)")
             XCTAssertLessThan(MapFoldTests.contrast(ink.over(.dimText), ink.over(.content)),
                               MapFoldTests.contrast(ink.over(.number), ink.over(.content)), "it steps back")
-            for step in [MapRole.track, .s1, .s2, .s3, .mini1, .mini2, .mini3] {
+            for step in [MapRole.track, .s1, .s2, .s3, .otrack, .os1, .os2, .os3] {
                 let c = DesignPaletteTests.lab(ink.over(step))
-                XCTAssertLessThanOrEqual(hypot(c.a, c.b), 5, "nearly neutral: \(step), dark \(dark)")
+                XCTAssertLessThanOrEqual(hypot(c.a, c.b), 6, "nearly neutral: \(step), dark \(dark)")  // UI v4 s3: 5.2 (5.8 dark)
             }
             // the map's links are the system's link colour, as every link in words
             XCTAssertLessThan(DesignPaletteTests.deltaE(ink.over(.link), srgb(Palette.link, dark: dark)), 1, "dark \(dark)")

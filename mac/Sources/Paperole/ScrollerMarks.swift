@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Markers beside the scroller (design/pdf-reader/PLAN.md P1.6): ticks in a 6 pt strip at the PDF's right edge, left
 /// of the scroller (a mouse's, or where an overlay scroller shows), below the find's button, showing what the page
-/// shows: in an open round the comments to check in amber; while change marks are shown, the student's edits in
+/// shows: in an open round the comments to check in vermilion; while change marks are shown, the student's edits in
 /// green, those no comment asked for in slate teal; while Find has a query, only its matches, in the find's grey.
 /// Ticks of a kind closer than 4 pt merge. A click goes there (a step of Back), hover names it.
 /// Where a tick goes is the place's share of the paper's height, so the strip is laid again when the marks or the

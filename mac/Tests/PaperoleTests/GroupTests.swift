@@ -381,7 +381,7 @@ final class PanelGroupTests: XCTestCase {
         XCTAssertNotEqual(AppModel(options: o).draftStore.directory.standardizedFileURL, DraftStore.standard.standardizedFileURL)
     }
 
-    /// Visual review: in a closed round nothing is the advisor's move, so a comment left open is not amber.
+    /// Visual review: in a closed round nothing is the advisor's move, so a comment left open is not vermilion.
     func testAClosedRoundIsNotAmber() throws {
         let m = try makeModel()
         XCTAssertEqual(m.panel.cards.first { $0.id == "R1-09" }?.stateTone, .attention)

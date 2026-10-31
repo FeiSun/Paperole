@@ -52,7 +52,7 @@ final class CommentListFixTests: XCTestCase {
     }
 
     /// UI-02: once every edit no comment asked for is handled, the group is not the advisor's move: its header says
-    /// "No comment asked for" with the grey sign (as in a closed round), under "All checked.", not the amber To check.
+    /// "No comment asked for" with the grey sign (as in a closed round), under "All checked.", not the vermilion To check.
     func testTheChangesHeaderIsNotAmberOnceEveryEditIsHandled() throws {
         _ = NSApplication.shared
         let panel = ChangePanel()

@@ -534,7 +534,7 @@ extension AppModel {
     /// The student page shown: its key.
     private var shownStudent: String? { if case .student(let k)? = hub { return k } else { return nil } }
 
-    /// A row of the shown student's Topics by round, as its click (nil: none listed).
+    /// A row of the shown student's Topics, as its click (nil: none listed).
     func pickStudentTag(_ tag: String?) {
         guard let k = shownStudent else { return }
         hubModel.studentTag = tag.map { StudentTagChoice(student: k, tag: $0) }
@@ -556,7 +556,11 @@ extension AppModel {
 
     func studentTagResult() -> [String: Any] {
         guard let l = studentTagList else { return ["student": shownStudent ?? NSNull(), "tag": NSNull()] }
+        // the list shows in a popover on the Topics tile's row (UI v4): there is one when the tile has that row
+        let g = studentGroups.first { $0.key == shownStudent }
+        let popover = g.map { studentPage($0).tiles.topics?.rows.contains { $0.id == l.tag } == true } ?? false
         return ["student": shownStudent ?? NSNull(), "tag": l.tag, "title": l.title, "meta": l.meta,
-                "papers": l.papers.map { p in [p.title, p.lines.map { [$0.id, $0.status, $0.round] as [Any] }] as [Any] }]
+                "papers": l.papers.map { p in [p.title, p.lines.map { [$0.id, $0.status, $0.round] as [Any] }] as [Any] },
+                "popover": popover]
     }
 }

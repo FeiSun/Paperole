@@ -275,10 +275,12 @@ def summary(paper, lg):
     """The paper's next step, for the papers list: its latest round (closed_at: when it was finished; resumable: it
     is finished, so Resume can open it again) and, when that round is open with a PDF, what is left there: carried
     comments without a verdict (to_judge), and unrequested changes neither checked, asked about by a comment of the
-    round, nor read (to_check; analysis.json's block hashes against the ledger's read map)."""
+    round, nor read (to_check; analysis.json's block hashes against the ledger's read map); and what is done there
+    (the status ring's fill): carried comments with a verdict (answered) and unrequested changes no longer to check
+    (handled). All four are 0 for a closed or failed round."""
     rnd = ledger.latest_round(lg)
-    out = {"round": None, "closed": False, "status": None, "to_judge": 0, "to_check": 0, "closed_at": None,
-           "resumable": False}
+    out = {"round": None, "closed": False, "status": None, "to_judge": 0, "to_check": 0, "answered": 0, "handled": 0,
+           "closed_at": None, "resumable": False}
     if rnd is None:
         return out
     n = rnd["n"]
@@ -286,12 +288,14 @@ def summary(paper, lg):
                resumable=bool(rnd["closed"]))
     if rnd["closed"] or rnd["build"]["status"] == "failed":
         return out
-    out["to_judge"] = sum(1 for c in lg["comments"] if c["created_round"] < n and str(n) in c["rounds"]
-                          and c["rounds"][str(n)]["verdict"] is None)
+    carried = [c for c in lg["comments"] if c["created_round"] < n and str(n) in c["rounds"]]
+    out["to_judge"] = sum(1 for c in carried if c["rounds"][str(n)]["verdict"] is None)
+    out["answered"] = len(carried) - out["to_judge"]
     changes = _changes(paper, n)
     checked, asked = set(rnd.get("checked", [])), comments.commenters(lg, n, changes)
     read = prose.read_map(paper, lg) if "read" in lg else {}
     out["to_check"] = sum(1 for ch in changes if unchecked(ch, checked, asked, read, n))
+    out["handled"] = sum(1 for ch in changes if not ch["attached_to"]) - out["to_check"]
     return out
 
 

@@ -27,6 +27,8 @@ final class OverviewModel: ObservableObject {
     var foldedParts: [FoldKind] = []
     /// The paper map as a table (`MapTableView`), the viewer's choice (kept in the app's defaults; never by a test run).
     @Published var asTable = false
+    /// The Key's popover under the map is open (UI v4; the debug hook `ovkeypop`).
+    @Published var keyOpen = false
     /// What the pointer is over and the help tag: observed only by the hover layer, the tag and the panel's lines.
     let hover = OverviewHover()
     /// The view that has the map's keys (`OverviewKeyTarget`), and the rounds the map folds now (a key that moves into
@@ -64,6 +66,7 @@ final class OverviewModel: ObservableObject {
         unfold = false
         shownParts = []
         foldedParts = []
+        keyOpen = false
         version = -1
         savedScroll = 0
         pendingScroll = 0
@@ -170,7 +173,7 @@ final class OverviewModel: ObservableObject {
 
     // MARK: Scrolling
 
-    /// Round `n`'s row of the map in view, with its chips above and its Sage line below, scrolled as little as needed:
+    /// Round `n`'s row of the map in view, with its label above and its Sage line below, scrolled as little as needed:
     /// a key moved what the overview follows, or following something unfolded older rounds (review 2026-10-19: the
     /// followed row could be below the window). After the map is drawn again, which may have unfolded.
     func revealRow(_ n: Int) {
@@ -280,13 +283,13 @@ enum OverviewText {
             // without the engine's overview: the latest round from the state
             guard let l = rounds.last else { return "" }
             let when = day(l.created).map { " on " + $0 } ?? ""
-            if l.closed { return "Round \(l.n) went back to \(name)\(day(l.closedAt).map { " on " + $0 } ?? ""); nothing to do until the next round comes in." }
+            if l.closed { return "Round \(l.n) was sent back to \(name)\(day(l.closedAt).map { " on " + $0 } ?? ""); nothing to do until the next round comes in." }
             if l.status == "failed" { return "Round \(l.n) came in\(when) but did not build" + (errors.map { ": " + $0 } ?? "") + "." }
             return "Round \(l.n) came in\(when)."
         }
         let when = day(r.created).map { " on " + $0 } ?? ""
         if r.isClosed {
-            return "Round \(r.n) went back to \(name)\(day(r.closedAt).map { " on " + $0 } ?? ""); nothing to do until the next round comes in."
+            return "Round \(r.n) was sent back to \(name)\(day(r.closedAt).map { " on " + $0 } ?? ""); nothing to do until the next round comes in."
         }
         if r.failed { return "Round \(r.n) came in\(when) but did not build" + (errors.map { ": " + $0 } ?? "") + "." }
         if r.n == 1 { return "Round 1 came in\(when): the first draft." }
@@ -339,8 +342,8 @@ enum OverviewText {
         return String(t.dropFirst(n.count)).trimmingCharacters(in: .whitespaces)
     }
 
-    /// The facts at the right of the header (OVERVIEW-v2 mockup): "**28 comments** · 4 rounds since Sep 8" over
-    /// "19 resolved · 2 kept · 7 open · 12 pp · 6,520 words"; what is not known is left out.
+    /// The header's facts (OVERVIEW-v2 mockup; UI v4: its help tag, `headerHelp`): "28 comments · 4 rounds since Sep 8"
+    /// and "19 resolved · 2 kept · 7 open · 12 pp · 6,520 words"; what is not known is left out.
     struct Facts: Equatable {
         var comments: String?
         var rounds: String?
@@ -362,6 +365,13 @@ enum OverviewText {
         if let p = built?.build?.pages ?? pages, p > 0 { f.details.append("\(p) pp") }
         if let w = built?.words?.body { f.details.append(grouped(w) + " words") }
         return f
+    }
+
+    /// The header's help tag (UI v4): the first sentence over the facts in one line, "14 comments · 2 rounds since Oct 14
+    /// · 0 resolved · 0 kept · 14 open · 8 pp · 6,520 words", which left the canvas.
+    static func headerHelp(_ sentence: String, _ f: Facts) -> String {
+        let facts = ([f.comments, f.rounds].compactMap { $0 } + f.details).joined(separator: " · ")
+        return [sentence, facts].filter { !$0.isEmpty }.joined(separator: "\n")
     }
 
     static func grouped(_ n: Int) -> String {

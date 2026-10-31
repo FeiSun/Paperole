@@ -14,7 +14,7 @@ enum OpenAtLaunch: String, CaseIterable, Identifiable {
 /// where Paperole opens, and the app icon's style (AppIcons.swift; UX.md §26, §34: the Appearance tab, which chose
 /// among three icons, went with them, 2026-10-27). Overview: folding a
 /// long appendix (and a long References list), the paper map as a map or a table. Reading: the reading marks, off by
-/// default (the advisor's decision, 2026-10-18). Tags: the writing tags (design/tags/TAGS.md §4). Data & Storage: where
+/// default (the advisor's decision, 2026-10-18), and the Checks, off by default (2026-10-30). Tags: the writing tags (design/tags/TAGS.md §4). Data & Storage: where
 /// things are, imports, exports, backup and restore (DataSettings.swift; UX.md §28). Every setting is the model's (the
 /// icon's style is AppIconModel's, the review folders' default DataModel's), kept in the app's defaults; a test run
 /// never saves one.
@@ -46,6 +46,9 @@ struct SettingsView: View {
     static let title = "Mark changed paragraphs to read"
     static let detail = "A bar beside each paragraph changed since the last round, until you mark it read. "
         + "The Changes tab lists every edit either way."
+    static let checksTitle = "Checks"
+    static let checksDetail = "Find slips every draft should avoid: undefined references, bibliography entries, spellings, "
+        + "overfull lines, fonts and anonymity, listed in a Checks tab beside the comments. Nothing reaches the student unless you comment."
     static let width: CGFloat = 560
 
     var body: some View {
@@ -210,7 +213,7 @@ struct FoldSample: View {
             ctx.fill(Path(roundedRect: r, cornerRadius: 3), with: .color(ink.color(.mini(level < 0 ? 1 : level))))
             if level < 0 {
                 MapCanvas.chevron(at: CGPoint(x: r.minX + 7, y: r.midY), down: false, in: &ctx, color: ink.color(.secondary))
-                ctx.draw(Text("A–E").font(.system(size: 9.5, weight: .medium)).foregroundColor(ink.color(.secondary)),
+                ctx.draw(Text("A–E").font(.system(size: 11, weight: .medium)).foregroundColor(ink.color(.secondary)),
                          at: CGPoint(x: r.minX + 14, y: r.midY), anchor: .leading)
             }
             x += w
@@ -218,7 +221,7 @@ struct FoldSample: View {
     }
 }
 
-/// Settings › Reading: the reading marks (UX.md §18 "Optional").
+/// Settings › Reading: the reading marks (UX.md §18 "Optional") and the Checks (§39).
 struct ReadingSettings: View {
     @ObservedObject var model: AppModel
 
@@ -229,11 +232,15 @@ struct ReadingSettings: View {
                     Text(SettingsView.title)
                     Text(SettingsView.detail)
                 }
+                Toggle(isOn: $model.checksOn) {
+                    Text(SettingsView.checksTitle)
+                    Text(SettingsView.checksDetail)
+                }
             }
         }
         .formStyle(.grouped)
         .scrollDisabled(true)
-        .frame(width: SettingsView.width, height: 110)
+        .frame(width: SettingsView.width, height: 180)
     }
 }
 

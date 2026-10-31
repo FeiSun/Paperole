@@ -31,10 +31,11 @@ import SwiftUI
 ///   card <id> / note <id>       click the row / the note: {selected, editing, reanchor}
 ///   cardmenu <id> <title>       pick a … (or style) menu item: {selected, editing, reanchor}
 ///   button <resolve|followup|keep|discard|gotit> [<s>]  a click on the selected card's button (or the field's Discard,
-///                               or the first-run tip's Got it), the next item <s> seconds later (0.6 by default):
-///                               {selected, editing, reanchor, ignored, tip, toast} (`ignored`: too soon after an answer
-///                               moved on to the card, ClickGuard, or while its own answer is with the engine; `tip`: the
-///                               tip still shown; `toast`: the panel's toast)
+///                               or the tip's Got it: in the overview the map's Follow anything, else the card's),
+///                               the next item <s> seconds later (0.6 by default): {selected, editing, reanchor,
+///                               ignored, tip, followTip, toast} (`ignored`: too soon after an answer moved on to the
+///                               card, ClickGuard, or while its own answer is with the engine; `tip`: the answer tip
+///                               still shown, `followTip` the map's; `toast`: the panel's toast)
 ///   rowclick <id>               a click on that row of the shown tab's list, scrolled into view first, as the mouse
 ///                               sends it: {selected, editing, reanchor, clicked, expanded}
 ///   toolbarclick                a click on the floating toolbar's Comment, as the mouse sends it: {clicked, editor,
@@ -152,9 +153,26 @@ import SwiftUI
 ///   setting reading on|off      Settings' reading marks, as its toggle (a test run never saves it): the reading result
 ///                               plus {menus, dots, subtitle, ready} (`dots`: the Contents rows with an olive dot)
 ///   setting fold on|off         Settings' folding of a long appendix, as its toggle (never saved): the nav result
+///   setting checks on|off       Settings' Checks, as its toggle (never saved; on asks the engine at once): the checks
+///                               result 0.5 s later
+///   checks                      the panel's Checks tab (UX.md §39): {on, state (hidden, asking or ready), tab (its
+///                               title, null when not shown), shown (the tab shown), sentence, round, count, rows:
+///                               [{group, code, text, page, places, key, ok}], showOK (Marked OK unfolded), items: the
+///                               page's rows in order ("group: …", "message: …", "ok: <n>" (the Marked OK header),
+///                               "check <i>"), current, cursor: [check, place]}
+///   checkok <i> [off]           Mark as OK the i-th check (off: Not OK), as its button: the checks result 0.5 s later
+///   checkokfold                 the marked OK group's Show / Hide: the checks result
+///   checkclick <i>              a click on the i-th check's row (from 0, in the list's order): the checks result plus
+///                               {nav} 0.5 s later
+///   checkmenu <i> [<title>]     the i-th check's right-click menu: {menu: [[title, enabled]]}; with a title, that item
+///                               picked first (Comment…: the editor 0.6 s later), plus {picked, editor, note, selection,
+///                               pinned, clipboard}
 ///   settings [general|overview|reading|tags|data]  the Settings window's tabs (toolbar tabs, as the Settings
 ///                               scene draws them) in a titled window of its own behind every other, on that tab
 ///                               (tools/shot.sh --pid … --all): {settings, on, size}
+///   help [<topic>]              the Help window (UI v4) behind every other window, at that topic (its title) or the
+///                               page in front's: {open, topic, section, sections}
+///   tips [reset|seen]           Help › Show Tips Again, or every tip seen for this run: {seen}
 ///   data [root|export|exportto|import|choose|settings|importnow|close|history|putback|remove|undo|comments|tags|clear|
 ///                               cancel …]  Settings › Data & Storage's work, Export…, Import…, Put Back an Earlier
 ///                               Ledger… and Remove from List without a panel, the result once it has finished
@@ -226,7 +244,8 @@ import SwiftUI
 ///                               opened: {under: the button's frame in the window, menu}} (the menu is not opened)
 ///   panelwidth <w>              the review's divider moved so the panel is w pt wide, as a drag (screenshots; no result)
 ///   studenttag <tag>|untagged|off / studenttagopen <path>|<id>  the shown student's Topics row clicked: {student, tag,
-///                               title, meta, papers: [[title, [[id, status, round]]]]}; a line's click: the nav result
+///                               title, meta, papers: [[title, [[id, status, round]]]], popover: shown on the tile's row};
+///                               a line's click (in the popover): the nav result
 ///   wait <s>, quit
 @MainActor
 final class DebugScript {
@@ -546,6 +565,14 @@ final class DebugScript {
                 if let page { m.openHub(page) }
             }
             waitForHub(0) { [weak self] in next(0.6) { self?.hubResult() } }
+        case "allview":  // `allview board|students`: All Students' Board | Students, as the toolbar's control (never saved by a test run)
+            if let m = model, let v = AllStudentsView(rawValue: rest) { m.allStudentsView = v }
+            next(0.6) { [weak self] in self?.hubResult() }
+        case "boardearlier":  // the board's "Earlier · N" row clicked: the older finished papers shown in place, or hidden again
+            model?.hubModel.showEarlier.toggle()
+            next(0.6) { [weak self] in self?.hubResult() }
+        case "studentpage":  // the student page's model (UI v4 step 5): the header's figures and ★, the cards, the grid
+            next(0.05) { [weak self] in self?.studentPageResult() }
         case "hubwait":
             waitForHub(0) { [weak self] in next(0.3) { self?.hubResult() } }
         case "backfillwait":  // waits (at most 120 s) until the second engine process has filled in what it was asked
@@ -608,6 +635,11 @@ final class DebugScript {
                 next(0.5) { [weak self] in self?.navResult() }
                 break
             }
+            if rest.hasPrefix("checks") {
+                model?.checksOn = !rest.hasSuffix("off")
+                next(0.5) { [weak self] in self?.checksResult() }
+                break
+            }
             if rest.hasPrefix("reading") { model?.readingMarksOn = !rest.hasSuffix("off") }
             next(0.5) { [weak self] in
                 var r = self?.readingResult() ?? [:]
@@ -615,6 +647,39 @@ final class DebugScript {
                 r["dots"] = self?.model?.reading.contents.rows.filter(\.changed).count ?? 0
                 r["subtitle"] = self?.model?.windowSubtitle ?? ""
                 r["ready"] = self?.model?.readyToFinish ?? false
+                return r
+            }
+        case "checks":  // the panel's Checks tab (UX.md §39)
+            next(0) { [weak self] in self?.checksResult() }
+        case "checkok":  // `checkok <i> [off]`: Mark as OK (or Not OK), as the row's button
+            let words = rest.split(separator: " ").map(String.init)
+            model?.markCheck(Int(words.first ?? "") ?? -1, words.count < 2 || words[1] != "off")
+            next(0.5) { [weak self] in self?.checksResult() }
+        case "checkokfold":
+            model?.checks.showOK.toggle()
+            next(0.2) { [weak self] in self?.checksResult() }
+        case "checkclick":
+            model?.checkClicked(Int(rest) ?? -1)
+            next(0.5) { [weak self] in
+                var r = self?.checksResult() ?? [:]
+                r["nav"] = self?.navResult() ?? NSNull()
+                return r
+            }
+        case "checkmenu":
+            let words = rest.split(separator: " ", maxSplits: 1).map(String.init)
+            let i = Int(words.first ?? "") ?? -1
+            let before = model?.checkMenu(i) ?? []
+            let picked = words.count > 1 ? before.first { $0.title == words[1] } : nil
+            if let m = model, let p = picked { m.pickCheckMenu(i, p.action) }
+            next(picked == nil ? 0 : 0.6) { [weak self] in
+                var r: [String: Any] = ["menu": before.map { [$0.title, $0.enabled] as [Any] }, "picked": nul(picked?.title)]
+                if picked != nil, let pdf = self?.controller {
+                    r["editor"] = pdf.popover?.isShown ?? false
+                    r["note"] = nul(pdf.draft?.note)
+                    r["selection"] = nul(pdf.view?.currentSelection?.string)
+                    r["pinned"] = pdf.pinned.map(\.title)
+                    r["clipboard"] = nul(AppModel.clipboard.string(forType: .string))
+                }
                 return r
             }
         case "settings":  // the Settings view in a window of its own, behind every other window (for tools/shot.sh --all)
@@ -625,6 +690,18 @@ final class DebugScript {
                 ["settings": self?.settingsWindow?.isVisible ?? false, "on": self?.model?.readingMarksOn ?? false,
                  "size": self?.settingsWindow.map { [Double($0.frame.width), Double($0.frame.height)] } ?? []]
             }
+        case "help":  // `help [<topic>]`: the Help window behind every other window, at that topic or the page in front's
+            if let m = model {
+                m.help.show(rest.isEmpty ? m.helpTopic : HelpTopic(argument: rest) ?? m.helpTopic)
+                if helpWindow == nil { helpWindow = Self.showHelp(m) }
+            }
+            next(0.6) { [weak self] in self?.helpResult() }
+        case "tips":  // `tips [reset|seen]`: Help › Show Tips Again, or every tip as seen (for this run): {seen}
+            if let t = model?.actions.tips {
+                if rest == "reset" { t.showAgain() }
+                if rest == "seen" { Tips.ID.allCases.forEach { t.dismiss($0) } }
+            }
+            next(0.3) { [weak self] in ["seen": self?.model?.actions.tips.seen.map(\.rawValue).sorted() ?? []] }
         case "data":  // Settings › Data & Storage without a panel (UX.md §28; DataModel.debug)
             if let m = model { m.data.debug(rest) { r in next(0) { r } } } else { next(0) { nil } }
         case "migration":  // UX.md §34: a test run never migrates, and takes the new names without looking at the disk
@@ -750,7 +827,7 @@ final class DebugScript {
             next(0.4) { [weak self] in self?.model?.listResult() }
         case "list":  // the line over the list and what the list shows
             next(0.05) { [weak self] in self?.model?.listResult() }
-        case "studenttag":  // `studenttag <tag>|untagged|off`: a row of the shown student's Topics by round clicked
+        case "studenttag":  // `studenttag <tag>|untagged|off`: a row of the shown student's Topics clicked (its popover)
             model?.pickStudentTag(rest == "off" || rest.isEmpty ? nil : rest == "untagged" ? TagCatalog.untagged : rest)
             next(0.4) { [weak self] in self?.model?.studentTagResult() }
         case "studenttagopen":  // `studenttagopen <path>|<id>`: a click on that comment's line under it (Review there)
@@ -796,14 +873,16 @@ final class DebugScript {
                 case "followup": if model?.draftText(id).isEmpty == false { a.sendDraft(id) } else { a.press("reopened", id) }
                 case "keep": a.press("wontfix", id)
                 case "discard": a.discardDraft(id)
-                case "gotit": a.tips.dismiss()
                 default: break
                 }
             }
+            // Got it on the tip shown: the paper map's in the overview, else the card's
+            if name == "gotit", let m = model { m.actions.tips.dismiss(m.showsOverview && m.hub == nil ? .follow : .answer) }
             next(Double(delay) ?? 0.6) { [weak self] in
                 var r = self?.cardResult() as? [String: Any] ?? [:]
                 r["ignored"] = ignored
                 r["tip"] = self?.model?.actions.tips.answer ?? false
+                r["followTip"] = self?.model?.actions.tips.follow ?? false
                 r["toast"] = nul(self?.model?.panelToast.text)
                 return r
             }
@@ -893,7 +972,8 @@ final class DebugScript {
             // layout and the drawing) done
             let t0 = ProcessInfo.processInfo.systemUptime
             var ms = -1.0
-            model?.tab = PanelTab(rawValue: rest) ?? .comments
+            let t = PanelTab(rawValue: rest) ?? .comments
+            model?.tab = t == .checks && model?.checksOn != true ? .comments : t  // no Checks tab while it is off
             DispatchQueue.main.async { ms = ((ProcessInfo.processInfo.systemUptime - t0) * 10_000).rounded() / 10 }
             next(0.4) { [weak self] in
                 ["tab": self?.model?.tab.rawValue ?? "", "selected": nul(self?.selectedID),
@@ -997,20 +1077,29 @@ final class DebugScript {
                 r["timing"] = Self.mapTiming(since: t0)
                 return r
             }
-        case "ovtext":  // the overview's words and numbers as drawn: the header, each row of the map, the table
+        case "ovtext":  // the overview's words and numbers as drawn: the header, the strip, each row of the map, the Key,
+            // Topics, the table
             next(0.05) { [weak self] in self?.overviewText() }
+        case "ovkeypop":  // `ovkeypop open|close`: the Key's popover under the map (`ovkey` is the map's keys)
+            model?.overview.keyOpen = rest != "close"
+            next(0.5) { [weak self] in ["keyOpen": self?.model?.overview.keyOpen ?? false] }
         case "ovpart":  // `ovpart show|fold appendix|references`: a folded part shown, or folded again
             let (what, kind) = Self.split(rest)
             if let k = FoldKind(rawValue: kind) { if what == "fold" { model?.foldPart(k) } else { model?.showPart(k) } }
             next(0.5) { [weak self] in self?.navResult() }
-        case "ovtable":  // the paper map as a table (on) or as the map (off), as the legend's switch
-            model?.setMapAsTable(rest == "on")
+        case "reducemotion":  // `reducemotion on|off|system`: Reduce Motion for the map's selected-round box, for the process
+            MapMotion.reduceMotion = rest == "system" ? nil : rest == "on"
+            next(0.05) { [weak self] in self?.navResult() }
+        case "ovtable":  // the paper map as a table (on) or as the map (off), as the toolbar's Map | Table control
+            if let m = model { OverviewToolbarTrail.mapOrTable(m).wrappedValue = rest == "on" }
             next(0.5) { [weak self] in self?.navResult() }
         case "papers":
             next(0.05) { [weak self] in
                 (self?.model?.papers ?? []).map {
                     ["path": $0.path, "step": nul(self?.model?.summaries[$0.path]?.text),
                      "badge": nul(self?.model?.summaries[$0.path]?.badge),
+                     "answered": nul(self?.model?.summaries[$0.path]?.answered),
+                     "handled": nul(self?.model?.summaries[$0.path]?.handled), "fill": nul(self?.model?.fill(of: $0.path)),
                      "badgeShown": self?.model?.summaries[$0.path]?.badge != nil && $0.path != self?.model?.selectedPath]
                 }
             }
@@ -1307,7 +1396,8 @@ final class DebugScript {
         if case .student(let k)? = m.hub, let g = m.studentGroups.first(where: { $0.key == k }),
            let t = m.hubModel.stats(for: g.papers.map(\.path))?.tags {
             let titles = Dictionary(g.papers.map { ($0.path, $0.title) }, uniquingKeysWith: { a, _ in a })
-            r["student"] = ["lede": ProfileText.lede(t, catalog: m.tags.catalog, titles: titles), "tagged": t.tagged, "comments": t.comments,
+            r["student"] = ["facts": t.facts.compactMap { ProfileText.fact($0, catalog: m.tags.catalog, titles: titles) },
+                            "tagged": t.tagged, "comments": t.comments,
                             "focus": t.focus.map(\.tag), "trend": t.firstDrafts.trend.mapValues { [nul($0.word), nul($0.why)] },
                             "email": ProfileText.email(t.focus, catalog: m.tags.catalog, titles: titles)] as [String: Any]
         }
@@ -1355,12 +1445,18 @@ final class DebugScript {
                         "hover": nul(o.hover.target.map { String(describing: $0) }), "preview": nul(o.hover.comment),
                         "tip": nul(o.hover.tip?.lines), "tipAt": nul(o.hover.tip.map { [$0.at.x, $0.at.y] }),
                         "mapOrigin": [o.hover.mapOrigin.x, o.hover.mapOrigin.y],
+                        "box": nul(o.hover.scene.flatMap { sc in sc.box.map { b in
+                            ["round": nul(sc.rows.first { abs($0.y - 6 - b.minY) < 0.5 }?.n), "y": b.minY, "followed": sc.boxFollowed] as [String: Any]
+                        } }),
+                        "reduceMotion": nul(MapMotion.reduceMotion),
                         "panel": nul(o.selection.flatMap { s in o.data.flatMap { OverviewPanel.make(s, data: $0, strip: m.stripRound, student: "") } }
                             .map { ["title": $0.title, "meta": $0.meta, "buttons": $0.buttons.map(\.title)] })] as [String: Any],
                 "overview": ["status": status, "paper": nul(o.paper), "selection": item(o.selection), "strip": nul(m.stripRound),
                              "scroll": nul(o.liveScroll.map { ($0 * 10).rounded() / 10 }), "saved": o.savedScroll,
                              "mapTop": o.mapTop, "visible": nul(o.scrollView.map { OverviewModel.visibleHeight($0) }),
                              "rounds": o.data?.rounds.map(\.n) ?? [],
+                             // Follow anything, under the map (UI v4 step 8)
+                             "tip": ["shown": m.actions.tips.follow && o.data.map { !$0.rounds.isEmpty } == true && m.hub == nil && m.level == .overview],
                              "sentence": OverviewText.firstSentence(o.data, student: m.state?.paper.student ?? "",
                                                                     fallback: m.state?.rounds ?? [], errors: m.overviewBuildErrors)] as [String: Any],
                 "review": ["round": nul(m.round?.n), "selected": nul(selectedID), "tab": m.tab.rawValue,
@@ -1387,9 +1483,10 @@ final class DebugScript {
          "shownMs": MapTiming.drawnAt > t0 ? ((MapTiming.drawnAt - t0) * 10_000).rounded() / 10 : NSNull()]
     }
 
-    /// `ovtext`: what the overview shows, in words: the header's first sentence and facts, the map as drawn (each row's
-    /// rail, cells with the count drawn or nil when left out, chips, ticks, the "carried" and "unplaced" words, the
-    /// readout and the Sage line), the structure labels, the legend's steps, each row's VoiceOver sentence and the
+    /// `ovtext`: what the overview shows, in words: the header's first sentence and facts (its help tag), its figure
+    /// (`header`), the strip's round and pages to check, the Key's rows and Topics (UI v4), the map as drawn (each row's
+    /// label, date, ring and whether it is an older round, cells with the count drawn or nil when left out, the cells
+    /// outlined as to check, ticks, the "carried" and "unplaced" words, the readout and the Sage line), the structure labels, the legend's steps, each row's VoiceOver sentence and the
     /// table's rows and totals; and how long the overview's data took to come (`loadMs`).
     private func overviewText() -> [String: Any] {
         guard let m = model, let d = m.overview.data else { return ["data": false] }
@@ -1401,6 +1498,26 @@ final class DebugScript {
             "facts": [nul(facts.comments), nul(facts.rounds), facts.details.joined(separator: " · ")],
             "speech": d.rounds.map { MapSpeech.row(d, $0, student: student) },
             "loadMs": nul(m.overview.loadMs)]
+        let sentence = out["sentence"] as? String ?? ""
+        let h = m.paperHeader
+        out["header"] = ["figure": nul(h?.words), "fill": nul(h.flatMap { if case .ring(let f) = $0.glyph { return f } else { return nil } }),
+                         "response": nul(h?.response?.words), "closed": nul(h?.closed), "closedHelp": nul(h?.closedHelp),
+                         "answered": nul(h?.answered),
+                         "help": OverviewText.headerHelp(sentence, facts)] as [String: Any]
+        let strip = m.stripRound
+        let pages: [[Int]] = PageStripView.pagesToCheck(strip.flatMap(d.round), d).sorted { $0.key < $1.key }.map { [$0.key + 1, $0.value] }
+        out["strip"] = ["round": nul(strip), "label": nul(PageStripView.roundLabel(strip, latest: d.latest?.n)), "counts": pages]
+            as [String: Any]
+        out["key"] = MapKeyRow.rows(m.overview.asTable ? nil : m.overview.hover.scene, d).map(\.noun)
+        if let tags = d.tags, tags.tagged > 0 {
+            let t = TopicsTable.make(tags, data: d, catalog: m.tags.catalog)
+            let open: [String] = t.showsOpen ? ["Open"] : []
+            let rows: [[String]] = t.rows.map { r in
+                let figures: [String] = r.counts.map(String.init) + (t.showsOpen ? [String(r.open)] : [])
+                return [r.name] + figures + [r.writtenIn]
+            }
+            out["topics"] = ["columns": t.columns + open + ["Mostly in"], "rows": rows] as [String: Any]
+        }
         if let s = m.overview.hover.scene {
             out["steps"] = s.steps
             out["parts"] = ["foldable": s.plan.foldable.map(\.rawValue), "folded": s.plan.folded.map(\.rawValue),
@@ -1410,10 +1527,10 @@ final class DebugScript {
             out["labels"] = s.labels.map(\.text.text)
             out["fold"] = nul(s.fold.map { $0.title.text + " · " + $0.text.text })
             out["rows"] = s.rows.map { r -> [String: Any] in
-                ["n": r.n, "title": r.title.text, "dates": r.dates.text, "carried": nul(r.carried?.text),
+                ["n": r.n, "title": r.title.text, "date": r.dates.text, "old": r.old, "ring": nul(r.ring), "carried": nul(r.carried?.text),
                  "cells": r.cells.map { [$0.section, $0.count, nul($0.number?.text), nul($0.name?.text), nul($0.fold?.rawValue)] as [Any] },
                  "quiet": r.quiet.map(\.sections),
-                 "chips": r.chips.map { "\($0.section) \($0.text.text)" },
+                 "outlined": r.cells.filter(\.outlined).map(\.section),
                  "ticks": ["asked": r.ticks.filter { !$0.unrequested }.count, "nobody": r.ticks.filter(\.unrequested).count,
                            "toCheck": r.ticks.filter(\.toCheck).count],
                  "unplaced": nul(r.unplacedText?.text), "caption": nul(r.caption?.text), "failed": nul(r.failedText?.text),
@@ -1591,8 +1708,11 @@ final class DebugScript {
             case .student(let k): return "student: " + (groups.first { $0.key == k }?.name ?? k)
             case .paper(let p):
                 guard let ref = m.papers.first(where: { $0.path == p }) else { return "paper: ?" }
-                let st = m.status(of: ref)
-                let trail = st?.badge.map { p == m.selectedPath ? "" : " [\($0)]" } ?? st.map { " (\(String(describing: $0)))" } ?? ""
+                // the trail (UI v4): its sign and words, "[ring(0.25) 3]", "[waiting]"
+                let trail = m.status(of: ref).map { s -> String in
+                    let t = SidebarTrail.of(s, fill: m.fill(of: p), isOpen: p == m.selectedPath)
+                    return " [" + String(describing: t.glyph) + (t.text.map { " " + $0 } ?? "") + "]"
+                } ?? ""
                 return "paper: " + ref.title + trail
             case .contentsHeader: return "header: Contents"
             case .contents(let i): return "contents \(i)"
@@ -1605,6 +1725,32 @@ final class DebugScript {
                 "current": nul(m.reading.current.block), "listSelected": nul(listSelected()),
                 "students": groups.map { ["name": $0.name, "papers": $0.papers.map(\.title)] as [String: Any] },
                 "bodies": ["sidebar": BodyCount.sidebar, "paper": BodyCount.paper, "section": BodyCount.section]] as [String: Any]
+    }
+
+    /// The panel's Checks tab (UX.md §39): the setting, the state, the tab, the checks and what the page shows.
+    private func checksResult() -> [String: Any] {
+        guard let m = model else { return [:] }
+        let c = m.checks
+        let state: String
+        switch c.phase {
+        case .hidden: state = "hidden"
+        case .asking: state = "asking"
+        case .ready: state = "ready"
+        }
+        let shown: [String] = c.items.map { item in
+            switch item.kind {
+            case .message(let t): return "message: " + t
+            case .group(let g): return "group: " + g
+            case .check(let i): return "check \(i)"
+            case .ok(let n): return "ok: \(n)"
+            }
+        }
+        return ["on": m.checksOn, "state": state, "tab": m.checksOn ? c.tabTitle : NSNull(), "shown": m.tab == .checks,
+                "sentence": c.sentence, "round": nul(c.round), "count": c.list.count, "current": nul(c.current),
+                "rows": c.list.map { ["group": $0.group, "code": $0.code, "text": $0.text, "page": nul($0.places.first?.page),
+                                      "places": $0.places.count, "key": $0.key, "ok": $0.ok] as [String: Any] },
+                "showOK": c.showOK,
+                "items": shown, "cursor": c.cursor.map { [$0.check, $0.place] } ?? NSNull()] as [String: Any]
     }
 
     private func waitForBackfill(_ n: Int, then: @escaping () -> Void) {
@@ -1624,13 +1770,13 @@ final class DebugScript {
         }
     }
 
-    /// A page of the hierarchy (UX.md §22): which, the toolbar's words, the data's status, Your Move (titles in order,
-    /// with their status and button), All Students' heading and its detail, the students' groups with their numbers
-    /// (the engine's `students`), the scroll, and the sidebar's selection.
+    /// A page of the hierarchy (UX.md §22, §40.6): which, the data's status, Your Move (titles in order, with their
+    /// status), how many wait, All Students' view (`mode`) and its board's lanes (`board`, `earlier`), Your Move's rows
+    /// (`yourMoveRows`), the students' groups with their numbers (the engine's `students`; UI v4's Closing split, medians
+    /// and Well done), each paper's v4 figures (`figures`), the scroll, and the sidebar's selection.
     private func hubResult() -> Any {
         guard let m = model else { return NSNull() }
         let moves = m.yourMove
-        let (review, failed) = Hierarchy.counts(moves)
         let page: String = {
             switch m.hub {
             case .allStudents?: return "all"
@@ -1649,17 +1795,113 @@ final class DebugScript {
         }()
         let students = m.studentGroups.map { g -> [String: Any] in
             let st = m.hubModel.stats(for: g.papers.map(\.path))
+            let trips = Turnaround.trips(st?.time ?? [], finished: Set(g.papers.filter { m.status(of: $0)?.isFinished == true }.map(\.path)))
+            let medians = Turnaround.medians(trips)
             return ["name": g.name, "papers": g.papers.map(\.title), "rounds": nul(st?.rounds), "comments": nul(st?.comments),
                     "land": st?.land.map { l in zip(l.columns.map(\.title), l.total).map { "\($0.0) \($0.1)" } } ?? [],
-                    "trips": (st?.time ?? []).map { "\($0.round)\($0.open ? " open" : "") you \($0.you ?? -1) student \($0.student ?? -1)" },
-                    "closed": st?.closed.map { $0.total.values } ?? []]
+                    "trips": trips.map { "\($0.round)\($0.open ? " open" : "")\($0.last == true ? " last" : "") you \($0.you ?? -1) student \($0.student ?? -1)" },
+                    "closed": st?.closed.map { $0.total.values } ?? [],
+                    "closing": nul(Closing.split(st, m.hubModel.data).map { ["toCheck": $0.toCheck, "stillOpen": $0.stillOpen] }),
+                    "medians": ["you": nul(medians.you?.exactText), "student": nul(medians.student?.exactText)],
+                    "praise": nul(st?.tags?.praise?.comments)]
+        }
+        // UI v4 step 7: the board's lanes and Your Move's rows, in words
+        func card(_ c: BoardCard) -> [String: Any] {
+            ["who": c.who, "corner": nul(c.corner), "title": c.title, "figure": c.words(), "fill": nul(c.fill),
+             "glyph": nul(c.glyph.map { String(describing: $0) })]
+        }
+        let b = m.board()
+        let board: [String: Any] = [
+            "lanes": b.lanes.map { l in ["name": l.kind.rawValue, "count": l.count, "cards": l.cards.map(card)] as [String: Any] },
+            "earlier": b.lane(.finished).earlier.map(card)]
+        let ym = m.yourMovePage()
+        func row(_ r: YourMoveModel.Row) -> [String: Any] {
+            let w = YourMoveModel.waiting(r.days)
+            return ["title": r.card.title, "sub": r.sub, "toCheck": r.card.words(), "waiting": w.value + (w.unit.map { " " + $0 } ?? ""),
+                    "help": nul(r.help), "button": nul(r.card.item.map(MoveRow.title)), "primary": r.primary]
+        }
+        let moveRows: [String: Any] = ["rows": ym.rows.map(row), "quiet": ym.quiet.map(row)]
+        let figures = m.papers.map { p -> [String: Any] in
+            let f = PaperFigures.make(m.status(of: p), m.summaries[p.path], m.hubModel.data[p.path], today: Date())
+            return ["title": p.title, "fill": nul(m.fill(of: p.path)), "response": nul(f?.response?.words),
+                    "figures": nul(f.map { f in
+                        [f.toCheck.map { HubText.figure($0.comments, $0.edits) }, f.toRead.map { "\($0) to read" },
+                         f.closed.map { "\($0) closed" },
+                         f.totals.map { t in [count(t.comments, "comment"), t.closed.map { "\($0) closed" }, t.open.map { "\($0) open" }]
+                            .compactMap { $0 }.joined(separator: " · ") }, f.answered].compactMap { $0 }
+                    }),
+                    "dayCounter": nul(f?.dayCounter), "hover": nul(f?.hover)]
         }
         return ["page": page, "status": status, "papers": m.papers.map(\.path), "args": CommandLine.arguments.count, "data": m.hubModel.data.count, "errors": m.hubModel.errors.count,
-                "waits": HubText.waits(moves.count), "detail": HubText.waitsDetail(review: review, failed: failed),
+                "waits": HubText.waits(moves.count),
                 "yourMove": moves.map { "\($0.paper.title) · \(m.statusText($0.paper))" }, "sidebarCount": m.yourMove.count,
-                "students": students, "scroll": nul(m.hubModel.liveScroll), "selection": nul(m.sidebarSelection.map { String(describing: $0) }),
+                "mode": m.allStudentsView.rawValue, "board": board, "earlier": m.hubModel.showEarlier, "yourMoveRows": moveRows,
+                "students": students, "figures": figures, "scroll": nul(m.hubModel.liveScroll), "selection": nul(m.sidebarSelection.map { String(describing: $0) }),
                 "paper": nul(m.selectedPath), "level": m.level.rawValue, "canBack": m.canGoBack,
                 "loadMs": nul(m.hubModel.loadMs)]
+    }
+
+    /// The shown student page's model (`StudentPageModel`): `{header: {figures, star}, cards: [{kind, glyph, status,
+    /// figures, fill, response, button, primary}], grid}`; nil on another page. By section's columns are those that fit 8
+    /// (the page fits as many as its width has room for).
+    private func studentPageResult() -> Any {
+        guard let m = model, case .student(let k)? = m.hub, let g = m.studentGroups.first(where: { $0.key == k }) else { return NSNull() }
+        let page = m.studentPage(g)
+        let star: Any = page.header.star.map { ["count": $0.count, "note": nul($0.note), "source": nul($0.source)] as [String: Any] } ?? NSNull()
+        let cards = page.cards.map { c -> [String: Any] in
+            ["title": g.papers.first { $0.path == c.path }?.title ?? c.path, "kind": c.kind.rawValue,
+             "glyph": nul(c.figures.map { String(describing: $0.glyph) }), "status": nul(c.line ?? c.meta),
+             "statusHelp": nul(c.lineHelp ?? c.metaHelp), "figures": c.words, "fill": nul(c.figures?.fill),
+             "response": nul(c.header?.response?.words), "button": nul(c.item.map(MoveRow.title)), "primary": c.primary]
+        }
+        let grid = page.grid.map { row in
+            row.map { cell -> String in
+                switch cell.slot {
+                case .card(let i): return "\(page.cards[i].kind.rawValue) \(cell.span)"
+                case .turnaround: return "turnaround \(cell.span)"
+                }
+            }
+        }
+        // the tiles (step 6): each with its headline and rows in words, a hidden one with hidden true
+        let t = page.tiles
+        func head(_ h: StudentTiles.Headline?) -> Any { h.map { $0.key + " " + $0.words } ?? NSNull() }
+        func tile(_ k: StudentTiles.Kind) -> [String: Any] {
+            var headline: Any = NSNull(), rows: [String] = []
+            switch k {
+            case .bySection:
+                headline = head(t.bySection?.headline)
+                if let b = t.bySection {
+                    rows = [b.heads.joined(separator: " | ")]
+                    for r in b.rows { rows.append(r.name + " " + r.counts.map(String.init).joined(separator: " ")) }
+                    if let all = b.all { rows.append("All " + all.map(String.init).joined(separator: " ")) }
+                }
+            case .closing:
+                headline = head(t.closing?.headline)
+                rows = t.closing?.rows.map { "\($0.name) \($0.value)" } ?? []
+            case .topics:
+                headline = head(t.topics?.headline)
+                for r in t.topics?.rows ?? [] { rows.append(r.name + " " + r.counts.map(String.init).joined(separator: " ") + " · \(r.all)") }
+            case .turnaround:
+                if let u = t.turnaround {
+                    let parts: [String?] = [u.you.map { $0.text + " you" }, u.student.map { $0.text + " " + u.who }]
+                    let words = parts.compactMap { $0 }.joined(separator: " · ")
+                    headline = words.isEmpty ? NSNull() : words
+                    for r in u.rows {
+                        let words: [String?] = [r.name, "R\(r.round)", StudentTiles.days(r.you), StudentTiles.days(r.student),
+                                                r.openYou || r.openStudent ? "so far" : nil]
+                        rows.append(words.compactMap { $0 }.joined(separator: " "))
+                    }
+                }
+            case .firstDrafts:
+                break
+            }
+            return ["kind": k.rawValue, "headline": headline, "rows": rows, "hidden": !t.shown.contains(k)]
+        }
+        let kinds: [StudentTiles.Kind] = [.bySection, .closing, .topics, .turnaround, .firstDrafts]
+        return ["header": ["since": nul(page.header.since), "figures": page.header.figures.map { "\($0.value) \($0.label)" }, "star": star],
+                "cards": cards, "grid": grid, "tiles": kinds.map(tile), "tileOrder": page.tileKinds.map(\.rawValue),
+                "nextDraft": t.nextDraft.map { ["tag": $0.name, "open": nul($0.open), "line": nul($0.line), "sentence": nul($0.sentence),
+                                                "source": nul($0.source)] as [String: Any] }]
     }
 
     /// Focus (POLISH §4.3, §7): whether it is on, the sidebar shown, the panel and its width, what its list shows and
@@ -2063,6 +2305,25 @@ final class DebugScript {
     // MARK: Output
 
     private var settingsWindow: NSWindow?
+    private var helpWindow: NSWindow?
+
+    /// The Help window as the scene draws it, in a window of its own behind every other (tools/shot.sh --all).
+    private static func showHelp(_ model: AppModel) -> NSWindow {
+        let w = NSWindow(contentViewController: NSHostingController(rootView: HelpView(help: model.help)))
+        w.styleMask = [.titled, .closable, .resizable, .fullSizeContentView]
+        w.title = "Paperole Help"
+        w.setContentSize(NSSize(width: 980, height: 720))
+        w.isReleasedWhenClosed = false
+        w.orderBack(nil)
+        return w
+    }
+
+    /// `help`: whether the window is open, its topic and its rows' names.
+    private func helpResult() -> [String: Any] {
+        guard let m = model else { return [:] }
+        return ["open": helpWindow?.isVisible ?? false, "topic": m.help.topic.title, "section": nul(m.help.section),
+                "sections": HelpContent.sections(m.help.topic).map(\.title)]
+    }
 
     /// The Settings window's tabs in a titled window ordered behind every other one, as the Settings scene shows them
     /// (a tab view controller with its tabs in the toolbar, each tab's form in a hosting view), which a test run cannot

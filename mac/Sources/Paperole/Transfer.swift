@@ -124,7 +124,7 @@ enum DataPlaces {
 /// is ticked, never by a test run.
 @MainActor
 enum PortableSettings {
-    static let keys = [AppModel.readingMarksKey, AppModel.foldPartsKey, AppModel.openAtLaunchKey, TagModel.suggestKey,
+    static let keys = [AppModel.readingMarksKey, AppModel.checksKey, AppModel.foldPartsKey, AppModel.openAtLaunchKey, TagModel.suggestKey,
                        "showChangedWords", AppModel.mapAsTableKey, ListGrouping.key, AppIconModel.styleKey]
 
     static func current(_ defaults: UserDefaults = .standard) -> [String: Any] {
@@ -145,6 +145,7 @@ enum PortableSettings {
             used.append(k)
         }
         if let v = s[AppModel.readingMarksKey] as? Bool { app.readingMarksOn = v }
+        if let v = s[AppModel.checksKey] as? Bool { app.checksOn = v }
         if let v = s[AppModel.foldPartsKey] as? Bool { app.foldParts = v }
         if let v = (s[AppModel.openAtLaunchKey] as? String).flatMap(OpenAtLaunch.init(rawValue:)) { app.openAtLaunch = v }
         if let v = s[TagModel.suggestKey] as? Bool { app.tags.suggest = v }

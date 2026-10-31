@@ -39,6 +39,8 @@ struct PanelTabs: View {
     @Binding var tab: PanelTab
     let comments: String
     let changes: String
+    /// The Checks tab's title, nil without it (Settings › Reading's Checks off; UX.md §39).
+    var checks: String? = nil
     @Environment(\.colorScheme) private var scheme
     static let height: CGFloat = 28
 
@@ -49,6 +51,7 @@ struct PanelTabs: View {
         HStack(spacing: 0) {
             segment(.comments, comments)
             segment(.changes, changes)
+            if let checks { segment(.checks, checks) }
         }
         .padding(2)
         .background { indicator }
@@ -60,16 +63,16 @@ struct PanelTabs: View {
         .onDisappear { Self.shown -= 1 }
     }
 
-    /// The raised segment under the shown tab, sliding between the two halves.
+    /// The raised segment under the shown tab, sliding between the segments.
     private var indicator: some View {
         GeometryReader { g in
-            let w = max((g.size.width - 4) / 2, 0)
+            let w = max((g.size.width - 4) / CGFloat(checks == nil ? 2 : 3), 0)
             RoundedRectangle(cornerRadius: 6)
                 .fill(scheme == .dark ? Color.white.opacity(0.17) : .white)
                 .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(Color.black.opacity(scheme == .dark ? 0 : 0.05), lineWidth: 0.5))
                 .shadow(color: .black.opacity(scheme == .dark ? 0.25 : 0.12), radius: 1.2, y: 0.6)
                 .frame(width: w, height: max(g.size.height - 4, 0))
-                .offset(x: 2 + (tab == .changes ? w : 0), y: 2)
+                .offset(x: 2 + CGFloat(tab.page) * w, y: 2)
                 .animation(TabMotion.animation, value: tab)
         }
         .accessibilityHidden(true)
@@ -147,7 +150,7 @@ struct PanelPager: NSViewRepresentable {
     let tab: PanelTab
 
     func makeNSView(context: Context) -> PagerView {
-        let pages: [NSView] = [AnyView(CommentsPage()), AnyView(ChangesPage())].map {
+        let pages: [NSView] = [AnyView(CommentsPage()), AnyView(ChangesPage()), AnyView(ChecksPage())].map {
             let host = NSHostingView(rootView: AnyView($0.environmentObject(model)))
             host.sizingOptions = []  // the pager sets their frames: their content never resizes the panel
             return host
@@ -164,7 +167,13 @@ struct PanelPager: NSViewRepresentable {
 
 extension PanelTab {
     /// Its page in the pager, in the tabs' order.
-    var page: Int { self == .comments ? 0 : 1 }
+    var page: Int {
+        switch self {
+        case .comments: return 0
+        case .changes: return 1
+        case .checks: return 2
+        }
+    }
 }
 
 /// Pages laid over each other, one shown. A switch moves the two pages' layers only, with Core Animation: the page

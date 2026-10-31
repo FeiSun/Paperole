@@ -99,7 +99,9 @@ final class DesignPaletteTests: XCTestCase {
     }
 
     /// POLISH §2.2's contrast: white on the accent (the default button); secondary words 5.2:1 on the panel (6.9:1 in
-    /// Dark Mode); accent text, errors and To check as words; tertiary is for placeholders only.
+    /// Dark Mode); accent text and errors as words; UI v4: To check's vermilion as a graphic, never words (measured
+    /// 4.63:1 and 5.01:1 on the panel and the card, 4.98:1 and 4.15:1 in Dark Mode); tertiary for "–" only, between
+    /// 3:1 and 4.7:1 (3.62:1 and 3.92:1, 4.61:1 and 3.84:1).
     func testContrast() {
         let sage = (light: NSColor(hex: Palette.sage.light), dark: NSColor(hex: Palette.sage.dark))
         XCTAssertGreaterThanOrEqual(contrast(.white, sage.light, .aqua), 5.7)
@@ -111,8 +113,9 @@ final class DesignPaletteTests: XCTestCase {
                 XCTAssertGreaterThanOrEqual(contrast(Palette.secondary, bg, mode), 5.2, mode.rawValue)
                 XCTAssertGreaterThanOrEqual(contrast(Palette.accentText, bg, mode), 6, mode.rawValue)
                 XCTAssertGreaterThanOrEqual(contrast(Palette.danger, bg, mode), 5.4, mode.rawValue)
-                XCTAssertGreaterThanOrEqual(contrast(Palette.toCheck, bg, mode), 4.5, mode.rawValue)
-                XCTAssertLessThan(contrast(Palette.tertiary, bg, mode), 4.5, "tertiary is for placeholders only")
+                XCTAssertGreaterThanOrEqual(contrast(Palette.toCheck, bg, mode), 3, "\(mode.rawValue): vermilion, a graphic")
+                XCTAssertGreaterThanOrEqual(contrast(Palette.tertiary, bg, mode), 3, "\(mode.rawValue): \"–\" still seen")
+                XCTAssertLessThan(contrast(Palette.tertiary, bg, mode), 4.7, "tertiary is for \"–\" only")
             }
         }
         XCTAssertGreaterThanOrEqual(contrast(Palette.secondary, Palette.panel, .darkAqua), 6.8)
@@ -120,8 +123,8 @@ final class DesignPaletteTests: XCTestCase {
     }
 
     /// The accent is far from every colour that means something, in either mode (POLISH §2.2's table, measured again
-    /// on the test build's screenshots, UX.md §19); the amber of "your move" is near the yellow and orange marks, the
-    /// known limitation that the outlined To check chip answers.
+    /// on the test build's screenshots, UX.md §19); the vermilion of "your move" (UI v4) is near the orange mark, the
+    /// known limitation that the ring's shape answers, and apart from the red of an error.
     func testTheAccentIsApartFromTheMeaningfulColours() {
         for (accent, mode) in [(NSColor(hex: Palette.sage.light), NSAppearance.Name.aqua), (NSColor(hex: Palette.sage.dark), .darkAqua)] {
             let pairs: [(String, NSColor, Double)] = [
@@ -139,12 +142,15 @@ final class DesignPaletteTests: XCTestCase {
                 XCTAssertGreaterThanOrEqual(Self.deltaE(accent, m.ink), 12, m.name)
             }
         }
-        // To check's amber: 9.5 from the yellow ink and 6.9 from the orange ink; 9.9 and 9.4 from those fills in Dark Mode
-        let amber = (light: srgb(Palette.toCheck, .aqua), dark: srgb(Palette.toCheck, .darkAqua))
-        XCTAssertGreaterThanOrEqual(Self.deltaE(amber.light, MarkColor.yellow.ink), 9.4)
-        XCTAssertGreaterThanOrEqual(Self.deltaE(amber.light, MarkColor.orange.ink), 6.8)
-        XCTAssertGreaterThanOrEqual(Self.deltaE(amber.dark, MarkColor.yellow.fill), 9.8)
-        XCTAssertGreaterThanOrEqual(Self.deltaE(amber.dark, MarkColor.orange.fill), 9.3)
+        // To check's vermilion: 7.45 from the orange ink, 17.8 from the orange fill in Dark Mode (the nearest marks);
+        // 20.9 and 34.6 from the yellow's; 5.75 from the red of an error (13.4 in Dark Mode)
+        let vermilion = (light: srgb(Palette.toCheck, .aqua), dark: srgb(Palette.toCheck, .darkAqua))
+        XCTAssertGreaterThanOrEqual(Self.deltaE(vermilion.light, MarkColor.orange.ink), 7.4)
+        XCTAssertGreaterThanOrEqual(Self.deltaE(vermilion.dark, MarkColor.orange.fill), 17.7)
+        XCTAssertGreaterThanOrEqual(Self.deltaE(vermilion.light, MarkColor.yellow.ink), 20)
+        XCTAssertGreaterThanOrEqual(Self.deltaE(vermilion.dark, MarkColor.yellow.fill), 34)
+        XCTAssertGreaterThanOrEqual(Self.deltaE(vermilion.light, srgb(Palette.danger, .aqua)), 5)
+        XCTAssertGreaterThanOrEqual(Self.deltaE(vermilion.dark, srgb(Palette.danger, .darkAqua)), 5)
         XCTAssertTrue(Status.toCheck.tinted, "so its chip is outlined, its shape apart from a mark's label")
     }
 
@@ -172,6 +178,36 @@ final class DesignPaletteTests: XCTestCase {
 }
 
 /// The note as a card's title (POLISH §2.3, §6 decision 6).
+/// UI v4 (design/ui-v4/BRIEF.md §8.4): vermilion is a mark's colour, never the words'. Every use of it in the sources
+/// on a line that makes a Text is the ring "○" itself, and no modifier chain that starts with a Text gives it the
+/// colour. Multi-line uses through a variable are the views' own (StateWord, Tag, UnsentTag, the card's header).
+final class VermilionTests: XCTestCase {
+    func testNoWordsAreVermilion() throws {
+        let dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().appendingPathComponent("Sources/Paperole")
+        let tokens = ["Palette.toCheck", "Status.toCheck.color", "color(.attention)", "ink: .attention"]
+        let allowed: [String] = []
+        var found: [String] = []
+        for f in try FileManager.default.contentsOfDirectory(atPath: dir.path) where f.hasSuffix(".swift") {
+            let lines = try String(contentsOf: dir.appendingPathComponent(f), encoding: .utf8).components(separatedBy: "\n")
+            for (i, line) in lines.enumerated() where tokens.contains(where: line.contains) {
+                let code = line.trimmingCharacters(in: .whitespaces)
+                if code.hasPrefix("//") || allowed.contains(where: code.contains) || code.contains("○") { continue }
+                if code.contains("ink: .attention") { found.append("\(f):\(i + 1)"); continue }
+                // what the colour is given to: the words before it on the line, or a modifier chain's first line
+                var head = String(code[..<tokens.compactMap { code.range(of: $0)?.lowerBound }.min()!])
+                if code.hasPrefix(".") {
+                    var j = i - 1
+                    while j > 0, lines[j].trimmingCharacters(in: .whitespaces).hasPrefix(".") { j -= 1 }
+                    head = lines[j]
+                }
+                if head.replacingOccurrences(of: "Text(Image", with: "").contains("Text(") { found.append("\(f):\(i + 1)") }
+            }
+        }
+        XCTAssertEqual(found, [], "words in vermilion")
+    }
+}
+
 final class NoteTitleTests: XCTestCase {
     func testTheFirstSentenceIsTheTitle() {
         let t = NoteTitle("Motivate the 2 kHz band first. Then cite the survey.")

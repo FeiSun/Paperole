@@ -129,6 +129,25 @@ final class StateDecodingTests: XCTestCase {
         XCTAssertEqual(reply.papers.map { $0.summary?.text }, ["Waiting for student", nil])
     }
 
+    /// UI v4 (CONTRACT amendment "UI v4 data"): `answered` and `handled` give the status ring's fill; without them (the
+    /// official app's frozen engine), or with nothing to answer or check, the ring is empty, never a guess.
+    func testTheRingsFill() throws {
+        func decode(_ json: String) throws -> PaperSummary {
+            try makeDecoder().decode(PaperSummary.self, from: Data(json.utf8))
+        }
+        let s = try decode(#"{"round": 3, "closed": false, "status": "ok", "to_judge": 3, "to_check": 0, "answered": 1, "handled": 0}"#)
+        XCTAssertEqual([s.answered, s.handled], [1, 0])
+        XCTAssertEqual(s.fill, 0.25, "Leo: 1 of 4 answered")
+        let old = try decode(#"{"round": 3, "closed": false, "status": "ok", "to_judge": 3, "to_check": 0}"#)
+        XCTAssertNil(old.answered)
+        XCTAssertNil(old.fill)
+        XCTAssertEqual(StatusGlyph.of(.toCheck(comments: 3, edits: 0), fill: old.fill), .ring(0))
+        XCTAssertEqual(try decode(#"{"round": 2, "closed": false, "status": "ok", "to_judge": 8, "to_check": 2, "answered": 6, "handled": 0}"#).fill, 0.375)
+        XCTAssertEqual(try decode(#"{"round": 2, "closed": false, "status": "ok", "to_judge": 0, "to_check": 0, "answered": 4, "handled": 2}"#).fill, 1)
+        XCTAssertNil(try decode(#"{"round": 1, "closed": false, "status": "ok", "to_judge": 0, "to_check": 0, "answered": 0, "handled": 0}"#).fill)
+        XCTAssertNil(try decode(#"{"round": 2, "closed": true, "status": "ok", "to_judge": 0, "to_check": 0, "answered": 0, "handled": 0}"#).fill)
+    }
+
     /// design/ui-v2/PROPOSAL.md §6, addition 10: the window subtitle says what is to check with the numbers of the
     /// panel's tabs (the shown open round's own when given), and names no round.
     func testWindowSubtitle() {

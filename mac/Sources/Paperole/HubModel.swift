@@ -2,9 +2,10 @@ import AppKit
 import Foundation
 
 /// The hierarchy's data (OVERVIEW-v2 §3.1–3.2, UX.md §22): the engine's read-only `overview` of every listed paper
-/// (without marks) with the advisor's Map Headings answers as `buckets`, and its `students`. Asked for when a page of
-/// the hierarchy is shown and the papers, their answers or a paper's ledger may have changed since (`key`), or the app
-/// became active again (a paper changed from the command line). Each page's scroll is kept for Back.
+/// (with marks, for the thumbnails' highlights; UI v4) with the advisor's Map Headings answers as `buckets`, and its
+/// `students`. Asked for when a page of the hierarchy is shown and the papers, their answers or a paper's ledger may
+/// have changed since (`key`), or the app became active again (a paper changed from the command line). Each page's
+/// scroll is kept for Back.
 @MainActor
 final class HubModel: ObservableObject {
     enum Status: Equatable { case idle, loading, loaded, failed(String) }
@@ -27,8 +28,11 @@ final class HubModel: ObservableObject {
     weak var scrollView: NSScrollView? { didSet { if scrollView !== oldValue { applyPendingScroll() } } }
     private(set) var scrolls: [HubPage: Double] = [:]
     private var pendingScroll: Double?
-    /// The tag whose comments a student's page lists under Topics by round (UX.md §27), or nil.
+    /// The tag whose comments a student's page lists in a popover on its Topics row (UX.md §27, §40.5), or nil.
     @Published var studentTag: StudentTagChoice?
+    /// The board's Finished lane shows the papers finished more than eight weeks ago ("Earlier · N"), for this run only
+    /// (UX.md §40.6).
+    @Published var showEarlier = false
 
     func begin(key: String) -> Int {
         sequence += 1

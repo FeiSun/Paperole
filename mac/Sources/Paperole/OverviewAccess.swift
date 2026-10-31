@@ -98,7 +98,7 @@ enum MapKeys {
 /// The map's sentences for VoiceOver (OVERVIEW-v2 §7 "VoiceOver（每行一句话）"): a round's row in one sentence, each
 /// cell in one, and what a key moved to.
 enum MapSpeech {
-    /// "Round 4, Oct 16, open. 12 comments, none new. Tomás: 3 edited, 3 untouched, 6 waiting. You: ✓ 2 so far, 10 to
+    /// "Round 4, Oct 16, open. 12 comments, none new. Tomás: 3 revised, 3 unchanged, 6 not asked. You: ✓ 2 so far, 10 to
     /// check. Introduction 1, Materials and methods 4, …"
     static func row(_ d: PaperOverview, _ r: PaperOverview.Round, student: String) -> String {
         let state = r.failed ? "build failed" : r.isClosed ? "closed" : "open"
@@ -108,8 +108,7 @@ enum MapSpeech {
         let c = r.comments ?? .init(), first = r.n == d.rounds.first?.n
         s += " \(count(c.present, "comment"))" + (c.present == 0 ? "." : first ? ", all new." : c.new == 0 ? ", none new." : ", \(c.new) new.")
         if !first {
-            let resp = [c.edited > 0 ? "\(c.edited) edited" : nil, c.noteOnly > 0 ? "\(c.noteOnly) note only" : nil,
-                        c.untouched > 0 ? "\(c.untouched) untouched" : nil, c.waiting > 0 ? "\(c.waiting) waiting" : nil].compactMap { $0 }
+            let resp = MapScene.responses(c)
             if !resp.isEmpty { s += " \(student.isEmpty ? "The student" : student): " + resp.joined(separator: ", ") + "." }
             let you = !r.isClosed
                 ? [c.resolved > 0 ? "\(c.resolved) resolved so far" : nil, c.followUp > 0 ? "\(c.followUp) followed up so far" : nil,

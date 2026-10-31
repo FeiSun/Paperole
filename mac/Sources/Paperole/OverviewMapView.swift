@@ -1,9 +1,9 @@
 import AppKit
 import SwiftUI
 
-/// The map's colours for an appearance (VISUAL v3 §3.2–3.3, with the critique's values): every cell fill a little
-/// further from the panel than the bands, so cells and bands never join into one mesh; the three steps half the
-/// lightness range of before (light L* 85 → 74, dark 23 → 34), their number always the label colour.
+/// The map's colours for an appearance (VISUAL v3 §3.2–3.3, with the critique's values; UI v4's ramp and roles,
+/// design/ui-v4/README.md §6): one data-ink ramp, about 8–10 L* a step, text on its darkest step at 4.5:1 or more;
+/// the roles the app's palette owns (the label colours, vermilion, red, Sage, the grounds) read from `Palette`.
 struct MapInk {
     var dark: Bool
 
@@ -11,42 +11,59 @@ struct MapInk {
     func rgba(_ r: MapRole) -> (hex: Int, alpha: Double) {
         let ink = dark ? 0xFFFFFF : 0x1F2621
         switch r {
-        // light: the same lightness steps as before, at the dark steps' low chroma (LCh C 2.6–3.9, hue about 100, the
-        // panel's grey-green family), not a sand ramp beside the amber chips (the UI audit)
-        case .track: return (dark ? 0x2D2E2C : 0xE2E1DC, 1)
-        case .s1: return (dark ? 0x383632 : 0xD5D3CE, 1)
-        case .s2: return (dark ? 0x44413C : 0xC7C5BE, 1)
-        case .s3: return (dark ? 0x54504A : 0xB8B5AE, 1)
-        case .number, .label: return (dark ? 0xE6EBE6 : 0x1F2621, 1)
-        case .name, .label2: return (dark ? 0xC5CDC6 : 0x3D473F, 1)
-        case .band: return (ink, dark ? 0.035 : 0.055)
+        case .track: return (dark ? 0x2D2E2C : 0xECEBE7, 1)
+        case .s1: return (dark ? 0x403F3B : 0xD5D3CD, 1)
+        case .s2: return (dark ? 0x55524C : 0xBEBBB3, 1)
+        case .s3: return (dark ? 0x6E6960 : 0xA29E95, 1)
+        case .ink: return (dark ? 0xA39E95 : 0x7F7A71, 1)
+        case .otrack: return (dark ? 0x272826 : 0xF0EFEC, 1)
+        case .os1: return (dark ? 0x333330 : 0xE1DFDB, 1)
+        case .os2: return (dark ? 0x413F3B : 0xD2D0CA, 1)
+        case .os3: return (dark ? 0x514E48 : 0xBFBDB6, 1)
+        case .band: return dark ? (0xFFFFFF, 0.06) : (0x463E32, 0.075)
         case .bandSelected: return dark ? (0x7CA080, 0.26) : (0x566B58, 0.22)
-        case .fan: return (ink, dark ? 0.065 : 0.065)
+        case .fan: return (ink, dark ? 0.065 : 0.05)  // UI v4: lighter in Light Mode, quieter than the lighter track
         case .wedge: return (ink, dark ? 0.03 : 0.04)
-        case .railDot: return (dark ? 0x9EA89F : 0x5F6A61, 0.7)
-        case .miniTrack: return (dark ? 0x363735 : 0xECEBE7, 1)
-        case .mini1: return (dark ? 0x45433F : 0xDDDCD6, 1)
-        case .mini2: return (dark ? 0x57534D : 0xC8C6BF, 1)
-        case .mini3: return (dark ? 0x6B6660 : 0xB0AEA5, 1)
-        case .chartYou: return (dark ? 0x8F988F : 0x7D857E, 1)
-        case .chartStudent: return (dark ? 0x3E423E : 0xD5D8D3, 1)
-        case .words: return (dark ? 0x4ADE80 : 0x16A34A, 1)
-        case .other: return (dark ? 0x9CC3CF : 0x355F6C, 1)
-        case .attention: return (dark ? 0xF59E0B : 0xB45309, 1)
-        case .danger: return (dark ? 0xF98B8B : 0xC42121, 1)
-        case .accent: return (dark ? 0x5D7A61 : 0x566B58, 1)
-        case .accentText: return (dark ? 0xA5BFA7 : 0x4D6150, 1)
+        case .you: return (dark ? 0xC9C4BA : 0x57534B, 1)
+        case .stu: return (dark ? 0x7A756C : 0x928D84, 1)
+        case .today: return (dark ? 0x636964 : 0x858D86, 1)
+        case .zeroline: return dark ? (0xFFFFFF, 0.08) : (0xFFFFFF, 0)
+        case .thumb: return (dark ? 0xBDBDB9 : 0xFFFFFF, 1)
+        case .c1: return (dark ? 0x7E9A82 : 0x566B58, 1)
+        case .c2: return (dark ? 0x5D7A61 : 0x879988, 1)
+        case .c3: return (dark ? 0x4A5A4C : 0xC3CEC4, 1)
         case .accentTint: return dark ? (0x7CA080, 0.24) : (0x566B58, 0.16)
         case .rule: return (ink, dark ? 0.09 : 0.10)
-        case .secondary: return (dark ? 0x9EA89F : 0x5F6A61, 1)
-        case .tertiary: return (dark ? 0x6C756D : 0x98A199, 1)
         case .dimText: return (dark ? 0x9EA89F : 0x566057, 1)
-        case .link: return (dark ? 0x419CFF : 0x0068DA, 1)  // NSColor.linkColor
-        case .content: return (dark ? 0x1C1D1C : 0xF6F6F4, 1)
-        case .card: return (dark ? 0x2A2C2A : 0xFFFFFF, 1)
-        case .neutral: return (dark ? 0xA8ADB7 : 0x6B7280, 1)
         case .path: return (dark ? 0x8DB091 : 0x566B58, 1)
+        case .number, .label, .name, .label2, .secondary, .tertiary, .attention, .danger, .accent, .accentText, .words,
+             .other, .link, .content, .card, .neutral:
+            return (Self.palette(r, dark: dark), 1)
         }
+    }
+
+    /// The palette's colour of a shared role, in sRGB for each appearance, resolved once.
+    static func palette(_ r: MapRole, dark: Bool) -> Int { shared[dark ? 1 : 0][r]! }
+
+    private static let shared: [[MapRole: Int]] = [false, true].map { dark in
+        let roles: [(MapRole, NSColor)] = [
+            (.number, Palette.label), (.label, Palette.label), (.name, Palette.label2), (.label2, Palette.label2),
+            (.secondary, Palette.secondary), (.tertiary, Palette.tertiary), (.attention, Palette.toCheck),
+            (.danger, Palette.danger), (.accent, Palette.accent), (.accentText, Palette.accentText),
+            (.words, Palette.changedWords), (.other, Palette.unrequested), (.link, Palette.link),
+            (.content, Palette.panel), (.card, Palette.card), (.neutral, Palette.neutral),
+        ]
+        return Dictionary(uniqueKeysWithValues: roles.map { ($0.0, hex($0.1, dark: dark)) })
+    }
+
+    /// A colour as an sRGB hex in Light or Dark Mode.
+    static func hex(_ c: NSColor, dark: Bool) -> Int {
+        var out = 0
+        NSAppearance(named: dark ? .darkAqua : .aqua)!.performAsCurrentDrawingAppearance {
+            let s = c.usingColorSpace(.sRGB)!
+            out = [s.redComponent, s.greenComponent, s.blueComponent].reduce(0) { $0 << 8 | Int(($1 * 255).rounded()) }
+        }
+        return out
     }
 
     /// The role's colour; `scale` its alpha times that (a legend's swatch, drawn small).
@@ -66,15 +83,13 @@ struct MapInk {
 
     /// The opacity of what steps back while something is followed.
     var dim: Double { dark ? 0.40 : 0.32 }
-    /// The edits' ticks (VISUAL §4.3): green and slate teal, a little under full.
-    static let tickOpacity = 0.85
 }
 
 extension MapFont {
     var swiftUI: Font {
         let w: Font.Weight = weight == .semibold ? .semibold : weight == .regular ? .regular : .medium
         let f = Font.system(size: size, weight: w)
-        return self == .number || self == .body || self == .bodyBold ? f.monospacedDigit() : f
+        return self == .number || self == .numberRegular || self == .body || self == .bodyBold ? f.monospacedDigit() : f
     }
 }
 
@@ -93,9 +108,21 @@ enum MapTiming {
     }
 }
 
-/// Draws a `MapScene` (OVERVIEW-v2 §4) in one Canvas, in the mockup's order: the lens, the bands, the rows (rail,
-/// readout, cells, chips, ticks), the fold, the paths, then the numbers on top of everything inside the rows, the
-/// structure labels and the page axis.
+/// How the selected round's box moves to another round (BRIEF §8.3, plan §1.7): a 0.28 s ease-out slide, or a jump
+/// with Reduce Motion on. `reduceMotion`: the debug item's override (`reducemotion on|off`) for the rest of the process, or
+/// until `reducemotion system`; nil, the system's. It takes effect at the box's next move.
+enum MapMotion {
+    nonisolated(unsafe) static var reduceMotion: Bool?
+
+    static func animation(reduceMotion: Bool) -> Animation? {
+        reduceMotion ? nil : .timingCurve(0.3, 0.7, 0.2, 1, duration: 0.28)
+    }
+}
+
+/// Draws a `MapScene` (OVERVIEW-v2 §4; UI v4, mac/UX.md §40.3) in one Canvas, in the mockup's order: the lens, the
+/// bands, the rows (the round's label, readout, cells and their outlines, ticks), the fold, the paths, then the numbers
+/// on top of everything inside the rows, the structure labels and the page axis. The selected round's box is drawn
+/// under it by `PaperMapView`, which slides it.
 struct MapCanvas: View, Equatable {
     let scene: MapScene
     @Environment(\.colorScheme) private var scheme
@@ -161,9 +188,25 @@ struct MapCanvas: View, Equatable {
         ctx.stroke(p, with: .color(color), style: StrokeStyle(lineWidth: 1.4, lineCap: .round, lineJoin: .round))
     }
 
+    /// A folded part's fill (the mockup's `.cell.fold`): 4 pt stripes at 135°, `a` over `b`, inside the cell's shape.
+    static func stripes(_ r: CGRect, in ctx: inout GraphicsContext, a: Color, b: Color) {
+        let shape = Path(roundedRect: r, cornerRadius: 5)
+        ctx.fill(shape, with: .color(b))
+        var c = ctx
+        c.clip(to: shape)
+        var p = Path()
+        let step = 8 * 2.squareRoot()  // 8 pt apart across the stripes
+        var x = r.minX - r.height
+        while x < r.maxX {
+            p.move(to: CGPoint(x: x, y: r.maxY)); p.addLine(to: CGPoint(x: x + r.height, y: r.minY))
+            x += step
+        }
+        c.stroke(p, with: .color(a), lineWidth: 4)
+    }
+
     // swiftlint:disable:next function_body_length cyclomatic_complexity
     static func draw(_ s: MapScene, in ctx: inout GraphicsContext, ink: MapInk) {
-        let g = s.geometry, cellH = MapGeometry.cell, rug = MapGeometry.rug
+        let g = s.geometry, cellH = MapGeometry.cell
         // the lens: hairlines and the wedges of folded parts; Sage only for what is followed
         for w in s.wedges { ctx.fill(polygon(w), with: .color(ink.color(.wedge))) }
         for f in s.fans {
@@ -196,36 +239,16 @@ struct MapCanvas: View, Equatable {
         }
         // the rows
         for row in s.rows {
-            let cy = row.y + cellH / 2
-            if let (a, b) = row.line {
-                var p = Path(); p.move(to: CGPoint(x: 10, y: a)); p.addLine(to: CGPoint(x: 10, y: b))
-                ctx.stroke(p, with: .color(ink.color(.rule)), lineWidth: 1)
-            }
             var rc = ctx
             if row.dim { rc.opacity = 0.38 }
-            if let pill = row.pill {
-                let p = Path(roundedRect: pill, cornerRadius: 6)
-                rc.fill(p, with: .color(ink.color(row.pillSelected ? .accentTint : .track)))
-                if row.pillSelected { rc.stroke(p, with: .color(ink.color(.accent)), lineWidth: 1.5) }
-            }
-            switch row.node {
-            case .dot:
-                rc.fill(Path(ellipseIn: CGRect(x: 7, y: cy - 3, width: 6, height: 6)), with: .color(ink.color(.railDot)))
-            case .toCheck, .failed:
-                let p = Path(ellipseIn: CGRect(x: 5.5, y: cy - 4.5, width: 9, height: 9))
-                rc.fill(p, with: .color(ink.color(.content)))
-                rc.stroke(p, with: .color(ink.color(row.node == .failed ? .danger : .attention)), lineWidth: 1.8)
+            // the open round's ring before its name, filled by what is answered (UI v4: no rail)
+            if let fill = row.ring {
+                let r = CGRect(x: 0, y: row.y + 3, width: 11, height: 11)
+                rc.fill(RingShape(fill: fill).path(in: r), with: .color(ink.color(.attention)))
             }
             text(row.title, in: &rc, ink: ink, dimmed: row.dim)
             text(row.dates, in: &rc, ink: ink, dimmed: row.dim)
-            if let t = row.carried {
-                let my = t.baseline - 4
-                var p = Path()
-                p.move(to: CGPoint(x: 7, y: my + 1.5)); p.addLine(to: CGPoint(x: 10, y: my - 1.8)); p.addLine(to: CGPoint(x: 13, y: my + 1.5))
-                ctx.stroke(p, with: .color(ink.color(.secondary).opacity(t.opacity)),
-                           style: StrokeStyle(lineWidth: 1.4, lineCap: .round, lineJoin: .round))
-                text(t, in: &ctx, ink: ink)
-            }
+            if let t = row.carried { text(t, in: &ctx, ink: ink) }
             for t in row.readout { text(t, in: &rc, ink: ink, dimmed: row.dim) }
             if let t = row.sage {
                 rc.fill(Path(roundedRect: CGRect(x: g.readoutX, y: t.baseline - 6, width: 6, height: 6), cornerRadius: 1.5),
@@ -233,13 +256,13 @@ struct MapCanvas: View, Equatable {
                 text(t, in: &rc, ink: ink, dimmed: row.dim)
             }
             if let f = row.failed {
-                rc.stroke(Path(roundedRect: f, cornerRadius: 4), with: .color(ink.color(.danger)),
+                rc.stroke(Path(roundedRect: f, cornerRadius: 5), with: .color(ink.color(.label2)),
                           style: StrokeStyle(lineWidth: 1, dash: [3, 3]))
                 if let t = row.failedText { signed(t, in: &rc, ink: ink, dimmed: row.dim) }
                 continue
             }
             if let box = row.pages {
-                rc.fill(Path(roundedRect: box, cornerRadius: 4), with: .color(ink.color(.track)))
+                rc.fill(Path(roundedRect: box, cornerRadius: 5), with: .color(ink.color(row.old ? .otrack : .track)))
                 for x in row.pageLines {  // the gaps between its pages, in the panel's colour
                     rc.fill(Path(CGRect(x: x - 0.6, y: row.y, width: 1.2, height: cellH)), with: .color(ink.color(.content)))
                 }
@@ -248,8 +271,13 @@ struct MapCanvas: View, Equatable {
                 }
                 if let t = row.caption { text(t, in: &rc, ink: ink, dimmed: row.dim) }
             }
+            // an older round from its own ramp, mixed in advance, so its words never fade (UI v4)
+            func fill(_ level: Int) -> MapRole { row.old ? MapRole.old(level) : MapRole.cell(level) }
             for q in row.quiet {
-                rc.fill(Path(roundedRect: q.rect, cornerRadius: 4), with: .color(ink.color(.track)))
+                let p = Path(roundedRect: q.rect, cornerRadius: 5)
+                rc.fill(p, with: .color(ink.color(fill(0))))
+                rc.stroke(Path(roundedRect: q.rect.insetBy(dx: 0.25, dy: 0.25), cornerRadius: 4.75), with: .color(ink.color(.zeroline)),
+                          lineWidth: 0.5)
                 if let t = q.name {
                     var qc = rc
                     if q.dim { qc.opacity *= ink.dim }
@@ -259,25 +287,29 @@ struct MapCanvas: View, Equatable {
             for c in row.cells {
                 var cc = rc
                 if c.dim { cc.opacity *= ink.dim }
-                if !c.quiet { cc.fill(Path(roundedRect: c.rect, cornerRadius: 4), with: .color(ink.color(.cell(c.level)))) }
-                if c.fold != nil, c.rect.width >= 16 {
-                    chevron(at: CGPoint(x: c.rect.minX + 9, y: c.rect.midY), down: false, in: &cc, color: ink.color(.secondary))
+                let p = Path(roundedRect: c.rect, cornerRadius: 5)
+                if c.fold != nil {
+                    // a folded part: stripes of its level and the track, its words on a solid pad (UI v4)
+                    stripes(c.rect, in: &cc, a: ink.color(fill(max(1, c.level))), b: ink.color(fill(0)))
+                    for t in [c.name, c.number].compactMap({ $0 }) {
+                        cc.fill(Path(roundedRect: t.rect.insetBy(dx: -3, dy: -0.5), cornerRadius: 3), with: .color(ink.color(fill(0))))
+                    }
+                } else if !c.quiet {
+                    cc.fill(p, with: .color(ink.color(fill(c.level))))
+                    if c.level == 0 {  // a keyline in Dark Mode, where the track is near the panel
+                        cc.stroke(Path(roundedRect: c.rect.insetBy(dx: 0.25, dy: 0.25), cornerRadius: 4.75), with: .color(ink.color(.zeroline)),
+                                  lineWidth: 0.5)
+                    }
                 }
                 if let t = c.name { text(t, in: &cc, ink: ink, dimmed: c.dim || row.dim) }
+                if c.outlined {
+                    cc.stroke(Path(roundedRect: c.rect.insetBy(dx: 0.75, dy: 0.75), cornerRadius: 4.25), with: .color(ink.color(.attention)),
+                              lineWidth: 1.5)
+                }
                 if c.selected {
-                    rc.stroke(Path(roundedRect: c.rect.insetBy(dx: -2.5, dy: -2.5), cornerRadius: 6), with: .color(ink.color(.accent)),
+                    rc.stroke(Path(roundedRect: c.rect.insetBy(dx: -2.5, dy: -2.5), cornerRadius: 7), with: .color(ink.color(.accent)),
                               lineWidth: 2)
                 }
-            }
-            for c in row.chips {
-                var cc = rc
-                if c.dim { cc.opacity *= ink.dim }
-                let p = Path(roundedRect: c.rect, cornerRadius: c.rect.height / 2)
-                cc.fill(p, with: .color(ink.color(.card)))
-                cc.stroke(p, with: .color(ink.color(.attention)), lineWidth: 1)
-                cc.stroke(Path(ellipseIn: CGRect(x: c.ring.x - 3.1, y: c.ring.y - 3.1, width: 6.2, height: 6.2)),
-                          with: .color(ink.color(.attention)), lineWidth: 1.4)
-                text(c.text, in: &cc, ink: ink, dimmed: c.dim || row.dim)
             }
             if let xe = row.endcap {
                 var l = Path(); l.move(to: CGPoint(x: xe, y: row.y + 2)); l.addLine(to: CGPoint(x: xe, y: row.y + cellH - 2))
@@ -285,32 +317,26 @@ struct MapCanvas: View, Equatable {
                 if let t = row.endText { text(t, in: &rc, ink: ink, dimmed: row.dim) }
             }
             if let u = row.unplaced {
-                rc.fill(Path(roundedRect: u, cornerRadius: 4), with: .color(ink.color(.cell(row.unplacedLevel))))
+                rc.fill(Path(roundedRect: u, cornerRadius: 5), with: .color(ink.color(fill(row.unplacedLevel))))
                 if let t = row.unplacedText { text(t, in: &rc, ink: ink, dimmed: row.dim) }
                 if let t = row.unplacedCaption { text(t, in: &rc, ink: ink, dimmed: row.dim) }
             }
+            // the edits (UI v4): asked for, a 6 pt tick; nobody asked, a 4 pt tick with a vermilion ring while to check
             for t in row.ticks {
                 var tc = rc
-                tc.opacity *= t.dim ? 0.25 : MapInk.tickOpacity
-                if t.unrequested {
-                    tc.fill(Path(roundedRect: CGRect(x: t.x - 0.75, y: t.top + 2, width: 1.5, height: 2.6), cornerRadius: 0.6),
-                            with: .color(ink.color(.other)))
-                    tc.fill(Path(ellipseIn: CGRect(x: t.x - 1.5, y: t.top + 5, width: 3, height: 3)), with: .color(ink.color(.other)))
-                } else {
-                    tc.fill(Path(roundedRect: CGRect(x: t.x - 0.75, y: t.top + 2, width: 1.5, height: 5), cornerRadius: 0.6),
-                            with: .color(ink.color(.words)))
-                }
+                if t.dim { tc.opacity *= 0.25 }
+                let h: CGFloat = t.unrequested ? 4 : 6
+                tc.fill(Path(roundedRect: CGRect(x: t.x - 1, y: t.top + 10 - h, width: 2, height: h), cornerRadius: 1), with: .color(ink.color(.ink)))
                 if t.toCheck {
-                    rc.stroke(Path(ellipseIn: CGRect(x: t.x - 4, y: t.top + 0.5, width: 8, height: 8)),
-                              with: .color(ink.color(.attention)), lineWidth: 1.3)
+                    tc.stroke(Path(ellipseIn: CGRect(x: t.x + 3.6, y: t.top + 4.6, width: 5.8, height: 5.8)), with: .color(ink.color(.attention)),
+                              lineWidth: 1.2)
                 }
             }
         }
         // folded older rounds
         if let f = s.fold {
-            ctx.fill(Path(ellipseIn: CGRect(x: f.node.x - 3, y: f.node.y - 3, width: 6, height: 6)), with: .color(ink.color(.railDot)))
             text(f.title, in: &ctx, ink: ink)
-            ctx.fill(Path(roundedRect: f.rect, cornerRadius: 4), with: .color(ink.color(.track)))
+            ctx.fill(Path(roundedRect: f.rect, cornerRadius: 5), with: .color(ink.color(.otrack)))
             text(f.text, in: &ctx, ink: ink)
             text(f.link, in: &ctx, ink: ink)
         }
@@ -330,9 +356,9 @@ struct MapCanvas: View, Equatable {
             var rc = ctx
             if row.dim { rc.opacity = 0.38 }
             for t in row.ticks where t.strong {
-                let r = CGRect(x: t.x - 1.3, y: t.top + 1.5, width: 2.6, height: rug - 1)
-                rc.stroke(Path(roundedRect: r, cornerRadius: 0.8), with: .color(ink.color(.content)), lineWidth: 0.8)
-                rc.fill(Path(roundedRect: r, cornerRadius: 0.8), with: .color(ink.color(.words)))
+                let r = CGRect(x: t.x - 1.3, y: t.top + 3, width: 2.6, height: 7.5)
+                rc.stroke(Path(roundedRect: r, cornerRadius: 1), with: .color(ink.color(.content)), lineWidth: 0.8)
+                rc.fill(Path(roundedRect: r, cornerRadius: 1), with: .color(ink.color(.path)))
             }
             for c in row.cells {
                 if let t = c.number { text(t, in: &rc, ink: ink, dimmed: c.dim || row.dim) }
@@ -362,13 +388,13 @@ struct MapCanvas: View, Equatable {
         if let t = s.foldLink { text(t, in: &ctx, ink: ink) }
     }
 
-    /// A failed build's words: its sign in red, the words in the label colour (VISUAL §4.7: red only for what is
-    /// broken). The words start with ⚠ where the sign goes; it is drawn as the one "did not build" sign, the octagon
+    /// A failed build's words: its sign in label2, the words in the label colour (UI v4, BRIEF §8.4: red only for an
+    /// error). The words start with ⚠ where the sign goes; it is drawn as the one "did not build" sign, the octagon
     /// (`BuildSign.failed`; the UI audit: the same state was ⚠, ⊗ and a filled octagon).
     static func signed(_ t: MapText, in ctx: inout GraphicsContext, ink: MapInk, dimmed: Bool = false) {
         guard t.text.hasPrefix("⚠") else { return text(t, in: &ctx, ink: ink, dimmed: dimmed) }
         let rest = String(t.text.dropFirst())
-        let sign = Text(Image(systemName: BuildSign.failed)).foregroundColor(ink.color(.danger))
+        let sign = Text(Image(systemName: BuildSign.failed)).foregroundColor(ink.color(.label2))
         var c = ctx
         if dimmed { c.opacity = 1 }
         let r = c.resolve((sign + Text(rest).foregroundColor(ink.color(dimmed ? .dimText : t.ink))).font(t.font.swiftUI))
@@ -376,7 +402,7 @@ struct MapCanvas: View, Equatable {
         c.draw(r, in: CGRect(x: t.x, y: t.baseline - r.firstBaseline(in: size), width: size.width, height: size.height))
     }
 
-    /// A path's point (§4.5): ○ written, ● carried, an amber ring to check, ✓ or – closed, ⊗ its passage deleted, □ not
+    /// A path's point (§4.5): ○ written, ● carried, a vermilion ring to check, ✓ or – closed, ⊗ its passage deleted, □ not
     /// placed in the round, a faint dot on the folded rounds.
     static func point(_ p: MapScene.PathPoint, in ctx: inout GraphicsContext, ink: MapInk) {
         let k: CGFloat = p.small ? 0.75 : 1, x = p.at.x, y = p.at.y
@@ -453,7 +479,7 @@ struct MapHoverLayer: View {
             case .round(let n), .edit(_, let n), .unplaced(let n): round = n
             default: break
             }
-            // the row's section names, above it, clear of its chips and the gap's labels and pills
+            // the row's section names, above it, clear of the gap's labels and pills
             guard let n = round else { return }
             for t in scene.hoverNames(n, data) { MapCanvas.text(t, in: &ctx, ink: ink) }
         }
@@ -549,6 +575,7 @@ enum MapHelp {
             }
             return []
         case .round(let n):
+            // the round's dates (came in, went back) and counts, which its label and the readout leave out (UI v4)
             guard let r = d.round(n) else { return [] }
             let first = n == d.rounds.first?.n
             var out = ["Round \(n) · " + OverviewText.dates(r.created, r.isClosed ? r.closedAt : nil)]
@@ -558,15 +585,22 @@ enum MapHelp {
                 out.append("Build failed · " + MapScene.waitWords(MapScene.waiting(d, n)))
             } else {
                 let c = r.comments ?? .init()
-                out.append("\(count(c.present, "comment"))" + (r.build?.pages.map { " · " + count($0, "page") } ?? ""))
+                out.append("\(count(c.present, "comment"))" + (!first ? ", \(c.new) new" : "")
+                           + (r.build?.pages.map { " · " + count($0, "page") } ?? ""))
                 if !first {
-                    out.append((student.isEmpty ? "Student" : student) + ": " + [c.edited > 0 ? "\(c.edited) edited" : nil,
-                        c.noteOnly > 0 ? "\(c.noteOnly) note only" : nil, c.untouched > 0 ? "\(c.untouched) untouched" : nil,
-                        c.waiting > 0 ? "\(c.waiting) waiting" : nil].compactMap { $0 }.joined(separator: ", "))
+                    let resp = MapScene.responses(c)
+                    if !resp.isEmpty { out.append((student.isEmpty ? "Student" : student) + ": " + resp.joined(separator: ", ")) }
+                    let done = MapScene.answers(c)
+                    let you = r.isClosed ? [done, c.leftOpen > 0 ? "\(c.leftOpen) left open" : ""]
+                        : [done.isEmpty ? "" : done + " so far", c.toCheck > 0 ? "○ \(c.toCheck) to check" : ""]
+                    if let y = you.filter({ !$0.isEmpty }).joined(separator: " · ").nonEmpty { out.append("You: " + y) }
                 }
                 if let w = r.words {
-                    if first { w.body.map { out.append(OverviewText.grouped($0) + " words") } }
-                    else if let a = w.added { out.append("+\(a) −\(w.deleted ?? 0) words · " + count(r.edits?.count ?? 0, "edit")) }
+                    // the body's words for every round; after the first, what changed and the edits
+                    let body = w.body.map { OverviewText.grouped($0) + " words" }
+                    if first { body.map { out.append($0) } }
+                    else if let a = w.added { out.append([body, "+\(a) −\(w.deleted ?? 0)", count(r.edits?.count ?? 0, "edit")].compactMap { $0 }.joined(separator: " · ")) }
+                    else if let body { out.append(body) }
                 }
                 if !r.hasSections {
                     out.append(r.prose == "pending" || r.prose == nil
@@ -582,7 +616,7 @@ enum MapHelp {
                     ids.joined(separator: ", ") + ": the passage was not found in this round. Counted in the row, not in a section."]
         case .edit(let id, let n):
             guard let r = d.round(n), let e = r.edits?.first(where: { $0.id == id }) else { return [] }
-            let kind = e.move ? "Move" : e.unrequested ? "Edit nobody asked for" : "Edit"
+            let kind = e.move ? "Move" : e.unrequested ? "Unasked edit" : "Edit"
             var out = [kind + " · Round \(n)" + (e.page.map { " · p.\($0 + 1)" } ?? "")]
             var line = e.section.flatMap { d.sectionTitle($0, round: n) } ?? ""
             if !e.attachedTo.isEmpty { line += (line.isEmpty ? "" : " · ") + "for " + e.attachedTo.joined(separator: ", ") }
@@ -665,9 +699,12 @@ struct PaperMapView: View {
     let data: PaperOverview
     let student: String
     @State private var last: (target: MapTarget?, time: TimeInterval)?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         ZStack(alignment: .topLeading) {
+            selectedBox
             // a new Canvas for a new scene: in one background run of six the old one kept its last frame though it
             // had drawn the new scene (visual review 2026-10-19)
             MapCanvas(scene: scene).equatable().id(scene.stamp)
@@ -700,6 +737,26 @@ struct PaperMapView: View {
             overview.foldedParts = scene.plan.folded
             hover.scene = scene
         }
+    }
+
+    /// The selected round's box behind its label (the strip's round; BRIEF §8.3): one shape under the Canvas, which a
+    /// new scene replaces, so it slides from round to round (`MapMotion`); the accent's tint and a Sage outline while
+    /// that round is followed; none while its row is folded away: it fades out where it was, and back in at its round.
+    private var selectedBox: some View {
+        let ink = MapInk(dark: scheme == .dark)
+        return ZStack(alignment: .topLeading) {
+            if let box = scene.box {
+                RoundedRectangle(cornerRadius: 7)
+                    .fill(scene.boxFollowed ? ink.color(.accentTint) : Color(nsColor: Palette.fill))
+                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(ink.color(.accent), lineWidth: scene.boxFollowed ? 1 : 0))
+                    .frame(width: MapGeometry.box.width, height: MapGeometry.box.height)
+                    .offset(x: box.minX, y: box.minY)
+                    .transition(.opacity)
+            }
+        }
+        .animation(MapMotion.animation(reduceMotion: MapMotion.reduceMotion ?? reduceMotion), value: scene.box?.minY)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     /// The pointer at `p` on the map: what it is over and that thing's help tag (`MapHelp`); no comment to preview (a
@@ -758,13 +815,13 @@ struct PaperMapView: View {
         ForEach(scene.rows, id: \.n) { row in
             ZStack(alignment: .topLeading) {
                 Color.clear
-                    .frame(width: MapGeometry.mapX - 10, height: MapGeometry.cell + 6)
+                    .frame(width: MapGeometry.box.width - 10, height: MapGeometry.box.height)
                     .accessibilityElement()
                     .accessibilityLabel(data.round(row.n).map { MapSpeech.row(data, $0, student: student) } ?? "Round \(row.n)")
-                    .accessibilityAddTraits(row.pillSelected ? [.isButton, .isSelected] : [.isButton])
+                    .accessibilityAddTraits(overview.selection == .round(row.n) ? [.isButton, .isSelected] : [.isButton])
                     .accessibilityAction { model.overviewClicked(.round(row.n)) }
                     .accessibilityAction(named: "Open Round \(row.n) in Review") { model.overviewClicked(.round(row.n), double: true) }
-                    .padding(.top, max(0, row.y - 3))
+                    .padding(.top, max(0, row.y - 6))
                 ForEach(row.cells, id: \.section) { c in
                     if let kind = c.fold {
                         // a folded part: one element, whose action shows its sections (VISUAL §5.1)
@@ -831,7 +888,7 @@ struct MapTip: View {
     }
 
     /// A line with the student's added words ("+120") in the edits' green, the one place green says words (the
-    /// mockup's tag), and ○ amber.
+    /// mockup's tag), and ○ in vermilion.
     static func words(_ line: String, ink: MapInk) -> Text {
         var out = Text("")
         var bold = false  // between ** and **: the name under the pointer in a quiet segment's tag
@@ -866,142 +923,151 @@ struct MapTip: View {
     }
 }
 
-/// The legend under the map, one line that wraps (OVERVIEW-v2 §3.3, §4.2; VISUAL v3 §4.8): this paper's three steps,
-/// each a swatch and its range, the ○ chip, the two edit ticks, a band, a folded block while one is folded, and Full
-/// key; at the right, Map or Table (the table has no ticks, bands or blocks).
-struct MapLegend: View {
+/// A row of the Key under the map (UI v4, mac/UX.md §40.4; mockup `keyPopover`): one per mark on this map, so a mark
+/// that is not drawn is not explained.
+enum MapKeyRow: String, CaseIterable {
+    case shades, toCheck, revised, unasked, band, folded
+
+    var noun: String {
+        switch self {
+        case .shades: return "Comments on a section"
+        case .toCheck: return "To check"
+        case .revised: return "Revised"
+        case .unasked: return "Unasked edit"
+        case .band: return "Same section a round apart"
+        case .folded: return "Folded part"
+        }
+    }
+
+    /// The rows for the marks on the map drawn (`scene`), or, as a table (no scene), its shades and ○.
+    static func rows(_ s: MapScene?, _ d: PaperOverview) -> [MapKeyRow] {
+        guard let s else {
+            let open = d.latest.map { !$0.isClosed && (($0.comments?.toCheck ?? 0) > 0 || ($0.changes?.toCheck ?? 0) > 0) } ?? false
+            return [MapShade.counts(d).contains { $0 > 0 } ? .shades : nil, open ? .toCheck : nil].compactMap { $0 }
+        }
+        let ticks = s.rows.flatMap(\.ticks)
+        let on: [MapKeyRow: Bool] = [
+            .shades: s.rows.contains { $0.cells.contains { $0.count > 0 } },
+            .toCheck: s.rows.contains { $0.ring != nil || $0.cells.contains(where: \.outlined) } || ticks.contains(where: \.toCheck)
+                || s.paths.contains { $0.points.contains { $0.glyph == .toCheck } },
+            .revised: ticks.contains { !$0.unrequested },
+            .unasked: ticks.contains(where: \.unrequested),
+            .band: !s.bands.isEmpty,
+            .folded: !s.plan.folded.isEmpty,
+        ]
+        return allCases.filter { on[$0] == true }
+    }
+}
+
+/// The Key's popover (mockup `keyPopover`): rows of 32 pt, each the mark at the map's own size in a 96 pt column, then
+/// its noun.
+struct MapKeyPopover: View {
+    let rows: [MapKeyRow]
     let steps: [Int]
-    var table = false
-    var folded = false
-    var setTable: (Bool) -> Void = { _ in }
+    /// The last row, "Reading the Paper Map" (mockup `.klink`): Help's topic (UI v4 step 8).
+    var openHelp: (() -> Void)?
     @Environment(\.colorScheme) private var scheme
-    @State private var showKey = false
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            items
-            Spacer(minLength: 0)
-            Toggle(isOn: Binding(get: { table }, set: { setTable($0) })) {
-                Image(systemName: "tablecells")
+        let ink = MapInk(dark: scheme == .dark)
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(rows, id: \.self) { r in
+                HStack(spacing: 12) {
+                    Self.picture(r, steps: steps, ink: ink).frame(width: 96, alignment: .leading)
+                    Text(r.noun).font(TypeScale.body).foregroundStyle(Ink.label).lineLimit(1)
+                }
+                .frame(height: 32)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(r == .shades ? r.noun + ": " + MapShade.labels(steps).joined(separator: ", ") : r.noun)
             }
-            .toggleStyle(.button)
-            .controlSize(.small)
-            .fixedSize()
-            .help(table ? "Show the paper map as a map" : "Show the paper map as a table")
-            .accessibilityLabel("Show as a table")
+            if let openHelp {
+                Button(action: openHelp) {
+                    Label(HelpTopic.paperMap.title, systemImage: "book").font(TypeScale.callout)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Ink.accentText)
+                .padding(.top, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .overlay(alignment: .top) { Rectangle().fill(Color(nsColor: Palette.rule)).frame(height: 1) }
+                .padding(.top, 6)
+            }
         }
+        .padding(.horizontal, 16).padding(.vertical, 10)
+        .frame(width: 316, alignment: .leading)
     }
 
-    private var items: some View {
-        let ink = MapInk(dark: scheme == .dark), labels = MapShade.labels(steps)
-        return WrapLayout(spacing: 18) {
-            HStack(spacing: 7) {
-                HStack(spacing: 9) {
-                    ForEach(0..<3, id: \.self) { i in
-                        HStack(spacing: 4) {
-                            RoundedRectangle(cornerRadius: 3).fill(ink.color(.cell(i + 1))).frame(width: 12, height: 12)
-                            Text(labels[i]).monospacedDigit().foregroundStyle(Ink.label2)
-                        }
-                    }
-                }
-                Text("comments on a section, this round")
-            }
-            HStack(spacing: 7) {
-                HStack(spacing: 3) {
-                    Circle().strokeBorder(ink.color(.attention), lineWidth: 1.4).frame(width: 7, height: 7)
-                    Text("2").font(.system(size: 11, weight: .semibold)).foregroundStyle(ink.color(.attention))
-                }
-                .padding(.horizontal, 6).frame(height: 16)
-                .background(Capsule().fill(ink.color(.card)))
-                .overlay(Capsule().strokeBorder(ink.color(.attention), lineWidth: 1))
-                Text("to check")
-            }
-            if !table { ticksAndBand(ink) }
-            if !table && folded {
-                HStack(spacing: 7) {
-                    Canvas { ctx, size in
-                        ctx.fill(Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 3), with: .color(ink.color(.track)))
-                        MapCanvas.chevron(at: CGPoint(x: 8, y: size.height / 2), down: false, in: &ctx, color: ink.color(.secondary))
-                    }
-                    .frame(width: 22, height: 14)
-                    Text("folded: click to show")
-                }
-            }
-            Button("Full Key") { showKey.toggle() }
-                .buttonStyle(LinkStyle())  // a link, as every link in words (the UI audit: it read as a label)
-                .font(.system(size: 12, weight: .medium))
-                .popover(isPresented: $showKey, arrowEdge: .bottom) { MapKey() }
-        }
-        .font(.system(size: 12))
-        .foregroundStyle(Ink.secondary)
-    }
-
+    /// A row's mark at the map's own size (also Help's pictures).
     @ViewBuilder
-    private func ticksAndBand(_ ink: MapInk) -> some View {
-        HStack(spacing: 7) {
-            Canvas { ctx, _ in
-                var c = ctx
-                c.opacity = MapInk.tickOpacity
-                for x in [3.0, 8.0] { c.fill(Path(roundedRect: CGRect(x: x, y: 3, width: 1.5, height: 5), cornerRadius: 0.6), with: .color(ink.color(.words))) }
-                c.fill(Path(roundedRect: CGRect(x: 15.25, y: 3, width: 1.5, height: 2.6), cornerRadius: 0.6), with: .color(ink.color(.other)))
-                c.fill(Path(ellipseIn: CGRect(x: 14.5, y: 6, width: 3, height: 3)), with: .color(ink.color(.other)))
+    static func picture(_ r: MapKeyRow, steps: [Int], ink: MapInk) -> some View {
+        switch r {
+        case .shades:
+            HStack(spacing: 3) {
+                ForEach(Array(MapShade.labels(steps).enumerated()), id: \.offset) { i, l in
+                    Text(l).font(.system(size: 11, weight: .semibold)).monospacedDigit().foregroundStyle(ink.color(.label))
+                        .frame(minWidth: 28).padding(.horizontal, 2).frame(height: 20)
+                        .background(RoundedRectangle(cornerRadius: 4).fill(ink.color(.cell(i + 1))))
+                        .fixedSize()
+                }
             }
-            .frame(width: 22, height: 12)
-            (Text("edits: asked for · ") + Text("nobody asked").foregroundColor(ink.color(.other)))
-        }
-        HStack(spacing: 7) {
+        case .toCheck:
+            StatusGlyphView(.ring(0), size: 11)
+        case .revised, .unasked:
+            Canvas { ctx, size in
+                ctx.fill(Path(roundedRect: CGRect(origin: .zero, size: size), cornerRadius: 4), with: .color(ink.color(.band)))
+                let h: CGFloat = r == .unasked ? 4 : 6
+                ctx.fill(Path(roundedRect: CGRect(x: 19, y: 13 - h, width: 2, height: h), cornerRadius: 1), with: .color(ink.color(.ink)))
+                if r == .unasked {
+                    ctx.stroke(Path(ellipseIn: CGRect(x: 23.6, y: 7.6, width: 5.8, height: 5.8)), with: .color(ink.color(.attention)), lineWidth: 1.2)
+                }
+            }
+            .frame(width: 64, height: 20)
+        case .band:
             Canvas { ctx, _ in
+                ctx.fill(Path(roundedRect: CGRect(x: 2, y: 0, width: 34, height: 5), cornerRadius: 1.5), with: .color(ink.color(.s2)))
                 var p = Path()
-                p.addLines([CGPoint(x: 3, y: 1), CGPoint(x: 19, y: 1), CGPoint(x: 27, y: 15), CGPoint(x: 11, y: 15)])
+                p.addLines([CGPoint(x: 4, y: 6), CGPoint(x: 34, y: 6), CGPoint(x: 54, y: 16), CGPoint(x: 24, y: 16)])
                 p.closeSubpath()
-                // on the legend's ground the band is drawn a little stronger than on the map, to be seen at this size
-                ctx.fill(p, with: .color(ink.color(.band, scale: 1.6)))
+                ctx.fill(p, with: .color(ink.color(.band)))
+                ctx.fill(Path(roundedRect: CGRect(x: 22, y: 17, width: 34, height: 5), cornerRadius: 1.5), with: .color(ink.color(.s1)))
             }
-            .frame(width: 30, height: 16)
-            Text("same section a round apart")
+            .frame(width: 64, height: 22)
+        case .folded:
+            Canvas { ctx, size in
+                MapCanvas.stripes(CGRect(origin: .zero, size: size), in: &ctx, a: ink.color(.s1), b: ink.color(.track))
+            }
+            .frame(width: 64, height: 20)
         }
     }
 }
 
-/// The map's full key (the mockup's encoding section), in words.
-struct MapKey: View {
+/// The map's full key (the mockup's encoding section), in words: Help's Reading the Paper Map and, for `following`,
+/// Following and Review (UI v4; the Key's popover is `MapKeyPopover`).
+enum MapKey {
     static let items: [(String, String)] = [
         ("Rows are rounds; cells sit where the sections are",
          "Each row is the paper in one round, newest on top, at one page scale for every row: a shorter round ends with a cap and its page count. A cell is as wide as its section is long, but a short section is drawn wider, so its name and count fit, and the longer ones give it the room; its name sits at the left when it fits, whole or in a short form. References count like any other section."),
         ("Number and shade say one thing",
-         "Comments on that section in that round: written then plus still open from before. The shade repeats the count in three steps chosen for this paper (thirds of its own counts), printed in the legend. Neither changes when you follow something."),
+         "Comments on that section in that round: written then plus still open from before. The shade repeats the count in three steps chosen for this paper (thirds of its own counts), named in the Key under the map. Neither changes when you follow something."),
         ("A long appendix folds into one block",
-         "An appendix longer than three pages (and a References list longer than four) is one block about two pages wide, with its pages under the axis and its comments in one count, shaded as a cell. A click shows its sections at their real length; Fold under the axis folds it again. Following anything inside it shows it first. Settings › Overview turns folding off."),
+         "An appendix longer than three pages (and a References list longer than four) is one block about two pages wide, with its pages under the axis and its comments in one count, drawn in stripes. A click shows its sections at their real length; Fold under the axis folds it again. Following anything inside it shows it first. Settings › Overview turns folding off."),
         ("Quiet segments",
          "Neighbouring sections with no comments, each too narrow for a cell of its own, are drawn as one quiet stretch of track. The pointer names them, and a click or the arrow keys still go section by section."),
         ("To check has its own mark",
-         "Only in the open round: an amber ○ chip over the cell says how many of that cell’s comments still wait for your answer. The chips add up to the comments to check."),
+         "Only in the open round: the round’s vermilion ring says it has comments still waiting for your answer, and once some are answered, a vermilion outline marks the cells that still have some. A cell’s help tag gives the number."),
         ("Ticks are the student’s edits",
-         "One tick per edit, where it was made: a bar when a comment asked for it, a short bar with a dot when nobody did, an amber ring while it still waits for you. When you follow a comment, the edits made for it stand out."),
+         "One tick per edit, where it was made: a tick when a comment asked for it, a short tick when nobody did, with a vermilion ring while it still waits for you. When you follow a comment, the edits made for it stand out."),
         ("Bands follow each section by its paragraphs",
          "A band joins a section to itself one round apart; sections are matched by their paragraphs, not their headings. A slanted band moved; two bands into one cell merged; one into two split; a band wider at one end changed length; moved, merged, split and renamed are also said beside it. A cell with no band below was added; a band ending in a point was removed."),
         ("Following something",
          "Click a cell, a band, a round, a page or a comment to follow it: what it touches stays, the rest steps back, and a Sage line under each round’s numbers says what it is in that round. Esc or the token’s × shows the whole paper again; a double click opens Review there."),
         ("Following a comment",
-         "Its path shows where it sat in each round: ○ written, ● carried, an amber ring to check, ✓ or – closed, ⊗ its passage was deleted, □ the round could not place it."),
+         "Its path shows where it sat in each round: ○ written, ● carried, a vermilion ring to check, ✓ or – closed, ⊗ its passage was deleted, □ the round could not place it."),
         ("When something is missing",
          "A round whose sections are not known yet shows its pages, comment dots and edits only. Comments a round could not place count in an “unplaced” cap after the row. Older rounds fold when they do not fit the window."),
         ("The readout never changes",
-         "Beside each row: the round’s comments and your answers (with the student’s responses in a wide window). What you follow adds one Sage line under it, so a number in a place keeps one meaning."),
+         "Beside each row: the round’s comments, and your answers once a round has some. The student’s responses and the round’s dates are in its help tag. What you follow adds one Sage line under it, so a number in a place keeps one meaning."),
     ]
 
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
-                ForEach(Self.items, id: \.0) { item in
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(item.0).font(.system(size: 13, weight: .semibold))
-                        Text(item.1).font(.system(size: 12)).foregroundStyle(Ink.label2).fixedSize(horizontal: false, vertical: true)
-                    }
-                }
-            }
-            .padding(16)
-        }
-        .frame(width: 440, height: 460)
-    }
+    /// "Following something" and "Following a comment": Following and Review's.
+    static let following = [7, 8]
 }

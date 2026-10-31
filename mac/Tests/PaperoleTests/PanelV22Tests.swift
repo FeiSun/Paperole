@@ -792,7 +792,7 @@ final class PanelSwitchTests: XCTestCase {
         spin(0.3)
         func all<T: NSView>(_ type: T.Type, in v: NSView) -> [T] { ((v as? T).map { [$0] } ?? []) + v.subviews.flatMap { all(type, in: $0) } }
         let pager = try XCTUnwrap(all(PagerView.self, in: host).first)
-        XCTAssertEqual(pager.pages.count, 2)
+        XCTAssertEqual(pager.pages.count, 3, "Comments, Changes and Checks (UX.md §39), alive from the start")
         XCTAssertEqual(pager.shown, 0)
         let tables = all(PanelTableView.self, in: host)
         XCTAssertEqual(tables.count, 2, "both lists are there from the start")

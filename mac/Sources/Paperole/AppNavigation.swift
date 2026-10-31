@@ -122,6 +122,14 @@ extension AppModel {
         if item.status == .ready, selectedPath == item.paper.path { pendingFinish = item.paper.path }
     }
 
+    /// A student page card's New Round… (UI v4): the paper selected first (its overview), then Start Round as from
+    /// its toolbar.
+    func startRound(_ path: String) {
+        openPaper(path)
+        guard selectedPath == path else { return }
+        startRound()
+    }
+
     /// Review at a position (OVERVIEW-v2 §5.1 "进审阅"): a double click on a cell, page, comment or round, the
     /// overview panel's Open in Review, the toolbar's Continue Round N (the latest round). From the overview, its
     /// place is pushed first, so Back returns to it as it was.
@@ -186,7 +194,7 @@ extension AppModel {
     }
 
     private func target(_ r: ReviewPlace) -> ReviewTarget {
-        ReviewTarget(round: r.round, comment: r.comment, change: r.change, pdf: r.pdf)
+        ReviewTarget(round: r.round, comment: r.comment, change: r.change, pdf: r.pdf, tab: r.tab)
     }
 
     // MARK: Review at a position
@@ -211,6 +219,7 @@ extension AppModel {
 
     /// Entering Review is a window step already: none of these moves records a PDF step (PLAN §5.2).
     private func applyTarget(_ t: ReviewTarget) {
+        let selects = t.comment.map { comment($0) != nil } == true || t.change.map { change($0) != nil } == true
         if let id = t.comment, comment(id) != nil {
             if tab != .comments { tab = .comments }
             select(.comment(id), reveal: t.pdf == nil, scroll: .centre, step: nil)
@@ -227,6 +236,9 @@ extension AppModel {
         } else if t.pdf == nil, let p = t.page {
             pdf.reveal(page: p, rects: [])
         }
+        // the tab it was left on, when nothing above chose one (a comment or change gone since); the Checks tab only
+        // while Checks is on and Focus, which has no tabs, is not
+        if !selects, let tb = t.tab, tb != tab, tb != .checks || (checksOn && !focus) { tab = tb }
         if let at = t.pdf { pdf.go(to: at) }  // Review as it was left: the PDF's place, after the selection
     }
 
@@ -278,6 +290,7 @@ extension AppModel {
             if overview.selection != nil { overview.selection = nil }
             return
         }
+        actions.tips.dismiss(.follow)  // the first follow: the tip has done its job
         if double { return openReview(reviewTarget(for: item)) }
         // something inside a folded part (a section, a page, a comment there): the part is shown first (VISUAL §5.1)
         if let d = overview.data {
@@ -460,5 +473,13 @@ extension AppModel {
         if l.closed { return ("Open Round \(l.n)", false, l.n) }
         if l.status == "failed" { return ("Show Log…", false, l.n) }
         return ("Continue Round \(l.n)", true, l.n)
+    }
+
+    /// The paper page's header figure (UI v4, mac/UX.md §40.4): the shown paper's state, its changed paragraphs to read
+    /// counted (`withReading`); none while its folder is missing.
+    var paperHeader: PaperHeader? {
+        guard let path = selectedPath, !missingPapers.contains(path),
+              let s = (state?.summary ?? summaries[path]).map(withReading) else { return nil }
+        return PaperHeader.make(PaperStatus.of(s, finished: papers.first { $0.path == path }?.finished), s, overview.data)
     }
 }

@@ -187,7 +187,8 @@ final class PaletteTests: XCTestCase {
         XCTAssertEqual(MarkColor.orange.ink, NSColor(hex: 0xC2410C))
     }
 
-    /// Each status colour as a word on the card, in either mode, and each ink on white reach 4.5:1 (UX.md §2, §5).
+    /// Each status colour as a word on the card, in either mode, and each ink on white reach 4.5:1 (UX.md §2, §5); To
+    /// check's vermilion is a sign's only (UI v4, UX.md §40.1): 3:1 as a graphic (4.15:1 on the dark card).
     func testContrast() {
         func lum(_ c: NSColor) -> CGFloat {
             let s = c.usingColorSpace(.sRGB)!
@@ -200,9 +201,10 @@ final class PaletteTests: XCTestCase {
             return out
         }
         for s in [Status.new, .toCheck, .notFound, .followUp, .resolved, .keptAsIs] {
-            XCTAssertGreaterThanOrEqual(1.05 / (lum(resolved(s.color, .aqua)) + 0.05), 4.5, s.word)
+            let least: CGFloat = s == .toCheck ? 3 : 4.5
+            XCTAssertGreaterThanOrEqual(1.05 / (lum(resolved(s.color, .aqua)) + 0.05), least, s.word)
             XCTAssertGreaterThanOrEqual((lum(resolved(s.color, .darkAqua)) + 0.05)
-                                        / (lum(resolved(Palette.card, .darkAqua)) + 0.05), 4.5, s.word)
+                                        / (lum(resolved(Palette.card, .darkAqua)) + 0.05), least, s.word)
         }
         for c in MarkColor.allCases { XCTAssertGreaterThanOrEqual(1.05 / (lum(c.ink) + 0.05), 4.5, c.name) }
         // the unrequested colour as text: on light panels (white, #ECECEC) and dark ones (#1E1E1E, #323232)

@@ -5,7 +5,7 @@ import XCTest
 
 /// The paper map's layout (OVERVIEW-v2 §4, the mockup's rules), as pure functions: the geometry by width, the shades
 /// per paper, the fold, the key page, where a count goes, and over every state of the synthetic papers that every
-/// count is there, inside its cell, never covered by a chip, a label, a pill or a path dot, and never changed by what is
+/// count is there, inside its cell, never covered by a label, a pill or a path dot, and never changed by what is
 /// followed; the structure labels never overlap; nothing runs past the overview's width. Synthetic data only: the
 /// engine's reply for a four-round paper it built (Fixtures/overview-kelp.json: a merge, a rename, a split, a move, a
 /// removed appendix and an added Conclusion), the M2a fixture, a generated stress paper (17 sections, 8 rounds), and a
@@ -149,25 +149,28 @@ final class MapLayoutTests: XCTestCase {
     // MARK: Pure rules
 
     func testGeometryByWidth() {
-        // three columns only from 1360 pt (the UI audit of 2026-10-21: the readout took the map's room at 1440)
-        let widest = MapGeometry(width: 1700 - 236 - 48, maxPages: 12, unplaced: false)
-        XCTAssertEqual(widest.columns, 3)
-        XCTAssertEqual(widest.readoutWidth, 320)
+        // UI v4: the readout a fixed 168 pt at every width (it was 320, 214 or 132 by width), Comments and, by the
+        // data only, You; so the map keeps its room whether You shows or not
         let wide = MapGeometry(width: Self.widths[0], maxPages: 12, unplaced: false)
-        XCTAssertEqual(wide.columns, 2)
-        XCTAssertEqual(wide.readoutWidth, 214)
-        XCTAssertEqual(wide.mapRight, wide.width - 214 - 22)
+        XCTAssertEqual(wide.columns, 1)
+        XCTAssertEqual(wide.readoutWidth, 168)
+        let you = MapGeometry(width: Self.widths[0], maxPages: 12, unplaced: false, you: true)
+        XCTAssertEqual(you.columns, 2)
+        XCTAssertEqual(you.readoutWidth, 168)
+        XCTAssertEqual(you.mapRight, wide.mapRight)
+        XCTAssertEqual(you.columnRight, [you.readoutX + 48, you.width], "figures right-aligned: Comments, then You at the edge")
+        XCTAssertEqual(wide.columnRight, [wide.width])
+        XCTAssertEqual(wide.mapRight, wide.width - 168 - 22)
         XCTAssertEqual(wide.x(0), 108)
         XCTAssertEqual(wide.x(12), wide.mapRight, accuracy: 0.001)
-        XCTAssertEqual(MapGeometry(width: Self.widths[1], maxPages: 12, unplaced: false).columns, 2)
         let narrow = MapGeometry(width: Self.widths[2], maxPages: 12, unplaced: true)
-        XCTAssertEqual(narrow.columns, 1)
         XCTAssertEqual(narrow.capWidth, 46, "room for the unplaced caps")
-        XCTAssertEqual(narrow.mapWidth, Self.widths[2] - 132 - 22 - 46 - 108)
-        // the mockup's map widths: about 700, 650 and 410 pt (a little less with unplaced caps)
-        XCTAssertEqual(MapGeometry(width: Self.widths[0], maxPages: 1, unplaced: false).mapWidth, 812, accuracy: 30)
-        XCTAssertEqual(MapGeometry(width: Self.widths[1], maxPages: 1, unplaced: false).mapWidth, 672, accuracy: 30)
-        XCTAssertEqual(MapGeometry(width: Self.widths[2], maxPages: 1, unplaced: false).mapWidth, 414, accuracy: 30)
+        XCTAssertEqual(narrow.mapWidth, Self.widths[2] - 168 - 22 - 46 - 108)
+        // the map's widths at 1440, 1280 and 960 pt windows (they were 812, 672 and 414)
+        XCTAssertEqual(MapGeometry(width: Self.widths[0], maxPages: 1, unplaced: false).mapWidth, 858)
+        XCTAssertEqual(MapGeometry(width: Self.widths[1], maxPages: 1, unplaced: false).mapWidth, 698)
+        XCTAssertEqual(MapGeometry(width: Self.widths[2], maxPages: 1, unplaced: false).mapWidth, 378)
+        XCTAssertEqual(MapGeometry.cell, 32, "UI v4: 32 pt cells (they were 28)")
     }
 
     /// Three steps per paper (VISUAL v3 §4.1, decision 1): thirds of its own non-zero counts; 1 · 2 · 3+ while no count
@@ -412,7 +415,8 @@ final class MapLayoutTests: XCTestCase {
                 }
                 for c in cells {
                     if c.count > 0 { XCTAssertNotNil(c.number, "its count, \(c.section)@\(row.n) at \(w)") }
-                    XCTAssertGreaterThan(c.rect.width, w == Self.widths[2] ? 20 : 38, "\(c.section) at \(w): \(c.rect.width)")
+                    // UI v4: 19.5 pt at 960 (it was over 20; the readout is 168 pt there, it was 132), still its count's room
+                    XCTAssertGreaterThan(c.rect.width, w == Self.widths[2] ? 19 : 38, "\(c.section) at \(w): \(c.rect.width)")
                     guard w != Self.widths[2] else { continue }
                     let name = try XCTUnwrap(c.name, "\(c.section)@\(row.n) at \(w) has a name")
                     let sn = try XCTUnwrap(s.names[MapScene.nameID(c.section, d.sectionTitle(c.section, round: row.n) ?? "")])
@@ -491,13 +495,46 @@ final class MapLayoutTests: XCTestCase {
         let sixty = StripLabels(slot: 676 / 60, pages: 60)
         XCTAssertEqual(sixty.every, 2)
         XCTAssertTrue(sixty.shows(0) && !sixty.shows(1), "1, 3, 5 …")
+        // UI v4: the ring and the page's count 6 pt after the number while they fit (8 pages), else a ring on the page's
+        // corner (30 pages; a 3-digit page in a slot that fits its number alone)
+        let eight = StripLabels(slot: 1156 / 8, pages: 8, most: 3)
+        XCTAssertTrue(eight.ringBeside)
+        XCTAssertEqual(eight.every, 1)
+        XCTAssertEqual(eight.ringWidth, 6 + 10 + 3 + MapFont.label.width("3"))
+        XCTAssertFalse(StripLabels(slot: 676 / 30, pages: 30, most: 3).ringBeside)
+        let wide = StripLabels(slot: 40, pages: 120, most: 12)
+        XCTAssertEqual(wide.every, 1)
+        XCTAssertFalse(wide.ringBeside, "a 3-digit page with a 2-digit count")
+        XCTAssertFalse(StripLabels(slot: 676 / 60, pages: 60, most: 1).ringBeside)
+        // the strip names its round only when it is not the latest
+        XCTAssertEqual(PageStripView.roundLabel(1, latest: 2), "Round 1")
+        XCTAssertNil(PageStripView.roundLabel(2, latest: 2))
+        XCTAssertNil(PageStripView.roundLabel(nil, latest: 2))
+    }
+
+    /// A page's help tag gives the round's page count and adds up to its count to check (comments and edits), which
+    /// shows on the page's corner instead when the strip is crowded.
+    func testThePagesHelpHasItsCountToCheck() throws {
+        let d = try Self.kelp()
+        let r = try XCTUnwrap(d.round(4))
+        let toCheck = PageStripView.pagesToCheck(r, d)
+        XCTAssertFalse(toCheck.isEmpty)
+        let re = try NSRegularExpression(pattern: "○ (\\d+) to check")
+        for p in 0..<(r.build?.pages ?? 0) {
+            let help = PageStripView.pageHelp(r, d, page: p)
+            XCTAssertEqual(help[0], "Page \(p + 1) of \(r.build?.pages ?? 0) · Round 4")
+            let line = help[1] as NSString
+            let sum = re.matches(in: help[1], range: NSRange(location: 0, length: line.length))
+                .compactMap { Int(line.substring(with: $0.range(at: 1))) }.reduce(0, +)
+            XCTAssertEqual(sum, toCheck[p] ?? 0, "page \(p + 1): \(help[1])")
+        }
     }
 
     // MARK: The scene
 
     func testTheKelpMap() throws {
         let d = try Self.kelp()
-        let s = MapScene.build(MapInput(data: d, width: 1700 - 236 - 48, student: "Tomás"))  // the readout's three columns
+        let s = MapScene.build(MapInput(data: d, width: 1700 - 236 - 48, student: "Tomás"))
         XCTAssertEqual(s.rows.map(\.n), [4, 3, 2, 1], "the latest on top")
         // cells at their places, counts from heat
         let r4 = try XCTUnwrap(s.rows.first)
@@ -505,10 +542,16 @@ final class MapLayoutTests: XCTestCase {
         XCTAssertEqual(r4.cells.first { $0.section == "methods" }?.count, 6)
         XCTAssertEqual(r4.cells.first { $0.section == "methods" }?.number?.text, "6")
         XCTAssertNil(r4.cells.first { $0.section == "front" }?.number, "no comment: no number")
-        // the chips add up to the round's comments to check
-        XCTAssertEqual(r4.chips.compactMap { Int($0.text.text) }.reduce(0, +), (d.round(4)?.heat ?? []).map(\.toCheck).reduce(0, +))
-        XCTAssertTrue(s.rows.dropFirst().allSatisfy { $0.chips.isEmpty }, "chips only in the open round")
-        XCTAssertEqual(r4.node, .toCheck)
+        // UI v4: no chips; the cells to check add up to the round's comments to check, outlined once something in the
+        // round is answered (Kelp's Round 4 has 2 resolved)
+        XCTAssertEqual(r4.cells.map(\.toCheck).reduce(0, +), (d.round(4)?.heat ?? []).map(\.toCheck).reduce(0, +))
+        XCTAssertEqual(r4.cells.filter(\.outlined).map(\.section), r4.cells.filter { $0.toCheck > 0 }.map(\.section))
+        XCTAssertTrue(s.rows.dropFirst().allSatisfy { $0.cells.allSatisfy { $0.toCheck == 0 && !$0.outlined } }, "only in the open round")
+        XCTAssertNotNil(r4.ring, "the open round's ring before its name")
+        XCTAssertTrue(s.rows.dropFirst().allSatisfy { $0.ring == nil })
+        XCTAssertEqual(s.rows.map(\.old), [false, true, true, true], "every row but the top one from the older rounds' ramp")
+        XCTAssertEqual(r4.title.text, "Round 4")
+        XCTAssertEqual(r4.dates.text, shortDate(d.round(4)?.created), "the day it came in only")
         // the structure the engine found, said beside its bands
         let words = Set(s.labels.map(\.text.text))
         for w in ["merged into Methods", "renamed", "split", "moved", "removed", "added"] { XCTAssertTrue(words.contains(w), w) }
@@ -517,9 +560,12 @@ final class MapLayoutTests: XCTestCase {
         XCTAssertTrue(s.bands.contains { $0.kind == "removed" && $0.points.count == 3 }, "a removed section's band ends in a point")
         XCTAssertEqual(s.bands.filter { $0.kind == "split" }.count, 2, "a split draws two bands")
         // the readout: this round's numbers
-        XCTAssertEqual(r4.readout.map(\.text), ["12", "0 new", "3 edited", "3 untouched · 6 waiting", "✓ 2 so far"])
-        XCTAssertEqual(s.rows.last?.readout.map(\.text), ["15", "all new", "first draft"])
-        XCTAssertEqual(s.captions.map(\.text), ["Comments", "Tomás", "You"])
+        // UI v4: Comments and You (Round 4 has answers), no student column (its words in the round's tag); no "0 new"
+        // or "all new"; "–" where a round has no answers (they were "12 · 0 new · 3 edited · 3 untouched · 6 waiting")
+        XCTAssertEqual(r4.readout.map(\.text), ["12", "✓ 2 so far"])
+        XCTAssertEqual(s.rows.last?.readout.map(\.text), ["15", "–"])
+        XCTAssertEqual(s.rows.last?.readout.last?.ink, .tertiary)
+        XCTAssertEqual(s.captions.map(\.text), ["Comments", "You"])
         // edits: one tick each, where it was made; the one without a place has none
         XCTAssertEqual(r4.ticks.count, (d.round(4)?.edits ?? []).filter { $0.pos != nil }.count)
         XCTAssertEqual(r4.ticks.filter(\.toCheck).count, d.round(4)?.changes?.toCheck)
@@ -529,7 +575,9 @@ final class MapLayoutTests: XCTestCase {
         XCTAssertLessThanOrEqual(s.fans.count, starts + 2)
         XCTAssertEqual(s.fans.first?.first?.x, 0, "from the strip's left end")
         XCTAssertEqual(s.fans.last?.first?.x ?? 0, s.geometry.width, accuracy: 0.5, "to its right end")
-        XCTAssertEqual(s.axis.first?.text, "page")
+        XCTAssertTrue(s.axis.isEmpty, "UI v4: the strip numbers the pages, the axis does not")
+        let noStrip = MapScene.build(MapInput(data: d, width: 1700 - 236 - 48, student: "Tomás", stripShown: false))
+        XCTAssertEqual(noStrip.axis.first?.text, "page", "without the strip, the axis numbers them")
     }
 
     func testClicksFindWhatIsUnderThem() throws {
@@ -538,22 +586,20 @@ final class MapLayoutTests: XCTestCase {
         let cell = try XCTUnwrap(s.rows[1].cells.first { $0.section == "methods" })
         XCTAssertEqual(s.target(at: CGPoint(x: cell.rect.midX, y: cell.rect.midY)), .cell("methods", round: 3))
         XCTAssertEqual(MapTarget.cell("methods", round: 3).item, .section("methods", round: 3))
-        XCTAssertEqual(s.target(at: CGPoint(x: 30, y: s.rows[2].y + 10)), .round(2), "the rail")
+        XCTAssertEqual(s.target(at: CGPoint(x: 30, y: s.rows[2].y + 10)), .round(2), "the round's label")
         XCTAssertEqual(s.target(at: CGPoint(x: s.geometry.readoutX + 20, y: s.rows[0].y + 10)), .round(4), "the readout")
         let band = try XCTUnwrap(s.bands.first { $0.kind == "renamed" })
         let mid = CGPoint(x: band.points.map(\.x).reduce(0, +) / 4, y: band.points.map(\.y).reduce(0, +) / 4)
         XCTAssertEqual(s.target(at: mid), .band(from: "methods", to: "methods", round: 3))
         XCTAssertEqual(MapTarget.band(from: "extra", to: nil, round: 4).item, .section("extra", round: 3), "a removed band: its section before")
         XCTAssertNil(s.target(at: CGPoint(x: s.geometry.mapRight - 2, y: 2)), "the lens is empty space")
-        if let chip = s.rows[0].chips.first {
-            XCTAssertEqual(s.target(at: CGPoint(x: chip.rect.midX, y: chip.rect.minY + 2)), .cell(chip.section, round: 4))
-        }
+        XCTAssertNil(s.target(at: CGPoint(x: cell.rect.midX, y: s.rows[0].y - 12)), "no chips over the cells (UI v4)")
     }
 
     /// The mockup's visibility test (OVERVIEW-v2 §6), for the app's layout: in every state of every paper at the three
     /// window widths, each non-zero count is drawn inside its cell (or left out only when its cell is narrower than
     /// it and a neighbour's count is in the way), in full opacity when its cell holds what is followed, covered by no
-    /// chip, label, pill, path point or name; the structure labels do not overlap each other or the pills; the rounds'
+    /// label, pill, path point or name (UI v4: no chips); the structure labels do not overlap each other or the pills; the rounds'
     /// readout is the same whatever is followed; nothing runs past the overview's width.
     func testNothingCoversACount() throws {
         var kelpPending = try Self.kelpJSON()
@@ -586,7 +632,6 @@ final class MapLayoutTests: XCTestCase {
 
     static func check(_ s: MapScene, _ d: PaperOverview, _ sel: OverviewItem?) throws {
         let where_ = "\(String(describing: sel)) at \(s.geometry.width)"
-        let chips = s.rows.flatMap(\.chips).map(\.rect)
         let labels = s.labels.map(\.text.rect)
         let pills = s.carriedPills.map(\.0)
         let dots = s.paths.flatMap(\.points).map { p -> CGRect in
@@ -610,7 +655,7 @@ final class MapLayoutTests: XCTestCase {
                 if c.rect.width >= MapFont.number.width(t.text) + 4 {
                     XCTAssertTrue(c.rect.insetBy(dx: 1, dy: 0).contains(ink), "inside its cell: \(c.section)@\(row.n) \(where_)")
                 }
-                for r in chips + labels + pills + dots { XCTAssertFalse(r.intersects(ink), "\(c.section)@\(row.n) covered by \(r), \(where_)") }
+                for r in labels + pills + dots { XCTAssertFalse(r.intersects(ink), "\(c.section)@\(row.n) covered by \(r), \(where_)") }
                 for o in row.cells { if let n = o.name { XCTAssertFalse(n.rect.intersects(ink), "a name over \(c.section)@\(row.n)") } }
                 for o in numbers { XCTAssertFalse(o.intersects(ink), "two counts overlap at \(c.section)@\(row.n), \(where_)") }
                 numbers.append(ink)
@@ -627,7 +672,6 @@ final class MapLayoutTests: XCTestCase {
                 XCTAssertLessThanOrEqual(n.rect.maxX, c.rect.maxX - 3.9, "\(n.text) in \(c.section)@\(row.n), \(where_)")
                 XCTAssertFalse(c.quiet, "no name in a quiet segment")
             }
-            for (i, a) in row.chips.enumerated() { for b in row.chips[(i + 1)...] { XCTAssertFalse(a.rect.intersects(b.rect), "chips overlap") } }
             for t in row.readout + [row.title, row.dates] + (row.endText.map { [$0] } ?? []) {
                 XCTAssertLessThanOrEqual(t.rect.maxX, s.geometry.width + 0.5, "\(t.text) runs past the width, \(where_)")
             }
@@ -697,15 +741,15 @@ final class MapLayoutTests: XCTestCase {
         let s = MapScene.build(MapInput(data: d, width: Self.widths[0], buildErrors: "2 errors in methods.tex"))
         let r5 = try XCTUnwrap(s.rows.first)
         XCTAssertEqual(r5.n, 5)
-        XCTAssertEqual(r5.node, .failed)
+        XCTAssertNil(r5.ring, "the octagon in its row says it, no ring")
         XCTAssertNotNil(r5.failed)
         let waiting = d.round(4)?.comments?.openAfter ?? 0
         XCTAssertEqual(r5.failedText?.text, "⚠ Build failed · 2 errors in methods.tex. \(MapScene.waitWords(waiting)).")
-        XCTAssertEqual(r5.readout.first?.text, MapScene.waitWords(waiting))
+        XCTAssertEqual(r5.readout.first?.text, MapScene.waitWords(waiting, counted: false), "the shorter form in the 168 pt readout")
         XCTAssertEqual(MapScene.waitWords(1), "1 comment waits for a PDF")
         XCTAssertEqual(MapScene.waitWords(3, counted: false), "3 wait for a PDF")
         XCTAssertEqual(MapScene.waitWords(0), "No comment waits for a PDF")
-        XCTAssertEqual(r5.carried?.text, "\(waiting) carried")
+        XCTAssertEqual(r5.carried?.text, "↑ \(waiting) carried")
         XCTAssertTrue(s.bands.allSatisfy { $0.round != 5 })
     }
 
@@ -762,12 +806,109 @@ final class MapLayoutTests: XCTestCase {
         let e = MapScene.build(MapInput(data: d, width: Self.widths[0], selection: .comment(edited.id)))
         XCTAssertTrue(e.rows.flatMap(\.ticks).contains { $0.strong && !$0.dim })
         XCTAssertTrue(e.rows.flatMap(\.ticks).filter { !$0.strong }.allSatisfy(\.dim))
-        let round = MapScene.build(MapInput(data: d, width: Self.widths[0], selection: .round(2)))
+        let round = MapScene.build(MapInput(data: d, width: Self.widths[0], strip: 2, selection: .round(2)))
         XCTAssertEqual(round.rows.filter(\.dim).map(\.n), [4, 3, 1])
-        XCTAssertTrue(round.rows.first { $0.n == 2 }?.pillSelected ?? false)
+        // the selected round's box behind the followed round's label: tinted and outlined (UI v4)
+        let r2 = try XCTUnwrap(round.rows.first { $0.n == 2 })
+        XCTAssertEqual(round.box?.minY, r2.y - 6)
+        XCTAssertTrue(round.boxFollowed)
         let page = MapScene.build(MapInput(data: d, width: Self.widths[0], selection: .page(round: 4, page: 1)))
         XCTAssertNotNil(page.pageBand)
         XCTAssertEqual(page.paths.count, d.comments.filter { $0.step(in: 4)?.page == 1 && $0.step(in: 4)?.state != "unplaced" }.count)
+    }
+
+    /// UI v4's map (plan §3 step 3, mac/UX.md §40.3): no chips, the round's label over its arrival date, older rows
+    /// from their own ramp, vermilion outlines on the cells to check only once something in the round is answered, a
+    /// You column only with answers, and the selected round's box at the strip's round (none while it is folded).
+    func testTheV4Map() throws {
+        var json = try Self.kelpJSON()
+        let answered = MapScene.build(MapInput(data: try Self.decode(json), width: Self.widths[0]))
+        XCTAssertFalse(answered.rows.contains { r in Mirror(reflecting: r).children.contains { $0.label == "chips" } }, "no chips in a scene")
+        XCTAssertFalse(answered.rows[0].cells.filter(\.outlined).isEmpty, "2 answered: the cells still to check outlined")
+        // nothing answered yet: every cell all to check, the round's ring says it once, no outline
+        Self.edit(&json) { o in
+            var rounds = o["rounds"] as! [[String: Any]]
+            rounds[3]["heat"] = (rounds[3]["heat"] as! [[Any]]).map { h -> [Any] in var h = h; h[3] = h[2]; return h }
+            var c = rounds[3]["comments"] as! [String: Any]
+            c["resolved"] = 0
+            c["to_check"] = 12
+            rounds[3]["comments"] = c
+            o["rounds"] = rounds
+        }
+        let d = try Self.decode(json)
+        let fresh = MapScene.build(MapInput(data: d, width: Self.widths[0]))
+        XCTAssertFalse(fresh.rows[0].cells.filter { $0.toCheck > 0 }.isEmpty)
+        XCTAssertTrue(fresh.rows.allSatisfy { $0.cells.allSatisfy { !$0.outlined } }, "nothing answered: no outline")
+        // the advisor's own new comment in the round answers nothing: still no outline (by the answers, not the counts)
+        var withNew = json
+        Self.edit(&withNew) { o in
+            var rounds = o["rounds"] as! [[String: Any]]
+            var heat = rounds[3]["heat"] as! [[Any]]
+            let i = heat.firstIndex { ($0[3] as! Int) > 0 }!
+            heat[i][1] = (heat[i][1] as! Int) + 1
+            rounds[3]["heat"] = heat
+            var c = rounds[3]["comments"] as! [String: Any]
+            c["new"] = 1
+            rounds[3]["comments"] = c
+            o["rounds"] = rounds
+        }
+        let written = MapScene.build(MapInput(data: try Self.decode(withNew), width: Self.widths[0]))
+        XCTAssertTrue(written.rows[0].cells.contains { $0.toCheck > 0 && $0.toCheck < $0.count }, "a new comment counted in a cell")
+        XCTAssertTrue(written.rows.allSatisfy { $0.cells.allSatisfy { !$0.outlined } }, "a new comment, nothing answered: no outline")
+        XCTAssertEqual(fresh.rows[0].ring ?? -1, 0, accuracy: 0.001, "an empty ring: 0 comments answered, 0 of 8 unasked edits handled")
+        XCTAssertEqual(answered.rows[0].ring ?? -1, 2.0 / 20, accuracy: 0.001, "2 answered of 2 + 10 comments and 8 unasked edits")
+        // the same fill as the sidebar's and headers' ring (`PaperSummary.fill`), from the round's own counts
+        var summary = try XCTUnwrap(Self.kelp().summary)
+        summary.answered = 2
+        summary.handled = 0
+        XCTAssertEqual(answered.rows[0].ring ?? -1, summary.fill ?? -2, accuracy: 0.001)
+        XCTAssertEqual(fresh.rows.map(\.old), [false, true, true, true])
+        for r in fresh.rows {
+            XCTAssertEqual(r.dates.text, shortDate(d.round(r.n)?.created), "the arrival date only")
+            XCTAssertFalse(r.title.ink == .label && r.old, "an older round's name in secondary")
+            for c in r.cells { if let t = c.number { XCTAssertEqual(t.ink == .label2, r.old, "an older round's numbers in label2") } }
+        }
+        // You: only while a shown round has answers, by the data only, never by what is followed
+        XCTAssertEqual(fresh.geometry.columns, 2, "Rounds 2 and 3 closed with answers")
+        let firstOnly = MapScene.build(MapInput(data: d, width: Self.widths[0], fold: 3))
+        XCTAssertEqual(firstOnly.rows.map(\.n), [4])
+        XCTAssertEqual(firstOnly.geometry.columns, 1, "no shown round with answers: Comments only")
+        XCTAssertEqual(firstOnly.captions.map(\.text), ["Comments"])
+        for sel in Self.selections(d) {
+            XCTAssertEqual(MapScene.build(MapInput(data: d, width: Self.widths[0], selection: sel)).geometry.columns, 2)
+        }
+        // the box: at the strip's round's row, nil while it is folded
+        for n in [4, 3, 1] {
+            let s = MapScene.build(MapInput(data: d, width: Self.widths[0], strip: n))
+            let row = try XCTUnwrap(s.rows.first { $0.n == n })
+            XCTAssertEqual(s.box?.minY, row.y - 6, "Round \(n)")
+            XCTAssertEqual(s.box?.size, MapGeometry.box)
+            XCTAssertFalse(s.boxFollowed)
+        }
+        XCTAssertNil(MapScene.build(MapInput(data: d, width: Self.widths[0], fold: 2, strip: 1)).box, "Round 1 folded away")
+        // You: all three answers, one count of two digits, drawn whole at every width, open and closed
+        var many = try Self.kelpJSON()
+        Self.edit(&many) { o in
+            var rounds = o["rounds"] as! [[String: Any]]
+            for i in [2, 3] {
+                var c = rounds[i]["comments"] as! [String: Any]
+                c["resolved"] = 11; c["follow_up"] = 2; c["kept"] = 1
+                rounds[i]["comments"] = c
+            }
+            o["rounds"] = rounds
+        }
+        let dm = try Self.decode(many)
+        let done = MapScene.answers(try XCTUnwrap(dm.round(4)?.comments))
+        XCTAssertEqual(done, "✓ 11 · ↩ 2 · \(Status.keptAsIs.glyph) 1")
+        for w in Self.widths {
+            let s = MapScene.build(MapInput(data: dm, width: w))
+            for n in [4, 3] {
+                let texts = try XCTUnwrap(s.rows.first { $0.n == n }).readout.map(\.text)
+                XCTAssertTrue(texts.contains(done) || texts.contains(done + " so far"), "Round \(n) at \(w): \(texts)")
+            }
+        }
+        XCTAssertNil(MapMotion.animation(reduceMotion: true), "Reduce Motion: it jumps")
+        XCTAssertEqual(MapMotion.animation(reduceMotion: false), .timingCurve(0.3, 0.7, 0.2, 1, duration: 0.28))
     }
 
     func testHelpTags() throws {
@@ -781,6 +922,16 @@ final class MapLayoutTests: XCTestCase {
         let removed = MapHelp.lines(.band(from: "extra", to: nil, round: 4), d, student: "")
         XCTAssertEqual(removed.last, "Removed: none of its paragraphs are in Round 4.")
         XCTAssertTrue(MapHelp.lines(.round(1), d, student: "Tomás").contains { $0.hasSuffix("words") })
+        // UI v4: the round's tag carries what its label and the readout leave out: its return, new comments, the
+        // student's responses (in the response bar's words), your answers, and its body's words in every round
+        let r4 = MapHelp.lines(.round(4), d, student: "Tomás")
+        XCTAssertEqual(r4[0], "Round 4 · " + OverviewText.dates(d.round(4)?.created, nil))
+        XCTAssertTrue(r4.contains("Tomás: 3 revised, 3 unchanged, 6 not asked"), "\(r4)")
+        XCTAssertTrue(r4.contains("You: ✓ 2 so far · ○ 10 to check"), "\(r4)")
+        XCTAssertTrue(r4.contains { $0.hasPrefix("12 comments, 0 new") }, "\(r4)")
+        if d.round(4)?.words?.body != nil { XCTAssertTrue(r4.contains { $0.contains(" words · +") }, "\(r4)") }
+        let r3 = MapHelp.lines(.round(3), d, student: "Tomás")
+        XCTAssertEqual(r3[0], "Round 3 · " + OverviewText.dates(d.round(3)?.created, d.round(3)?.closedAt), "a closed round's return too")
         let edit = try XCTUnwrap(d.round(4)?.edits?.first { $0.toCheck })
         XCTAssertTrue(MapHelp.lines(.edit(edit.id, round: 4), d, student: "").contains("○ to check"))
     }
@@ -886,6 +1037,29 @@ final class MapLayoutTests: XCTestCase {
         await store.flush()
         XCTAssertFalse(FileManager.default.fileExists(atPath: folder.path))
         XCTAssertNil(store.image(paper: "/papers/a", pdf: "/no/such.pdf", page: 0, height: 72))
+    }
+
+    /// The Key (UI v4 Step 4): a row only for a mark on this map; as a table, its shades and ○.
+    func testTheKeysRowsAreTheMarksOnTheMap() throws {
+        let d = try Self.kelp()
+        let s = MapScene.build(MapInput(data: d, width: 1300, student: "Tomás"))
+        let rows = MapKeyRow.rows(s, d)
+        let ticks = s.rows.flatMap(\.ticks)
+        XCTAssertEqual(rows.contains(.revised), ticks.contains { !$0.unrequested })
+        XCTAssertEqual(rows.contains(.unasked), ticks.contains(where: \.unrequested))
+        XCTAssertEqual(rows.contains(.band), !s.bands.isEmpty)
+        XCTAssertEqual(rows.contains(.folded), !s.plan.folded.isEmpty)
+        XCTAssertTrue(rows.contains(.shades))
+        XCTAssertTrue(rows.contains(.toCheck), "Round 4 is open with comments to check")
+        XCTAssertEqual(rows, MapKeyRow.allCases.filter(rows.contains), "in the Key's order")
+        XCTAssertEqual(MapKeyRow.rows(nil, d), [.shades, .toCheck], "the table: shades and ○")
+        var one = d
+        one.rounds = Array(d.rounds.prefix(1))
+        let first = MapKeyRow.rows(MapScene.build(MapInput(data: one, width: 1300, student: "Tomás")), one)
+        XCTAssertFalse(first.contains(.band), "one round: no band")
+        XCTAssertFalse(first.contains(.revised) || first.contains(.unasked), "Round 1 has no edits")
+        XCTAssertEqual(MapKeyRow.allCases.map(\.noun), ["Comments on a section", "To check", "Revised", "Unasked edit",
+                                                       "Same section a round apart", "Folded part"])
     }
 
     func testThePagesToCheckAndTheFirstSentence() throws {

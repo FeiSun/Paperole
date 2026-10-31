@@ -13,7 +13,9 @@
      "closed": false,
      "status": "ok",
      "to_judge": 3,
-     "to_check": 5
+     "to_check": 5,
+     "answered": 0,
+     "handled": 0
     },
     "sections": [
      {
@@ -1253,7 +1255,9 @@
      "closed": true,
      "status": "ok",
      "to_judge": 0,
-     "to_check": 0
+     "to_check": 0,
+     "answered": 0,
+     "handled": 0
     },
     "sections": [
      {
@@ -1791,7 +1795,9 @@
      "closed": false,
      "status": "ok",
      "to_judge": 2,
-     "to_check": 3
+     "to_check": 3,
+     "answered": 0,
+     "handled": 0
     },
     "sections": [
      {
@@ -3044,7 +3050,9 @@
      "closed": true,
      "status": "ok",
      "to_judge": 0,
-     "to_check": 0
+     "to_check": 0,
+     "answered": 0,
+     "handled": 0
     },
     "sections": [
      {
@@ -3815,7 +3823,9 @@
      "closed": false,
      "status": "ok",
      "to_judge": 0,
-     "to_check": 0
+     "to_check": 0,
+     "answered": 2,
+     "handled": 4
     },
     "sections": [
      {
@@ -4599,7 +4609,9 @@
      "closed": true,
      "status": "ok",
      "to_judge": 0,
-     "to_check": 0
+     "to_check": 0,
+     "answered": 0,
+     "handled": 0
     },
     "sections": [
      {
@@ -4900,7 +4912,9 @@
      "closed": false,
      "status": "failed",
      "to_judge": 0,
-     "to_check": 0
+     "to_check": 0,
+     "answered": 0,
+     "handled": 0
     },
     "sections": [
      {
@@ -5474,7 +5488,9 @@
      "closed": false,
      "status": "ok",
      "to_judge": 0,
-     "to_check": 0
+     "to_check": 0,
+     "answered": 0,
+     "handled": 0
     },
     "sections": [
      {
@@ -5801,7 +5817,8 @@
      "open": true,
      "you": 3,
      "student": null,
-     "received": null
+     "received": null,
+     "failed": false
     },
     {
      "path": "/tmp/synthetic/students/shrimp",
@@ -5811,6 +5828,16 @@
      "you": 3,
      "student": 39,
      "received": 38
+    },
+    {
+     "path": "/tmp/synthetic/students/shrimp",
+     "round": 2,
+     "next": null,
+     "open": false,
+     "last": true,
+     "you": 6,
+     "student": 91,
+     "received": null
     }
    ],
    "closed": {
@@ -5947,7 +5974,8 @@
      "open": true,
      "you": 4,
      "student": null,
-     "received": null
+     "received": null,
+     "failed": false
     },
     {
      "path": "/tmp/synthetic/students/urchin",
@@ -5966,6 +5994,16 @@
      "you": 3,
      "student": 17,
      "received": 16
+    },
+    {
+     "path": "/tmp/synthetic/students/urchin",
+     "round": 3,
+     "next": null,
+     "open": false,
+     "last": true,
+     "you": 3,
+     "student": 178,
+     "received": null
     }
    ],
    "closed": {
@@ -6086,6 +6124,17 @@
      "open": true,
      "you": 6,
      "student": null,
+     "received": null,
+     "failed": false
+    },
+    {
+     "path": "/tmp/synthetic/students/blue",
+     "round": 1,
+     "next": null,
+     "open": false,
+     "last": true,
+     "you": 2,
+     "student": 16,
      "received": null
     }
    ],
@@ -6179,6 +6228,25 @@
      "you": 3,
      "student": 37,
      "received": 36
+    },
+    {
+     "path": "/tmp/synthetic/students/seagrass",
+     "round": 2,
+     "next": 3,
+     "open": false,
+     "you": 4,
+     "student": 115,
+     "received": 114
+    },
+    {
+     "path": "/tmp/synthetic/students/seagrass",
+     "round": 3,
+     "next": null,
+     "open": true,
+     "you": 2,
+     "student": null,
+     "received": null,
+     "failed": true
     }
    ],
    "closed": {
@@ -6261,7 +6329,8 @@
      "open": true,
      "you": 1,
      "student": null,
-     "received": null
+     "received": null,
+     "failed": false
     }
    ],
    "closed": {

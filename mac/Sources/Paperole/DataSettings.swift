@@ -61,7 +61,7 @@ struct DataSettings: View {
 
     /// Backups (DATA.md §0.1, §6.2): one switch, off by default; turning it on asks for the folder (Cancel leaves it
     /// off). Only while it is on: the folder with Choose… and Show in Finder (and the note when it shares a disk with
-    /// the review folders), the last backup or why the backups fail (§28's error style, never amber), Back Up Now, and
+    /// the review folders), the last backup or why the backups fail (§28's error style, never vermilion), Back Up Now, and
     /// what is kept.
     private var backupsSection: some View {
         Section {

@@ -77,7 +77,8 @@ struct WritingTag: Codable, Equatable, Identifiable {
     var builtIn: Bool { TagCatalog.builtInIDs.contains(id) }
 }
 
-/// The catalogue: its order is the picker's and every table's (never sorted by count). Pure, so every rule is tested.
+/// The catalogue: its order is the picker's and every table's, except Topics, by count with ties in this order (UI v4).
+/// Pure, so every rule is tested.
 struct TagCatalog: Equatable {
     var tags: [WritingTag]
 

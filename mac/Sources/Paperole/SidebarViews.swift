@@ -52,8 +52,9 @@ struct Sidebar: View {
                                     set: { model.sidebarSelected($0, secondClick: AppModel.isSecondClick(NSApp.currentEvent)) })) {
                 HubRow(title: "All Students", icon: "person.2")
                     .tag(SidebarItem.allStudents)
-                // amber only when something waits on the advisor (amber means "your move")
-                HubRow(title: "Your Move", icon: "circle", amber: waiting > 0, count: waiting)
+                // vermilion only when something waits on the advisor (it means "your move")
+                HubRow(title: "Your Move", glyph: waiting > 0 ? .ring(0) : .nothingWaits, count: waiting,
+                       selected: model.sidebarSelection == .yourMove)
                     .help(HubText.waits(waiting))
                     .tag(SidebarItem.yourMove)
                 if let path = review, let p = model.papers.first(where: { $0.path == path }) {  // listed: `reviewPaper`
@@ -110,9 +111,10 @@ struct Sidebar: View {
         let drive = gone ? DataPlaces.unplugged(p.path) : nil
         let damage = gone ? nil : model.damagedPapers[p.path]
         SidebarPaperRow(title: p.title.isEmpty ? (p.path as NSString).lastPathComponent : p.title, status: status,
+                        fill: model.fill(of: p.path),
                         detail: gone ? (drive.map { "Its folder is on “\($0)”, which is not connected." }
                                         ?? "Its folder is missing: \(DataFiles.shown(URL(fileURLWithPath: p.path)))")
-                            : damage.map { "Damaged: " + $0 } ?? model.statusText(p),
+                            : damage.map { "Damaged: " + $0 } ?? [model.statusText(p), model.statusHelp(p)].compactMap { $0 }.joined(separator: " · "),
                         open: p.path == model.selectedPath, indent: indent,
                         missing: gone ? (drive == nil ? "missing" : "not connected") : damage == nil ? nil : "damaged")
             .tag(SidebarItem.paper(p.path))
@@ -178,42 +180,37 @@ struct PaperMenu: View {
     }
 }
 
-/// All Students and Your Move: an icon, the name (13 Medium), and Your Move's count of papers that wait on you in the
-/// system's grey count badge (the amber ○ is its icon; the count is the same number All Students and Your Move say).
+/// All Students and Your Move: an icon, the name (13 Medium), and Your Move's count of papers that wait on you as plain
+/// trailing digits (11 medium secondary, label2 while selected; UI v4, mockup `sidebar`), its icon the vermilion ring
+/// 13, or the secondary one when nothing waits. The count is the same number All Students and Your Move say.
 struct HubRow: View {
     let title: String
-    let icon: String
-    var amber = false
+    var icon = ""
+    var glyph: StatusGlyph?
     var count: Int?
+    var selected = false
     @Environment(\.backgroundProminence) private var prominence
 
     var body: some View {
         HStack(spacing: 7) {
-            Image(systemName: icon)
-                .font(.system(size: amber ? 11 : 12, weight: amber ? .bold : .medium))
-                .foregroundStyle(amber ? Color(nsColor: Palette.toCheck) : Ink.secondary)
-                .frame(width: 18)
+            Group {
+                if let glyph {
+                    StatusGlyphView(glyph, size: 13)
+                } else {
+                    Image(systemName: icon).font(.system(size: 12, weight: .medium)).foregroundStyle(Ink.secondary)
+                }
+            }
+            .frame(width: 18)
             Text(title).font(.system(size: 13, weight: .medium))
                 .foregroundStyle(prominence == .increased ? AnyShapeStyle(.primary) : AnyShapeStyle(Ink.label))
             Spacer(minLength: 4)
-            if let n = count, n > 0 { CountBadge(n: n) }
+            if let n = count, n > 0 {
+                Text("\(n)").font(.system(size: 11, weight: .medium)).monospacedDigit()
+                    .foregroundStyle(prominence == .increased ? AnyShapeStyle(.primary) : selected ? AnyShapeStyle(Ink.label2) : AnyShapeStyle(Ink.secondary))
+            }
         }
         .padding(.vertical, 1)
         .accessibilityElement(children: .combine)
-    }
-}
-
-/// The system sidebars' count: grey digits on the chips' quiet fill.
-struct CountBadge: View {
-    let n: Int
-
-    var body: some View {
-        Text("\(n)")
-            .font(.system(size: 11, weight: .semibold)).monospacedDigit()
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 6)
-            .frame(minWidth: 20, minHeight: 16)
-            .background(Capsule().fill(Color(nsColor: Palette.chipFill)))
     }
 }
 
@@ -254,13 +251,13 @@ struct StudentRow: View {
     }
 }
 
-/// A paper under its student (the mockup's sidebar): its title on one line (13), and at the right what it waits for:
-/// the count of comments and edits to check in the grey badge (not on the open paper, whose counts the window's
-/// subtitle and the panel's tabs say), or a sign: ready to finish ✓○, with the student ⌛, finished (the title grey),
-/// build failed (the octagon, the only red), the first draft •, paragraphs to read ▍. The help tag says it in words.
+/// A paper under its student (UI v4, mockup `sidebar`): its short title on one line (13; the full title in the help
+/// tag and the accessibility label), and at the right its trail (`SidebarTrail`). The help tag says the state in words.
 struct SidebarPaperRow: View {
     let title: String
     let status: PaperStatus?
+    /// The ring's fill (`AppModel.fill(of:)`, from the summaries: no hierarchy data read here).
+    var fill: Double? = nil
     let detail: String
     var open = false
     var indent = true
@@ -272,7 +269,7 @@ struct SidebarPaperRow: View {
     var body: some View {
         let _ = { BodyCount.paper += 1 }()
         HStack(spacing: 6) {
-            Text(title).font(.system(size: 13)).lineLimit(1).truncationMode(.tail)
+            Text(ShortTitle.of(title)).font(.system(size: 13)).lineLimit(1).truncationMode(.tail)
                 .foregroundStyle(prominence == .increased ? AnyShapeStyle(.primary)
                                  : status?.isFinished == true ? AnyShapeStyle(Ink.secondary) : AnyShapeStyle(Ink.label))
             Spacer(minLength: 4)
@@ -280,7 +277,7 @@ struct SidebarPaperRow: View {
         }
         .padding(.leading, indent ? 21 : 2)
         .padding(.vertical, 1)
-        .help(detail)
+        .help(detail.isEmpty ? title : title + " · " + detail)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(title + (detail.isEmpty ? "" : ", " + detail))
     }
@@ -290,11 +287,34 @@ struct SidebarPaperRow: View {
             Text(m).font(.system(size: 11))
                 .foregroundStyle(m != "not connected" && prominence != .increased ? Color(nsColor: Palette.danger) : Ink.secondary)
         } else if let s = status {
-            if let n = s.badge {
-                if !open { CountBadge(n: n) }
-            } else {
-                StatusSign(status: s).font(.system(size: 11))
+            let t = SidebarTrail.of(s, fill: fill, isOpen: open)
+            HStack(spacing: 4) {
+                StatusGlyphView(t.glyph, size: t.size, text: 11)
+                if let text = t.text {
+                    Text(text).font(.system(size: 11, weight: .medium)).monospacedDigit()
+                        .foregroundStyle(prominence == .increased ? AnyShapeStyle(.primary) : AnyShapeStyle(Ink.secondary))
+                }
             }
+        }
+    }
+}
+
+/// A paper row's trail (UI v4, plan step 7): to check, the ring 11 filling as you answer and "14 + 2" (the ring alone on
+/// the open paper, whose counts its own page says); with the student the hourglass 12; finished the checkmark 11; ready
+/// the Sage check; failed the octagon in label2; a first draft the empty ring, paragraphs to read the full one; no
+/// rounds the tray.
+struct SidebarTrail: Equatable {
+    var glyph: StatusGlyph
+    var size: CGFloat
+    var text: String?
+
+    static func of(_ s: PaperStatus, fill: Double?, isOpen: Bool) -> SidebarTrail {
+        let g = StatusGlyph.of(s, fill: fill)
+        switch s {
+        case .toCheck(let c, let e):
+            return SidebarTrail(glyph: g, size: 11, text: isOpen || c + e == 0 ? nil : HubText.badge(c, e))
+        case .waiting: return SidebarTrail(glyph: g, size: 12)
+        default: return SidebarTrail(glyph: g, size: 11)
         }
     }
 }
@@ -306,25 +326,6 @@ struct OpenPaperFill: View {
         RoundedRectangle(cornerRadius: 5)
             .fill(Color(nsColor: Palette.openPaper))
             .padding(.horizontal, 10)
-    }
-}
-
-/// A status's sign (the mockup's STATE_GLYPH): ○ amber to check, ✓○ ready to finish, ⌛ with the student, a seal
-/// finished, ⊗ (the octagon) red build failed, • the first draft, ▍ olive paragraphs to read, a tray without rounds.
-struct StatusSign: View {
-    let status: PaperStatus
-
-    var body: some View {
-        switch status {
-        case .toCheck: Image(systemName: "circle").fontWeight(.semibold).foregroundStyle(Color(nsColor: Palette.toCheck))
-        case .ready: Image(systemName: "checkmark.circle").foregroundStyle(Ink.secondary)
-        case .waiting: Image(systemName: "hourglass").foregroundStyle(Ink.secondary)
-        case .finished: Image(systemName: "checkmark.seal").foregroundStyle(Ink.secondary)
-        case .failed: Image(systemName: BuildSign.failed).foregroundStyle(Color(nsColor: Palette.danger))
-        case .firstDraft: Image(systemName: "circle.fill").font(.system(size: 5)).foregroundStyle(Ink.secondary).frame(width: 12)
-        case .toRead: RoundedRectangle(cornerRadius: 1).fill(Color(nsColor: Palette.reading)).frame(width: 2.5, height: 10).frame(width: 12)
-        case .noRounds: Image(systemName: "tray").foregroundStyle(Ink.secondary)
-        }
     }
 }
 

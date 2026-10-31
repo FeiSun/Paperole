@@ -544,10 +544,10 @@ def test_reading_counts_as_checking(paper2):
     s = api.state_({"paper": p}, quiet)["state"]
     c06 = next(c for c in s["changes"] if c["id"] == "c06")
     assert c06["unrequested"] and not c06["read"]
-    before = s["summary"]["to_check"]
+    before, handled = s["summary"]["to_check"], s["summary"]["handled"]
     s = api.read({"paper": p, "blocks": c06["blocks"]}, quiet)["state"]
     assert next(c for c in s["changes"] if c["id"] == "c06")["read"]
-    assert s["summary"]["to_check"] == before - 1
+    assert s["summary"]["to_check"] == before - 1 and s["summary"]["handled"] == handled + 1  # UI v4's ring fill
     assert api.summaries({"papers": [p]}, quiet)["papers"][0]["summary"]["to_check"] == before - 1
     s = api.read({"paper": p, "blocks": c06["blocks"], "read": False}, quiet)["state"]  # computed, not stored
     assert not next(c for c in s["changes"] if c["id"] == "c06")["read"] and s["summary"]["to_check"] == before

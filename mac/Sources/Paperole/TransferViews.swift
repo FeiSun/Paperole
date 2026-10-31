@@ -242,7 +242,7 @@ struct ImportSheet: View {
                     Text("Put them in")
                     Text(plan.destination.map(DataFiles.shown) ?? "Choose a folder for the papers")
                         .font(.system(size: 11))
-                        .foregroundStyle(plan.destination == nil ? Ink.label : Ink.secondary)  // amber is only "your move"
+                        .foregroundStyle(plan.destination == nil ? Ink.label : Ink.secondary)  // vermilion is only "your move"
                         .lineLimit(1).truncationMode(.middle).help(plan.destination?.path ?? "")
                 }
                 Spacer(minLength: 8)

@@ -3,7 +3,7 @@ import AppKit
 /// Paperole Dev's mark on its icon, wherever the app shows one (the Dock, About, alerts; AppIconModel) and on the dev
 /// bundle's own icon (Resources/AppIcons/paperole-dev.icns, made from this drawing by tools/dev_icon.sh, which compiles
 /// this file alone): a small graphite capsule, "DEV" in white bold, a thin light outline, bottom right, about a quarter
-/// of the icon wide, so it reads on the light icons and the dark ones. Not the Dock's red badge (a count), not amber
+/// of the icon wide, so it reads on the light icons and the dark ones. Not the Dock's red badge (a count), not vermilion
 /// (the advisor's move), not red (broken).
 enum DevMark {
     /// `icon` with the mark, drawn at whatever size it is drawn.

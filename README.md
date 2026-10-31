@@ -9,7 +9,7 @@
 
 <img src="docs/images/paperole-wordmark.svg" alt="Paperole" width="300" height="92">
 
-<p>A Mac app for reviewing your students' LaTeX papers, round by round.</p>
+<p>A Mac app for reviewing LaTeX papers, round by round.</p>
 
 <p>
   <img alt="macOS 14+" src="https://img.shields.io/badge/macOS-14%2B-000000?logo=apple&logoColor=white">

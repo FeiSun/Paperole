@@ -123,8 +123,8 @@ extension View {
     }
 }
 
-/// Text whose ○ is amber (OVERVIEW-v2 §4.7: amber only for ○).
-func amberRings(_ s: String) -> Text {
+/// Text whose ○ is vermilion (OVERVIEW-v2 §4.7: the mark colour only for ○; UI v4).
+func ringText(_ s: String) -> Text {
     let parts = s.components(separatedBy: "○")
     var t = Text(parts[0])
     for p in parts.dropFirst() { t = t + Text("○").foregroundColor(Color(nsColor: Palette.toCheck)) + Text(p) }

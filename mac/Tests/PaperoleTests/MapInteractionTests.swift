@@ -125,7 +125,7 @@ final class MapInteractionTests: XCTestCase {
         XCTAssertTrue(detail.facts.hasSuffix("on the map for 4 rounds · ○ to check in Round 4"), detail.facts)
         XCTAssertEqual(detail.steps.map(\.round), [2, 3, 4])
         XCTAssertEqual(detail.steps.map(\.answer), ["left open", "↩ followed up", "○ to check"])
-        XCTAssertEqual(detail.steps.map(\.what), ["untouched", "waiting for you", "untouched"])
+        XCTAssertEqual(detail.steps.map(\.what), ["unchanged", "not asked", "unchanged"], "UI v4: the response bar's words")
         // edits made for it: their number, words and first words
         let e = try XCTUnwrap(d.round(4)?.edits?.first { $0.attachedTo.contains("R2-03") })
         let q = try XCTUnwrap(OverviewPanel.make(.comment("R2-03"), data: d, strip: 4, student: "Tomás"))
@@ -407,14 +407,18 @@ final class MapInteractionModelTests: XCTestCase {
         window.close()
     }
 
-    /// The table's switch is the viewer's; a test run keeps it only for itself.
+    /// The table's switch (UI v4: the toolbar's Map | Table control) is the viewer's; a test run keeps it only for
+    /// itself.
     func testTheTableSwitch() throws {
         let before = UserDefaults.standard.object(forKey: AppModel.mapAsTableKey) as? Bool
         let m = makeModel()
         XCTAssertFalse(m.overview.asTable, "a fixture run reads no setting")
-        m.setMapAsTable(true)
+        let control = OverviewToolbarTrail.mapOrTable(m)
+        XCTAssertFalse(control.wrappedValue, "Map")
+        control.wrappedValue = true
         XCTAssertTrue(m.overview.asTable)
-        m.setMapAsTable(false)
+        XCTAssertTrue(control.wrappedValue, "Table")
+        control.wrappedValue = false
         XCTAssertFalse(m.overview.asTable)
         XCTAssertEqual(UserDefaults.standard.object(forKey: AppModel.mapAsTableKey) as? Bool, before, "nothing saved")
     }

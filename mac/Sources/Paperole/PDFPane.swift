@@ -409,7 +409,8 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     /// The selected comment's outline round its mark and id label (UX.md §5), a view of its own too: taking the mark off
     /// its page and putting it back with an outline made PDFKit redraw the whole page, every mark on it, on each J/K.
     private var selectionOutline: OutlineView?
-    private(set) var popover: NSPopover?
+    /// Set only here, and by a test to stand for a shown editor (no window is on screen in a test run).
+    var popover: NSPopover?
     private(set) var draft: CommentDraft?
     private(set) var saveDraft: (() -> Void)?
     private(set) var toolbarView: NSView?
@@ -1402,7 +1403,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
                             .change(ch.id), (ch.unrequested ? "An edit no comment asked for" : "An edit") + (place.isEmpty ? "" : " · " + place))
                     }
                 }
-                for c in model.state?.comments ?? [] where model.roundIsOpen && Status(c) == .toCheck {  // amber: your move
+                for c in model.state?.comments ?? [] where model.roundIsOpen && Status(c) == .toCheck {  // vermilion: your move
                     add(.toCheck, c.page, c.rects.map { $0.count == 4 ? $0[1] : .infinity }.min(), .comment(c.id), "\(c.id) · to check")
                 }
             }
@@ -1787,11 +1788,16 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
 
     private func keepOpen(_ pv: LinkPreview, topLeft: CGPoint) {
         guard let e = pv.entries.first, let target = table?.targets[pv.target] else { return }
+        keepOpen(e, title: pv.title, topLeft: topLeft) { [weak self] in self?.goTo(target) }
+    }
+
+    /// A kept window of a crop (a preview's first entry, a check's place): titled, the picture scaled to fit, Go to ›.
+    private func keepOpen(_ e: LinkPreview.Entry, title: String, topLeft: CGPoint, go: @escaping () -> Void) {
         let size = PinnedPreviewView.content(e.size)
         let panel = NSPanel(contentRect: CGRect(x: topLeft.x, y: topLeft.y - size.height, width: size.width, height: size.height),
                             styleMask: [.titled, .closable, .resizable, .utilityWindow, .nonactivatingPanel], backing: .buffered,
                             defer: false)
-        panel.title = pv.title
+        panel.title = title
         panel.isReleasedWhenClosed = false
         panel.becomesKeyOnlyIfNeeded = true  // the keys stay the review window's
         panel.contentMinSize = CGSize(width: 120, height: 90)
@@ -1799,7 +1805,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         let test = LaunchOptions.background || LaunchOptions.unitTest
         panel.isFloatingPanel = !test
         panel.hidesOnDeactivate = !test
-        panel.contentView = NSHostingView(rootView: PinnedPreviewView(entry: e) { [weak self] in self?.goTo(target) })
+        panel.contentView = NSHostingView(rootView: PinnedPreviewView(entry: e, go: go))
         panel.delegate = self
         pinned.append(panel)
         if LaunchOptions.unitTest { return }
@@ -1815,6 +1821,59 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         let all = pinned
         pinned = []
         all.forEach { $0.close() }
+    }
+
+    // MARK: Checks (UX.md §39)
+
+    /// A check's Comment…: the PDF goes to its place (a look-up, a step of Back), then the words in its rects are
+    /// selected, or a pending box goes round them when they hold none, and the new-comment editor opens with `note`.
+    func commentOn(check place: Check.Place, note: String) {
+        guard let doc = view?.document, let (page, _, rs) = pageRects(doc, place.page, place.rects), let first = rs.first
+        else { return }
+        let sel = PDFSelection(document: doc)
+        for r in rs { if let s = page.selection(for: r) { sel.add(s) } }
+        let words = !PDFMenus.collapsed(sel.string ?? "").isEmpty
+        let union = rs.dropFirst().reduce(first) { $0.union($1) }
+        clearSelection()
+        dropPendingBox()
+        reveal(page: place.page, rects: place.rects, step: .lookUp)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            guard let self, let v = self.view, v.document === doc else { return }
+            if words {
+                v.setCurrentSelection(sel, animate: false)
+            } else {
+                self.setPendingBox(page: page, rect: union.insetBy(dx: -3, dy: -3))
+            }
+            self.beginComment(note: note)
+        }
+    }
+
+    /// A check's Keep Open: a kept window of its place as printed (its rects' union, 4 pt round it), titled with the
+    /// check's words, near the place when it is on screen; its Go to › goes back there.
+    func keepOpen(check place: Check.Place, title: String) {
+        guard let v = view, let w = v.window, let doc = v.document, let model,
+              let (page, _, rs) = pageRects(doc, place.page, place.rects), let first = rs.first else { return }
+        let cb = page.bounds(for: .cropBox), rects = place.rects
+        let clip = [max(rects.map { $0[0] }.min()! - 4, 0), max(rects.map { $0[1] }.min()! - 4, 0),
+                    min(rects.map { $0[2] }.max()! + 4, Double(cb.width)), min(rects.map { $0[3] }.max()! + 4, Double(cb.height))]
+        guard clip[2] > clip[0], clip[3] > clip[1] else { return }
+        let req = CropRequest(round: model.round?.n ?? 0, pdf: model.pdfURL?.path, page: place.page, rects: [], textX: nil,
+                              clip: clip, look: .paper)
+        var e = LinkPreview.Entry(id: -1, label: "p.\(place.page + 1)", request: req,
+                                  area: CGSize(width: clip[2] - clip[0], height: clip[3] - clip[1]))
+        let s = PreviewLayout.scale([e.area], page: v.scaleFactor,
+                                    width: PreviewLayout.maxWidth(view: v.bounds.width) - 2 * PreviewLayout.padding,
+                                    height: 0.7 * w.contentLayoutRect.height)
+        e.size = CGSize(width: e.area.width * s, height: e.area.height * s)
+        let size = PinnedPreviewView.content(e.size)
+        var line = v.convert(rs.dropFirst().reduce(first) { $0.union($1) }, from: page)
+        if !v.bounds.intersects(line) { line = CGRect(x: v.bounds.midX, y: v.bounds.midY, width: 0, height: 0) }
+        let o = PreviewLayout.origin(size: size, line: line, bounds: v.bounds,
+                                     above: PreviewLayout.above(height: size.height, line: line, bounds: v.bounds))
+        let at = w.convertToScreen(v.convert(CGRect(origin: o, size: size), to: nil))
+        keepOpen(e, title: title, topLeft: CGPoint(x: at.minX, y: at.maxY)) { [weak self] in
+            self?.reveal(page: place.page, rects: place.rects, step: .lookUp)
+        }
     }
 
     /// The pointer at a point of a page: true over a link a click previews (a pointing hand). Once it rests on one its
@@ -2180,21 +2239,21 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     // MARK: Writing comments
 
     /// Return, Comment (toolbar or window), or the context menu: comment on the selection or the pending box; in
-    /// re-anchor mode, place the comment there instead.
-    func beginComment() {
+    /// re-anchor mode, place the comment there instead. `note`: the editor's words to start with (a check's Comment…).
+    func beginComment(note start: String = "") {
         guard let model else { return }
         if model.toolbar.reanchor != nil { return model.placeReanchor() }
         guard let v = view else { return }
         let shown = model.shown  // the note is saved to this paper and round only
         if let b = pendingBox, let a = pendingAnchor() {
             let rect = v.convert(b.rect, from: b.page)
-            return showEditor(at: rect, page: a.page, quote: "", mode: .box) { [weak self] _, color, note, tags, done in
+            return showEditor(at: rect, page: a.page, quote: "", mode: .box, note: start) { [weak self] _, color, note, tags, done in
                 self?.model?.createComment(anchor: ["page": a.page, "rects": a.rects, "text": a.text], note: note, kind: .box,
                                            color: color, tags: tags, on: shown, done: done)
             }
         }
         guard let a = selectionAnchor() else { return }
-        showEditor(at: a.viewRect, page: a.page, quote: a.text, mode: .text) { [weak self] kind, color, note, tags, done in
+        showEditor(at: a.viewRect, page: a.page, quote: a.text, mode: .text, note: start) { [weak self] kind, color, note, tags, done in
             self?.model?.createComment(anchor: ["page": a.page, "rects": a.rects, "text": a.text], note: note, kind: kind,
                                        color: color, tags: tags, on: shown, done: done)
         }
@@ -2538,8 +2597,9 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         return item
     }
 
-    /// The new-comment popover at `rect` of `target` (the PDF by default), for a comment on `page`.
-    func showEditor(at rect: CGRect, page: Int, quote: String, mode: CommentDraft.Mode, in target: NSView? = nil,
+    /// The new-comment popover at `rect` of `target` (the PDF by default), for a comment on `page`, its note starting
+    /// with `note`.
+    func showEditor(at rect: CGRect, page: Int, quote: String, mode: CommentDraft.Mode, in target: NSView? = nil, note: String = "",
                     save: @escaping (_ kind: MarkKind, _ color: MarkColor, _ note: String, _ tags: TagSelection,
                                      _ done: @escaping (Bool) -> Void) -> Void) {
         guard let v = target ?? view, let model else { return }
@@ -2554,7 +2614,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         pop.behavior = .transient
         pop.delegate = self
         let kind: MarkKind = mode == .box ? .box : (mode == .point ? .note : (mode == .replace ? .strikeout : model.toolbar.kind))
-        let d = CommentDraft(kind: kind, color: model.toolbar.color, note: "", mode: mode, page: page, quote: quote)
+        let d = CommentDraft(kind: kind, color: model.toolbar.color, note: note, mode: mode, page: page, quote: quote)
         let toolbar = model.toolbar
         let tagModel = model.tags
         let saveDraft = { [weak pop] in

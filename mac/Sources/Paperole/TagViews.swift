@@ -196,7 +196,7 @@ struct TagChip: View {
 }
 
 /// The chips' fills (TAGS.md §2.1): off a quiet neutral (6% ink, 7.5% white in Dark Mode); on the accent at 15%
-/// (22% in Dark Mode). No tag has a colour of its own; amber, red and the mark colours are never used for them.
+/// (22% in Dark Mode). No tag has a colour of its own; vermilion, red and the mark colours are never used for them.
 enum TagInk {
     static let off = Palette.pair(NSColor(white: 0, alpha: 0.06), NSColor(white: 1, alpha: 0.075))
     static let on = Palette.pair(NSColor(hex: Palette.sage.light).withAlphaComponent(0.15),

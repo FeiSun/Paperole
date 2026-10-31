@@ -12,8 +12,8 @@ import sys
 import traceback
 from pathlib import Path
 
-from . import EngineError, analysis, anchor, archive, cards, check, comments, disk, export, history, ledger, links, \
-    notes, overview, project, prose, render, state, tags, texdiff
+from . import EngineError, analysis, anchor, archive, cards, check, checks, comments, disk, export, history, ledger, \
+    links, notes, overview, project, prose, render, state, tags, texdiff
 
 _REQUIRED = object()
 
@@ -661,33 +661,87 @@ def prose_(params, progress):
     return out
 
 
-def links_(params, progress):
-    """Round n's link table (default: the latest round; links.py, rN/links.json), read only and without state: built
-    when missing or stale, after the round's prose.json. `table` is null when it cannot be built (the paragraphs
-    cannot be found, an error: on stderr): the app then follows a link as before."""
-    paper = _paper(params)
-    lg = ledger.load(paper)
-    n = params.get("round")
+def _built_round(paper, lg, n):
+    """Round n of the paper (the latest when n is None), refused when it does not exist or has no build PDF."""
     rnd = ledger.latest_round(lg) if n is None else next((r for r in lg["rounds"] if r["n"] == n), None)
     if rnd is None:
         raise EngineError("There is no round {}.".format(n) if n is not None else
                           "There is no round yet. Ingest the student's source first.")
     if not rnd["build"]["pdf"]:
         raise EngineError("Round {} has no build PDF.".format(rnd["n"]))
+    return rnd
+
+
+def _prose_quietly(paper, n, progress):
+    """Round n's prose.json, built when missing or stale (under the ledger lock, as the prose RPC), or None when its
+    paragraphs cannot be found (noted in rN/prose.failed, the error on stderr)."""
+    data = prose.load(paper, n)
+    if data is None and not prose.failed(paper, n):
+        with ledger.locked(paper):  # as the prose RPC: building writes analysis.cache.json
+            try:
+                data = prose.ensure(paper, ledger.load(paper), n, progress)
+            except Exception as e:
+                traceback.print_exc(file=sys.stderr)
+                prose.record_failure(paper, n, e)
+    return data
+
+
+def links_(params, progress):
+    """Round n's link table (default: the latest round; links.py, rN/links.json), read only and without state: built
+    when missing or stale, after the round's prose.json. `table` is null when it cannot be built (the paragraphs
+    cannot be found, an error: on stderr): the app then follows a link as before."""
+    paper = _paper(params)
+    lg = ledger.load(paper)
+    rnd = _built_round(paper, lg, params.get("round"))
     table = links.load(paper, rnd["n"])
     if table is None:
-        data = prose.load(paper, rnd["n"])
-        if data is None and not prose.failed(paper, rnd["n"]):
-            with ledger.locked(paper):  # as the prose RPC: building writes analysis.cache.json
-                try:
-                    data = prose.ensure(paper, ledger.load(paper), rnd["n"], progress)
-                except Exception as e:
-                    traceback.print_exc(file=sys.stderr)
-                    prose.record_failure(paper, rnd["n"], e)
+        data = _prose_quietly(paper, rnd["n"], progress)
         if data is not None:
             table = links.build_quietly(paper, lg, rnd["n"], data)
     return {"round": rnd["n"], "path": str(links.path(paper, rnd["n"])) if table is not None else None,
             "table": table}
+
+
+def checks_(params, progress):
+    """Round n's checks (default: the latest round; checks.py, rN/checks.json; design/pdf-reader/PLAN.md P1.5), read
+    only and without state: built when missing or stale, after the round's prose.json and link table, and only when
+    asked (the app asks while Checks is on). `checks` is null when the paragraphs cannot be found or the checks
+    cannot be built (an error: on stderr); a link table that cannot be built leaves the checks that need it empty."""
+    paper = _paper(params)
+    lg = ledger.load(paper)
+    rnd = _built_round(paper, lg, params.get("round"))
+    found = checks.load(paper, rnd["n"])
+    if found is not None and not found["table"]:  # built without the table: try it again (once a process if it fails)
+        data = prose.load(paper, rnd["n"])
+        if data is not None and links.build_quietly(paper, lg, rnd["n"], data) is not None:
+            found = None
+    if found is None:
+        data = _prose_quietly(paper, rnd["n"], progress)
+        if data is not None:
+            table = links.load(paper, rnd["n"]) or links.build_quietly(paper, lg, rnd["n"], data)
+            found = checks.build_quietly(paper, lg, rnd["n"], data, table)
+    ok = lg.get("checks_ok") or {}
+    return {"round": rnd["n"], "path": str(checks.path(paper, rnd["n"])) if found is not None else None,
+            "checks": [dict(c, ok=c["key"] in ok) for c in found["checks"]]
+            if found is not None else None}
+
+
+def check_ok(params, progress):
+    """Mark a check OK (or, with ok: false, not OK): the advisor looked and the paper is fine there. Kept in the
+    ledger's checks_ok map, key (each check's, `checks._keys`: the same in every round while the slip is, or for its
+    round alone when the slip is known only by its place) to the round it was marked in. Any round, open or closed: it is the advisor's own
+    note, never the student's. {"checks_ok": [keys]}."""
+    paper = _paper(params)
+    key, flag = _param(params, "key"), _param(params, "ok", True)
+    if not isinstance(key, str) or not key or not isinstance(flag, bool):
+        raise EngineError("key is a check's key, ok true or false.")
+    with _edit(paper) as lg:
+        if flag:
+            rnd = ledger.latest_round(lg)
+            lg.setdefault("checks_ok", {})[key] = rnd["n"] if rnd else 0
+        else:  # nothing written when there is nothing to clear
+            lg.get("checks_ok", {}).pop(key, None)
+        return {"checks_ok": sorted(lg.get("checks_ok") or {})}
 
 
 def follow(params, progress):
@@ -1062,7 +1116,7 @@ def swap_in(params, progress):
 METHODS = {"new": new, "ingest": ingest, "comment": comment, "edit_comment": edit_comment, "reanchor": reanchor,
            "delete_comment": delete_comment, "verdict": verdict, "import": import_, "finish": finish,
            "check_change": check_change, "state": state_, "summaries": summaries, "prose": prose_, "links": links_,
-           "follow": follow, "read": read,
+           "checks": checks_, "check_ok": check_ok, "follow": follow, "read": read,
            "email_preview": email_preview, "edit_paper": edit_paper, "overview": overview_, "tag": tag, "retag": retag,
            "revive": revive, "export_comments": export_comments, "adopt_facts": adopt_facts, "fork": fork,
            "history": history_, "put_back_ledger": put_back_ledger, "check": check_, "archive_write": archive_write,

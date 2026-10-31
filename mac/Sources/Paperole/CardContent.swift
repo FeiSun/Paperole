@@ -540,7 +540,7 @@ struct CardModel: Equatable, Identifiable {
     /// The card's follow-up field holds text not sent yet (UX.md §8); set by AppModel from the drafts, not the state.
     var unsent = false
     /// The shown round is open. In a closed one nothing is the advisor's move: To check and position uncertain are not
-    /// amber (UX.md §2).
+    /// vermilion (UX.md §2).
     var open: Bool
     /// The advisor's writing tags on it, named and signed from the catalogue (UX.md §24), and, while it has none, the
     /// first suggestion (a dashed chip, taken with one click).

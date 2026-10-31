@@ -155,7 +155,7 @@ final class OverviewDataTests: XCTestCase {
                        "Round 2 came in on Wed, Oct 14. Lin edited most open passages, and changed part of Design that no comment asked about.")
         XCTAssertEqual(OverviewText.firstSentence(nil, student: "Lin Zhou", fallback: [
             RoundSummary(n: 1, created: "2026-10-07T12:00:00+08:00", closed: true, closedAt: "2026-10-08T12:00:00+08:00", status: "ok")]),
-                       "Round 1 went back to Lin on Thu, Oct 8; nothing to do until the next round comes in.")
+                       "Round 1 was sent back to Lin on Thu, Oct 8; nothing to do until the next round comes in.")
         XCTAssertEqual(OverviewText.firstSentence(nil, student: "", fallback: [
             RoundSummary(n: 3, created: "2026-10-16T12:00:00+08:00", closed: false, status: "failed")]),
                        "Round 3 came in on Fri, Oct 16 but did not build.")
@@ -168,6 +168,10 @@ final class OverviewDataTests: XCTestCase {
         XCTAssertEqual(f.comments, "17 comments")
         XCTAssertEqual(f.rounds, "2 rounds since Oct 7")
         XCTAssertEqual(f.details, ["2 resolved", "1 kept", "14 open", "4 pp", "3,120 words"])
+        // UI v4: the facts left the canvas for the header's help tag, every one of them
+        XCTAssertEqual(OverviewText.headerHelp("Round 2 came in on Wed, Oct 14.", f),
+                       "Round 2 came in on Wed, Oct 14.\n17 comments · 2 rounds since Oct 7 · 2 resolved · 1 kept · 14 open · 4 pp · 3,120 words")
+        XCTAssertEqual(OverviewText.headerHelp("", OverviewText.Facts()), "")
         XCTAssertEqual(OverviewText.dates("2026-10-07T12:00:00+08:00", "2026-10-08T12:00:00+08:00"), "Oct 7 → 8")
         XCTAssertEqual(OverviewText.dates("2026-09-28T12:00:00+08:00", "2026-10-02T12:00:00+08:00"), "Sep 28 → Oct 2")
         XCTAssertEqual(OverviewText.dates("2026-10-14T12:00:00+08:00", nil), "Oct 14 →")
@@ -506,7 +510,7 @@ final class OverviewViewTests: XCTestCase {
 
 /// The code audit of 2026-10-24 on the hierarchy, the strip and the overview's screen (B12): thumbnails asked for again
 /// after the cache empties, the key page's bookmark and the strip's cells, what an empty strip says, a hub page put
-/// back near its bottom, the formatters made once, the time sentence's same-day trips, a Your Move chip in its room.
+/// back near its bottom, the formatters made once, Turnaround under a day.
 @MainActor
 final class HubAndStripAuditTests: XCTestCase {
     private func spin(_ s: Double = 0.15) { RunLoop.main.run(until: Date().addingTimeInterval(s)) }
@@ -624,50 +628,23 @@ final class HubAndStripAuditTests: XCTestCase {
         XCTAssertEqual(moves.map(\.paper.path), ["/c", "/d", "/a", "/b"])
     }
 
-    /// UI-08: a trip of no calendar days is said in words, without "in" before "the same day".
-    func testTheTimeSentenceSaysTheSameDay() {
+    /// UI-08, UI v4: a trip of no calendar days reads "<1 d" in Turnaround's rows and medians (was "under a day" and
+    /// "the same day" in the old box's sentence, `HubText.time`).
+    func testTurnaroundSaysUnderADay() throws {
         func trip(_ round: Int, you: Int, student: Int, path: String = "/kelp") -> StudentStats.Trip {
             StudentStats.Trip(path: path, round: round, next: round + 1, open: false, you: you, student: student, received: nil)
         }
-        let t = ["/kelp": "Kelp forest drift", "/reef": "Reef choruses"]
-        XCTAssertEqual(HubText.time([trip(1, you: 0, student: 0), trip(2, you: 0, student: 0)], titles: t, first: "Leo"),
-                       "Leo’s revisions took under a day each time on Kelp forest drift. You returned each round the same day.")
-        XCTAssertEqual(HubText.time([trip(1, you: 0, student: 0)], titles: t, first: "Leo"),
-                       "Leo’s revisions took under a day on Kelp forest drift. You returned the round the same day.")
-        XCTAssertEqual(HubText.time([trip(1, you: 2, student: 9), trip(2, you: 3, student: 0), trip(1, you: 1, student: 1, path: "/reef")],
-                                    titles: t, first: "Leo"),
-                       "Leo’s revisions took 9 days and under a day on Kelp forest drift; 1 day on Reef choruses. You returned each round in 1–3 days.")
-        XCTAssertEqual(HubText.time([trip(1, you: 1, student: 4)], titles: t, first: "Leo"),
-                       "Leo’s revisions took 4 days on Kelp forest drift. You returned the round in 1 day.")
-    }
-
-    /// UI-06: a Your Move chip stays within its room, its words measured, whatever their length; a long title gives way.
-    func testAMoveChipFitsItsRoom() throws {
-        _ = NSApplication.shared
-        let drafts = FileManager.default.temporaryDirectory.appendingPathComponent("pc-chip-" + UUID().uuidString)
-        defer { try? FileManager.default.removeItem(at: drafts) }
-        var o = LaunchOptions()
-        o.fixture = StepTests.fixtures.appendingPathComponent("state-m2a.json").path
-        o.overviewFixture = HierarchyDataTests.fixture.path
-        o.drafts = drafts.path
-        let m = AppModel(options: o)
-        m.papers = HierarchyDataTests.papers(try HierarchyDataTests.reply())
-        m.openHub(.allStudents)
-        let long = String(repeating: "A very long title of a paper ", count: 6)
-        let reef = try XCTUnwrap(m.papers.first { $0.title == "Reef choruses" })
-        let blue = try XCTUnwrap(m.papers.first { $0.title == "Blue carbon review" })
-        // long words: a student whose first name is long ("With Wolfeschlegelsteinhausenbergerdorff since Oct 3")
-        let items = [MoveItem(paper: PaperRef(path: reef.path, title: long, student: reef.student), status: .toCheck(comments: 3, edits: 5)),
-                     MoveItem(paper: PaperRef(path: blue.path, title: long, student: "Wolfeschlegelsteinhausenbergerdorff Priya"),
-                              status: .toCheck(comments: 1, edits: 0))]
-        XCTAssertGreaterThan((m.statusText(items[1].paper) as NSString).size(withAttributes: [.font: NSFont.systemFont(ofSize: 13)]).width, 300)
-        for item in items {
-            for room: CGFloat in [560, 676, 712] {
-                let host = NSHostingView(rootView: MoveChip(model: m, item: item, room: room))
-                let w = host.fittingSize.width
-                XCTAssertLessThanOrEqual(w, room, "\(m.statusText(item.paper)) in \(room)")
-                XCTAssertGreaterThan(w, room - 24, "the title takes the room left")
-            }
-        }
+        let trips = [trip(1, you: 0, student: 0), trip(2, you: 0, student: 0)]
+        let m = Turnaround.medians(trips)
+        XCTAssertEqual(m.you?.text, "<1 d")
+        XCTAssertEqual(m.student?.text, "<1 d")
+        let stats = try makeDecoder().decode(StudentStats.self, from: Data(#"{"student": "Leo Park", "papers": ["/kelp"], "comments": 2}"#.utf8))
+        var s = stats
+        s.time = trips + [trip(1, you: 2, student: 9, path: "/reef")]
+        let g = StudentGroup(key: "leo", name: "Leo Park", papers: [PaperRef(path: "/kelp", title: "Kelp forest drift", student: "Leo Park")])
+        let t = try XCTUnwrap(StudentTiles.make(g, stats: s, data: [:], statuses: [:], catalog: TagCatalog()).turnaround)
+        XCTAssertEqual(t.rows.map { StudentTiles.days($0.you) + " " + StudentTiles.days($0.student) }, ["<1 d <1 d", "<1 d <1 d"],
+                       "the other student's paper is not this page's")
+        XCTAssertEqual(t.who, "Leo")
     }
 }

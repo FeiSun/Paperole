@@ -160,6 +160,12 @@ sets it for a test run, which never saves it (without the flag a `--background` 
 Focus and Jump (`UX.md` §20): `focus [on|off]`, `jump [<text>]`, `jumpclick <n>`, and `key up|down`; `--focus` starts
 in Focus once the PDF is shown (for `--debug-scroll-perf keys` in Focus). `busy on|off` holds the engine busy;
 `headerclick <group>` clicks a group header's name; `cardclick x,y,up` clicks the card's buttons.
+The overview and the hierarchy (`UX.md` §21, §22, §40): `--level overview|review` (where `--paper` opens),
+`--hub all|move|student:<name>` (open at that page), `--all-view board|students` (never saved); items `nav`, `ovtext` (the
+paper page in words and numbers: header, strip, map rows, Key, Topics), `ovclick <item>` / `ovopen <item>`, `ovkey <left|right|up|down|return>`,
+`ovkeypop open|close` (the Key), `ovtable on|off` (Map | Table), `reducemotion on|off|system`, `hub all|move|student <name>`,
+`allview board|students`, `boardearlier`, `studentpage`, `help [<topic>]` (the Help window, behind every window),
+`tips [reset|seen]` and `button gotit` (the tip shown).
 `--fixture Fixtures/state-reading.json` shows round 2 of the engine's fixture paper with its paragraphs.
 
     open -n "build/Paperole Dev.app" --args --fixture Fixtures/state-many.json --debug-scroll-perf scroll|keys \

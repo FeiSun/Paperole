@@ -71,9 +71,19 @@ final class HierarchyDataTests: XCTestCase {
         XCTAssertFalse([PaperStatus.waiting, .finished("x"), .noRounds].contains(where: \.yourMove))
         XCTAssertEqual(PaperStatus.toCheck(comments: 3, edits: 5).badge, 8)
         XCTAssertNil(PaperStatus.ready.badge)
+        // UI v4's signs (GlyphTests): the ring for every state that waits on you except ready and failed
+        XCTAssertEqual(StatusGlyph.of(.toCheck(comments: 3, edits: 1), fill: 0.25), .ring(0.25))
+        XCTAssertEqual(StatusGlyph.of(.toCheck(comments: 3, edits: 1)), .ring(0), "no counts: an empty ring")
+        XCTAssertEqual(StatusGlyph.of(.firstDraft), .ring(0))
+        XCTAssertEqual(StatusGlyph.of(.toRead(6)), .ring(1))
+        XCTAssertEqual(StatusGlyph.of(.ready), .ready)
+        XCTAssertEqual(StatusGlyph.of(.failed), .failed)
+        XCTAssertEqual(StatusGlyph.of(.waiting), .waiting)
+        XCTAssertEqual(StatusGlyph.of(.finished("2026-07-20")), .finished)
+        XCTAssertEqual(StatusGlyph.of(.noRounds), .noRounds)
     }
 
-    /// Your Move: the earliest import first; to review or finish, and failed builds, counted apart.
+    /// Your Move: the earliest import first (UI v4: the failed builds are no longer counted apart; their rows say it).
     func testYourMoveIsOldestFirst() throws {
         let r = try Self.reply()
         let papers = Self.papers(r)
@@ -83,7 +93,7 @@ final class HierarchyDataTests: XCTestCase {
         XCTAssertEqual(moves.map(\.paper.title), ["Mangrove sediment cores", "Kelp forest drift", "Reef choruses",
                                                   "Seagrass carbon budget", "Untitled draft"])
         XCTAssertEqual(moves.map(\.round), [3, 4, 4, 3, 1])
-        XCTAssertTrue(Hierarchy.counts(moves) == (4, 1))
+        XCTAssertEqual(moves.filter { $0.status == .failed }.map(\.paper.title), ["Seagrass carbon budget"])
         // without the overview's dates, the list's order
         let undated = Hierarchy.yourMove(papers, status: status, data: [:])
         XCTAssertEqual(undated.map(\.paper.title), ["Reef choruses", "Kelp forest drift", "Mangrove sediment cores",
@@ -100,10 +110,17 @@ final class HierarchyDataTests: XCTestCase {
         XCTAssertEqual(mei.closed?.total.values, [11, 1, 0, 3, 2], "1, 2, 3+ rounds, still open, followed up")
         XCTAssertEqual(mei.closed?.total.untouchedAfterFollowUp, 2)
         let trips = try XCTUnwrap(mei.time)
-        XCTAssertEqual(trips.map(\.round), [1, 2, 3, 4, 1])
-        XCTAssertEqual(trips.map(\.student), [9, 14, 7, nil, 39])
+        XCTAssertEqual(trips.map(\.round), [1, 2, 3, 4, 1, 2])
+        XCTAssertEqual(trips.map(\.student), [9, 14, 7, nil, 39, 91], "the closed last round: its days so far (UI v4)")
         XCTAssertEqual(trips.first?.received, 8)
         XCTAssertTrue(trips[3].open)
+        XCTAssertEqual(trips.map { $0.last == true }, [false, false, false, false, false, true])
+        XCTAssertEqual(trips.last?.next, nil)
+        // UI v4 (CONTRACT amendment "UI v4 data"): the summaries' answered and handled, and the ring's fill
+        let mangrove = try XCTUnwrap(r.papers.first { $0.path == Self.root + "mangrove" }?.overview?.summary)
+        XCTAssertEqual([mangrove.answered, mangrove.handled], [2, 4])
+        XCTAssertEqual(mangrove.fill, 1, "ready to finish: all done")
+        XCTAssertEqual(r.papers.first { $0.path == Self.root + "reef" }?.overview?.summary?.fill, 0, "nothing answered yet")
         // the summaries' names (CONTRACT amendment "App, hierarchy")
         let json = #"{"papers": [{"path": "/p", "summary": {"round": 1, "closed": false, "status": "ok", "to_judge": 0, "to_check": 0}, "paper": {"title": "T", "student": "S"}}, {"path": "/q", "error": "no"}]}"#
         let s = try makeDecoder().decode(SummariesReply.self, from: Data(json.utf8))
@@ -129,44 +146,42 @@ final class HierarchyDataTests: XCTestCase {
         XCTAssertEqual(HubText.waits(4), "4 papers wait on you")
         XCTAssertEqual(HubText.waits(1), "1 paper waits on you")
         XCTAssertEqual(HubText.waits(0), "Nothing waits on you")
-        XCTAssertEqual(HubText.waitsDetail(review: 3, failed: 1), "3 to review or finish · 1 build failed")
-        XCTAssertEqual(HubText.waitsDetail(review: 0, failed: 2), "2 builds failed")
+        XCTAssertEqual(HubText.allCounts(students: 3, papers: 4, rounds: 9), "3 students · 4 papers · 9 rounds")
+        XCTAssertEqual(HubText.allCounts(students: 1, papers: 1, rounds: 1), "1 student · 1 paper · 1 round")
         XCTAssertEqual(HubText.status(.toCheck(comments: 7, edits: 2), round: 4, student: "Mei Lin", since: nil),
                        "Round 4 · 7 comments and 2 edits to check")
-        XCTAssertEqual(HubText.status(.toCheck(comments: 7, edits: 2), round: 4, student: "Mei Lin", since: nil, short: true),
-                       "Round 4 · 7 comments, 2 edits to check")
         XCTAssertEqual(HubText.status(.ready, round: 3, student: "", since: nil), "Round 3 · ready to finish")
         XCTAssertEqual(HubText.status(.failed, round: 5, student: "", since: nil), "Round 5 · build failed")
-        XCTAssertEqual(HubText.status(.waiting, round: 1, student: "Priya Nair", since: "2026-10-03T10:00:00+08:00"),
-                       "With Priya since Oct 3")
+        XCTAssertEqual(HubText.status(.waiting, round: 1, student: "Priya Nair", since: "2026-10-03T10:00:00+08:00",
+                                      today: Self.day("2026-10-09"), calendar: Self.calendar),
+                       "With Priya · 6 d", "UI v4: the days since it went back (was \"With Priya since Oct 3\")")
+        XCTAssertEqual(HubText.status(.waiting, round: 1, student: "", since: "2026-10-03T10:00:00+08:00",
+                                      today: Self.day("2026-10-03"), calendar: Self.calendar), "With the student · today")
         XCTAssertEqual(HubText.status(.finished("2026-07-20"), round: 2, student: "Mei Lin", since: nil), "Finished Jul 20")
-        XCTAssertEqual(HubText.week(Self.day("2026-10-19"), calendar: Self.calendar), "Oct 13–19")
-        XCTAssertEqual(HubText.week(Self.day("2026-10-02"), calendar: Self.calendar), "Sep 26 – Oct 2")
-        XCTAssertEqual(HubText.land(["Abstract", "Methods", "Results"], [0, 18, 11]), "Most comments land in Methods (18), then Results (11).")
-        XCTAssertEqual(HubText.land(["Abstract"], [0]), "No comments yet.")
 
-        let r = try Self.reply()
-        let data = Dictionary(r.papers.compactMap { e in e.overview.map { (e.path, $0) } }, uniquingKeysWith: { a, _ in a })
-        let rows = Self.papers(r).map { p -> (paper: PaperRef, status: PaperStatus?, data: PaperOverview?) in
-            (p, PaperStatus.of(data[p.path]?.summary, finished: p.title == "Shrimp snap detector" ? "2026-07-20" : nil), data[p.path])
-        }
-        let week = HubText.thisWeek(rows, today: Self.day("2026-10-19"), calendar: Self.calendar).map(\.text).joined()
-        XCTAssertEqual(week, "Five rounds came in this week: Priya’s Mangrove sediment cores (Tue), Tomás’s Kelp forest drift (Thu), "
-                       + "Mei’s Reef choruses (Fri), Jonas’s Seagrass carbon budget (Sat) and Untitled draft (Sun). Mangrove sediment "
-                       + "cores is decided and only needs Finish; Seagrass carbon budget did not build. Urchin barrens survey is with Tomás; "
-                       + "Blue carbon review is with Priya.")
-        XCTAssertEqual(HubText.thisWeek(rows, today: Self.day("2026-08-01"), calendar: Self.calendar).first?.text, "No rounds came in this week.")
-        let titles = HubText.thisWeek(rows, today: Self.day("2026-10-19"), calendar: Self.calendar).filter(\.bold).map(\.text)
-        XCTAssertEqual(titles.count, 5, "the titles that came in are bold")
-        let mei = rows.filter { $0.paper.student == "Mei Lin" }
-        XCTAssertEqual(HubText.studentLede(mei).map(\.text).joined(),
-                       "○ Reef choruses is your move: Round 4 came in Oct 16. Shrimp snap detector finished on Jul 20 after 2 rounds.")
-        XCTAssertEqual(HubText.studentLede(mei).filter(\.amber).map(\.text), ["○"], "the amber ○ of your move")
-        let stats = try XCTUnwrap(r.students?.first { $0.student == "Mei Lin" })
-        let t = Dictionary(mei.map { ($0.paper.path, $0.paper.title) }, uniquingKeysWith: { a, _ in a })
-        XCTAssertEqual(HubText.time(stats.time ?? [], titles: t, first: "Mei"),
-                       "Mei’s revisions took 9, 14 and 7 days on Reef choruses; 39 days on Shrimp snap detector. You returned each round in 2–3 days.")
-        XCTAssertEqual(HubText.time([], titles: [:], first: "Ana"), "No round has gone back to Ana yet.")
+        // UI v4's words (BRIEF §3, §5)
+        XCTAssertEqual(HubText.figure(14, 2), "14 comments + 2 edits")
+        XCTAssertEqual(HubText.figure(3, 0), "3 comments")
+        XCTAssertEqual(HubText.figure(1, 1), "1 comment + 1 edit")
+        XCTAssertEqual(HubText.figure(0, 2), "2 edits")
+        XCTAssertEqual(HubText.badge(14, 2), "14 + 2")
+        XCTAssertEqual(HubText.badge(3, 0), "3")
+        XCTAssertEqual(HubText.badge(0, 2), "+ 2")
+        let cal = Self.calendar, now = Self.day("2026-10-30")
+        XCTAssertEqual(HubText.dayCounter(Self.day("2026-10-28"), today: now, calendar: cal), "2 d")
+        XCTAssertEqual(HubText.dayCounter(now, today: now, calendar: cal), "today")
+        XCTAssertEqual(HubText.days(Self.day("2026-10-28"), today: now, calendar: cal), "2 days")
+        XCTAssertEqual(HubText.days(Self.day("2026-10-29"), today: now, calendar: cal), "1 day")
+        XCTAssertEqual(HubText.days(now, today: now, calendar: cal), "today")
+        XCTAssertEqual(HubText.cameIn(Self.day("2026-10-28"), today: now, calendar: cal), "came in 2 days ago")
+        XCTAssertEqual(HubText.cameIn(Self.day("2026-10-29"), today: now, calendar: cal), "came in 1 day ago")
+        XCTAssertEqual(HubText.cameIn(now, today: now, calendar: cal), "came in today")
+        XCTAssertEqual(HubText.hoverCameIn(Self.day("2026-10-28"), calendar: cal), "Came in Wed, Oct 28")
+        XCTAssertEqual(HubText.hoverSentBack(Self.day("2026-10-24"), calendar: cal), "Sent back Sat, Oct 24")
+        XCTAssertEqual(HubText.hoverSentBack(Self.day("2026-10-24"), round: 1, calendar: cal), "Round 1 sent back Sat, Oct 24")
+        XCTAssertEqual(HubText.finishedLine(rounds: 2, closed: 12, of: 16), "2 rounds · 12 of 16 closed")
+        XCTAssertEqual(HubText.finishedLine(rounds: 1, closed: 0, of: 5), "1 round · 0 of 5 closed")
+        XCTAssertEqual(HubText.answeredSoFar(6, of: 16), "6 of 16 answered so far")
     }
 
     /// The small maps (OVERVIEW-v2 §3.1, VISUAL v3 §6.2): a row per round, newest first, shaded with the paper's own
@@ -174,11 +189,9 @@ final class HierarchyDataTests: XCTestCase {
     func testSmallMaps() throws {
         let r = try Self.reply()
         let reef = try XCTUnwrap(r.papers.first { $0.path == Self.root + "reef" }?.overview)
-        let m = MiniMap.make(reef, ring: true)
+        let m = MiniMap.make(reef)
         XCTAssertEqual(m.rows.map(\.n), [4, 3, 2, 1])
         XCTAssertEqual(m.rows.map(\.count), [3, 6, 9, 6], "the readout's Comments of each round")
-        XCTAssertEqual(m.rows.first?.ring, true)
-        XCTAssertEqual(m.rows.dropFirst().filter(\.ring).count, 0)
         XCTAssertEqual(m.rows.first?.cells.count, reef.round(4)?.spans?.count)
         XCTAssertTrue(m.rows.flatMap(\.cells).contains { $0.level > 0 })
         XCTAssertTrue(m.rows.flatMap(\.cells).allSatisfy { $0.level <= 3 }, "three steps")
@@ -195,11 +208,29 @@ final class HierarchyDataTests: XCTestCase {
         var pending = reef
         pending.rounds[0].prose = "pending"
         XCTAssertTrue(MiniMap.make(pending).rows.last?.plain == true, "a round without sections: plain pages")
+
+        // UI v4's bare style (mockup `mini`): no labels or counts; each row's round and comments in its help tag
+        XCTAssertEqual(m.rows.map(MiniMapView.rowHelp), ["Round 4 · 3 comments", "Round 3 · 6 comments", "Round 2 · 9 comments", "Round 1 · 6 comments"])
+        XCTAssertEqual(MiniMapView.rowHelp(s.rows[0]), "Round 3 · build failed")
+        XCTAssertEqual(MiniMapView.foldHelp(1...2), "Rounds 1–2")
+        XCTAssertEqual(MiniMapView.foldHelp(1...1), "Round 1")
+        for dark in [false, true] {
+            for (map, empty) in [(m, false), (two, false), (s, false), (m, true)] {
+                let v = MiniMapView(map: map, width: 300, cell: 10, gap: 6, empty: empty)
+                let lines = v.lines
+                let host = NSHostingView(rootView: v)
+                host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+                let size = host.fittingSize
+                XCTAssertEqual(size.width, 300, accuracy: 0.5, "full width: no label or count columns")
+                XCTAssertEqual(size.height, CGFloat(lines) * 10 + CGFloat(lines - 1) * 6, accuracy: 0.5)
+            }
+        }
     }
 
-    /// Rounds in 2026 (the mockup's timeline): with you while open or until it closed, with the student until the next
-    /// round, amber for a round that waits on you, a check for one ready to finish, a triangle for a failed build, a
-    /// diamond for a finished paper.
+    /// Rounds in 2026 (UI v4, BRIEF §8.2, mockup `timeline()`): a line while with you, dotted with the student until the
+    /// next round; the vermilion stretch from the last arrival to today for a round that waits on you, a ready one's line
+    /// in ink; a failed build's mark; a finished paper's day (its checkmark); short names on the lanes and each round's
+    /// dates in the hover, no round numbers drawn.
     func testTheTimeline() throws {
         let r = try Self.reply()
         let data = Dictionary(r.papers.compactMap { e in e.overview.map { (e.path, $0) } }, uniquingKeysWith: { a, _ in a })
@@ -213,21 +244,41 @@ final class HierarchyDataTests: XCTestCase {
         XCTAssertEqual(t.lanes.count, 8)
         let reef = try XCTUnwrap(t.lanes.first { $0.title == "Reef choruses" })
         XCTAssertEqual(reef.marks.map(\.kind), [.imported, .imported, .imported, .yourMove])
-        XCTAssertEqual(reef.you.count, 4)
+        XCTAssertEqual(reef.you.count, 3, "UI v4: the open round is the vermilion stretch, not a line with you (was 4)")
         XCTAssertEqual(reef.you[0].upperBound - reef.you[0].lowerBound, 2, "Sep 8 to Sep 10")
         XCTAssertEqual(reef.student.count, 3)
-        XCTAssertEqual(reef.you[3].upperBound, t.today, "the open round is with you until today")
-        XCTAssertEqual(t.lanes.first { $0.title == "Mangrove sediment cores" }?.marks.last?.kind, .ready)
+        XCTAssertEqual(reef.open?.lowerBound, reef.marks.last?.day, "from the last arrival")
+        XCTAssertEqual(reef.open?.upperBound, t.today, "to today")
+        XCTAssertEqual(reef.short, "Reef choruses")
+        XCTAssertTrue(reef.hover.hasPrefix("Reef choruses · Round 4 came in "), reef.hover)
+        XCTAssertTrue(reef.hover.contains(" · Round 1 Sep 8 – Sep 10"), reef.hover)
+        let mangrove = try XCTUnwrap(t.lanes.first { $0.title == "Mangrove sediment cores" })
+        XCTAssertEqual(mangrove.marks.last?.kind, .ready)
+        XCTAssertNil(mangrove.open, "ready to finish: an ink line to today, no vermilion")
+        XCTAssertEqual(mangrove.you.last?.upperBound, t.today)
         let sea = try XCTUnwrap(t.lanes.first { $0.title == "Seagrass carbon budget" })
         XCTAssertEqual(sea.marks.last?.kind, .failed)
         XCTAssertEqual(sea.student.last?.upperBound, sea.marks.last?.day, "with the student until the failed round came in")
+        XCTAssertNil(sea.open)
+        XCTAssertTrue(sea.hover.contains("build failed"), sea.hover)
         let urchin = try XCTUnwrap(t.lanes.first { $0.title == "Urchin barrens survey" })
-        XCTAssertNotNil(urchin.finished)
+        XCTAssertNotNil(urchin.finished, "its checkmark after the last point")
+        XCTAssertNil(urchin.open)
+        XCTAssertTrue(urchin.hover.hasPrefix("Urchin barrens survey · Finished May 2 · Round "), urchin.hover)
         XCTAssertEqual(urchin.student.last?.upperBound, urchin.finished, "with the student until it was marked finished")
         let blue = try XCTUnwrap(t.lanes.first { $0.title == "Blue carbon review" })
         XCTAssertEqual(blue.student.last?.upperBound, t.today, "with the student until today")
         let across = Timeline.make(rows, today: Self.day("2027-01-10"), calendar: Self.calendar)
         XCTAssertEqual(across?.title, "Rounds since Mar 2026")
+        // UI v4 (BRIEF §4 05): the axis starts in the first round's month, with no three-month minimum (was Aug here)
+        let recent = Timeline.make(rows.filter { $0.paper.title == "Blue carbon review" }, today: Self.day("2026-10-19"),
+                                   calendar: Self.calendar)
+        XCTAssertEqual(recent?.months.map(\.0), ["Oct"])
+        // the old lede's count, in the title's help
+        XCTAssertEqual(HubText.cameThisWeek(Array(data.values), today: Self.day("2026-10-19"), calendar: Self.calendar),
+                       "5 rounds came in this week")
+        XCTAssertEqual(HubText.cameThisWeek(Array(data.values), today: Self.day("2026-08-01"), calendar: Self.calendar),
+                       "No rounds came in this week")
     }
 
     /// The sidebar's rows (FEATURES OV-7): All Students, Your Move, Students with their papers (a folded student
@@ -258,19 +309,20 @@ final class HierarchyDataTests: XCTestCase {
         let initial = MapHeadingsSheet.initial([kelp], data: data)[kelp.path]
         XCTAssertEqual(initial?["study-area"], "method")
         XCTAssertEqual(initial?["front"], "abstract")
-        XCTAssertEqual(LandBox.mapped([kelp], data: data),
+        XCTAssertEqual(StudentTiles.mapped([kelp], data: data),
                        "Headings matched by their words (not confirmed yet): Study area → Methods · Materials and methods → Methods.")
         kelp.buckets = ["study-area": "", "methods": "method"]
         XCTAssertEqual(MapHeadingsSheet.initial([kelp], data: data)[kelp.path]?["study-area"], "", "the advisor's answer first")
-        XCTAssertTrue(LandBox.mapped([kelp], data: data).hasPrefix("Headings matched to the standard sections: Materials and methods → Methods"))
+        XCTAssertTrue(StudentTiles.mapped([kelp], data: data).hasPrefix("Headings matched to the standard sections: Materials and methods → Methods"))
         let req = AppModel.hubRequest([kelp])
         XCTAssertEqual(req["papers"] as? [String], [kelp.path])
+        XCTAssertEqual(req["marks"] as? Bool, true, "UI v4: the thumbnails' highlights")
         let b = try XCTUnwrap((req["buckets"] as? [String: [String: Any]])?[kelp.path])
         XCTAssertTrue(b["study-area"] is NSNull)
         XCTAssertEqual(b["methods"] as? String, "method")
         XCTAssertEqual(MapHeadingsSheet.title("method"), "Methods")
         XCTAssertNil(MapHeadingsSheet.title(""))
-        XCTAssertEqual(LandBox.short("Introduction"), "Intro.")
+        XCTAssertEqual(StudentTiles.short("Introduction"), "Intro.")
         XCTAssertEqual(HubPage(argument: "student:Mei  Lin"), .student(StudentName.key("Mei Lin")))
         XCTAssertEqual(HubPage(argument: "move"), .yourMove)
         XCTAssertNil(HubPage(argument: "nope"))
@@ -341,15 +393,20 @@ final class HierarchyModelTests: XCTestCase {
         XCTAssertEqual(m.hubModel.data.count, 8)
         XCTAssertEqual(m.yourMove.count, 5, "the sidebar's Your Move count")
         XCTAssertEqual(HubText.waits(m.yourMove.count), "5 papers wait on you", "All Students' heading")
-        let (review, failed) = Hierarchy.counts(m.yourMove)
-        XCTAssertEqual(HubText.waitsDetail(review: review, failed: failed), "4 to review or finish · 1 build failed")
+        // UI v4: the board's Your move lane is the same five, oldest first; every listed paper is in one lane
+        let board = m.board()
+        XCTAssertEqual(board.lane(.yourMove).cards.map(\.path), m.yourMove.map(\.paper.path))
+        XCTAssertEqual(board.lanes.map(\.count).reduce(0, +), m.papers.count)
+        XCTAssertEqual(m.yourMovePage().rows.map(\.card.path), m.yourMove.map(\.paper.path))
         XCTAssertEqual(m.sidebarSelection, .allStudents)
         XCTAssertEqual(m.status(of: m.papers.first { $0.title == "Reef choruses" }!), .toCheck(comments: 3, edits: 5),
                        "the overview's summaries are taken for the badges")
         m.openHub(.yourMove)
         XCTAssertEqual(m.yourMove.first?.paper.title, "Mangrove sediment cores")
         XCTAssertEqual(m.statusText(m.yourMove[0].paper), "Round 3 · ready to finish")
-        XCTAssertEqual(m.statusText(m.papers.first { $0.title == "Blue carbon review" }!), "With Priya since Oct 3")
+        let back = try XCTUnwrap(Hierarchy.date(m.hubModel.data[HierarchyDataTests.root + "blue"]?.latest?.closedAt))
+        XCTAssertEqual(m.statusText(m.papers.first { $0.title == "Blue carbon review" }!),
+                       "With Priya · " + HubText.dayCounter(back, today: Date()))
     }
 
     func testBackAndForwardThroughThePages() throws {
@@ -704,20 +761,74 @@ final class HierarchyModelTests: XCTestCase {
     }
 
     /// The pages lay out at the three window widths (the overview's width at 1440, 1280 and 960 with the sidebar), in
-    /// both appearances, without the engine.
+    /// both appearances, without the engine: All Students as Board and as Students, Your Move with papers waiting and
+    /// with none, and the student pages.
     func testThePagesLayOut() throws {
         let m = try makeModel()
         m.openHub(.allStudents)
-        for page in [HubPage.allStudents, .yourMove, .student(StudentName.key("Mei Lin")), .student(StudentName.key("Nobody"))] {
-            for (w, h) in [(1204.0, 872.0), (1044.0, 772.0), (724.0, 612.0)] {
-                for dark in [false, true] {
-                    let host = NSHostingView(rootView: HubScreen(model: m, hub: m.hubModel, page: page).frame(width: w, height: h))
-                    host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
-                    host.frame = NSRect(x: 0, y: 0, width: w, height: h)
-                    host.layoutSubtreeIfNeeded()
-                    XCTAssertGreaterThan(host.fittingSize.width, 0)
+        // UI v4's student pages: Leo with two papers that wait (Kelp and Seagrass), Sara with one paper with her (Blue
+        // carbon review), beside Mei's one waiting and one finished
+        m.papers = m.papers.map { p in
+            var p = p
+            if p.title == "Seagrass carbon budget" { p.student = "Tomás Ruiz" }
+            if p.title == "Blue carbon review" { p.student = "Sara Okafor" }
+            if p.title == "Shrimp snap detector" { p.finished = "2026-07-20" }
+            return p
+        }
+        let pages = [HubPage.allStudents, .yourMove, .student(StudentName.key("Mei Lin")), .student(StudentName.key("Tomás Ruiz")),
+                     .student(StudentName.key("Sara Okafor")), .student(StudentName.key("Nobody"))]
+        let tomas = try XCTUnwrap(m.studentGroups.first { $0.key == StudentName.key("Tomás Ruiz") })
+        XCTAssertEqual(m.studentPage(tomas).cards.filter { $0.kind == .action }.count, 2, "two papers wait")
+        let sara = try XCTUnwrap(m.studentGroups.first { $0.key == StudentName.key("Sara Okafor") })
+        XCTAssertEqual(m.studentPage(sara).cards.map(\.kind), [.wide])
+        XCTAssertEqual(m.studentPage(sara).grid.first?.count, 2, "Turnaround beside her paper")
+        func lay(_ m: AppModel, _ pages: [HubPage]) {
+            for page in pages {
+                for (w, h) in [(1204.0, 872.0), (1044.0, 772.0), (724.0, 612.0)] {
+                    for dark in [false, true] {
+                        let host = NSHostingView(rootView: HubScreen(model: m, hub: m.hubModel, page: page).frame(width: w, height: h))
+                        host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+                        host.frame = NSRect(x: 0, y: 0, width: w, height: h)
+                        host.layoutSubtreeIfNeeded()
+                        XCTAssertGreaterThan(host.fittingSize.width, 0)
+                    }
                 }
             }
         }
+        lay(m, pages)
+        // Your Move's rows leave the title its room at every width (the review: at a 960 pt window the mini map's column
+        // pushed the rows past their card), and a to-check figure of large counts stays in the narrowest Students card
+        for w in [1204.0, 1044.0, 724.0] {
+            let width = w - 2 * HubScreen.inset
+            let page = NSHostingController(rootView: YourMovePage(model: m, hub: m.hubModel, width: width))
+            // the least width the rows take (the narrow figure under the title included), with room to spare
+            XCTAssertLessThanOrEqual(page.sizeThatFits(in: CGSize(width: 1, height: 10_000)).width + 100, width, "at \(w)")
+        }
+        XCTAssertTrue(m.yourMovePage().rows.contains { $0.card.item.map(MoveRow.title)?.hasPrefix("Finish Round") == true })
+        let big = BoardCard(path: "/big", who: "", title: "T", status: .toCheck(comments: 120, edits: 15),
+                            figure: .toCheck(PaperFigures.Count(comments: 120, edits: 15)), glyph: .ring(0))
+        // a card of the Students view at 1044: (980 − 16) / 2 a block, less 48, two cards 16 apart, less 32
+        XCTAssertLessThanOrEqual(NSHostingController(rootView: BoardFigure(card: big)).sizeThatFits(in: CGSize(width: 177, height: 1000)).width, 177)
+        // UI v4 step 7: All Students' Students view, then Your Move and the board with nothing waiting
+        m.allStudentsView = .students
+        lay(m, [.allStudents])
+        m.allStudentsView = .board
+        m.papers = m.papers.filter { m.status(of: $0)?.yourMove != true }
+        XCTAssertTrue(m.yourMovePage().rows.isEmpty)
+        XCTAssertFalse(m.yourMovePage().quiet.isEmpty, "the papers with students under it")
+        lay(m, [.yourMove, .allStudents])
+        // UI v4 step 6: a student with every tile, For the next draft and First drafts (the tags fixture)
+        var o = LaunchOptions()
+        o.fixture = StepTests.fixtures.appendingPathComponent("state-m2a.json").path
+        o.overviewFixture = TagDataTests.fixture.path
+        o.drafts = drafts.path
+        let t = AppModel(options: o)
+        let reply = try TagDataTests.reply()
+        t.papers = (reply.students?.first?.papers ?? []).map { PaperRef(path: $0, title: ($0 as NSString).lastPathComponent, student: "Mei Lin") }
+        t.openHub(.student(StudentName.key("Mei Lin")))
+        let mei = try XCTUnwrap(t.studentGroups.first { $0.key == StudentName.key("Mei Lin") })
+        XCTAssertEqual(t.studentPage(mei).tiles.shown, [.bySection, .closing, .topics, .turnaround, .firstDrafts])
+        XCTAssertFalse(t.studentPage(mei).tiles.nextDraft.isEmpty)
+        lay(t, [.student(StudentName.key("Mei Lin"))])
     }
 }

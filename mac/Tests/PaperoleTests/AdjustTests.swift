@@ -52,7 +52,7 @@ final class GroupHeaderTests: XCTestCase {
         withExtendedLifetime(list) {}
     }
 
-    /// In a closed round To check is Left open, its sign grey (no amber: nothing is the advisor's move).
+    /// In a closed round To check is Left open, its sign grey (no vermilion: nothing is the advisor's move).
     func testLeftOpenIsGrey() {
         XCTAssertEqual(HeaderGlyph.toCheck(open: true).color, Color(nsColor: Palette.toCheck))
         XCTAssertEqual(HeaderGlyph.toCheck(open: false).color, Color(nsColor: Palette.neutral))

@@ -136,6 +136,7 @@ extension AppModel {
         setLevel(review ? .review : .overview)
         if review {
             if p.tab == PanelTab.changes.rawValue { tab = .changes }
+            if p.tab == PanelTab.checks.rawValue && checksOn { tab = .checks }
             reveal(ReviewTarget(round: p.round, comment: p.comment, change: p.change, page: p.page))
         }
         return true

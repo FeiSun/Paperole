@@ -3,6 +3,7 @@
 texdiff and anchor are replaced by a stand-in with the contract's interface (§5), so these tests check
 the core's wiring and rules, not engine B's diff and re-anchoring."""
 import json
+import shutil
 import types
 import unicodedata
 
@@ -66,7 +67,7 @@ def test_rounds_2_and_3(paper, standin):
             (1, "Our simulator is event-driven", "这段放到本节最后。", "highlight"),
             (1, "which performed best on a held-out day of the trace.", "只用一天调参够吗？", "note")]:
         call("comment", paper=p, page=page, rects=select(pdf1, page, phrase), text="", note=note, kind=kind)
-    nothing = {"to_judge": 0, "to_check": 0, "closed_at": None, "resumable": False}
+    nothing = {"to_judge": 0, "to_check": 0, "answered": 0, "handled": 0, "closed_at": None, "resumable": False}
     assert call("state", paper=p)["state"]["summary"] == dict(nothing, round=1, closed=False, status="ok")
     round1_state = call("finish", paper=p)["state"]
     assert round1_state["summary"] == dict(nothing, round=1, closed=True, status="ok", resumable=True,
@@ -99,7 +100,7 @@ def test_rounds_2_and_3(paper, standin):
     assert state["changes"][1]["new_text"] == "Because the controller needs no changes"
     # the papers list: 5 comments to judge and c02 to check
     assert state["summary"] == {"round": 2, "closed": False, "status": "ok", "to_judge": 5, "to_check": 1,
-                                "closed_at": None, "resumable": False}
+                                "answered": 0, "handled": 0, "closed_at": None, "resumable": False}
 
     # Edit and delete are for this round's comments, verdicts for the carried ones.
     with pytest.raises(EngineError, match="Give it a verdict"):
@@ -206,6 +207,57 @@ def test_rounds_2_and_3(paper, standin):
     email = call("finish", paper=p)["state"]["round"]["email"]
     assert "  这句不准确：Hybrid 也决定预热窗口。\n  Round 2 (follow-up): 还是没说清楚和 Hybrid 的区别。\n" in email
     assert email.index("Still open (3)") < email.index("Round 2 (follow-up)")
+
+
+def test_answered_and_handled(paper, standin, tmp_path):
+    """UI v4 (CONTRACT amendment "UI v4 data"): summary.answered counts the open round's carried comments with a
+    verdict and summary.handled its unrequested changes no longer to check (checked, or asked about by a comment of
+    the round); both agree with the overview's open round, are 0 once the round is finished and are back after
+    Resume, and are 0 for a failed round after one with comments."""
+    p = str(paper)
+    pdf1 = str(paper / "r1" / "build" / "main.pdf")
+    for page, phrase in [(0, "simple keep-alive policy:"),
+                         (0, "Both approaches decide when to keep a single instance alive."),
+                         (2, "The memory footprint is two floating-point numbers per function.")]:
+        call("comment", paper=p, page=page, rects=select(pdf1, page, phrase), text="", note="Fix it.", kind="highlight")
+    call("finish", paper=p)
+
+    def counts(state):
+        s = state["summary"]
+        return s["to_judge"], s["answered"], s["to_check"], s["handled"]
+
+    def agree():
+        ov = call("overview", papers=[p])["papers"][0]["overview"]
+        r, s = ov["rounds"][-1], ov["summary"]
+        assert s["answered"] == r["comments"]["resolved"] + r["comments"]["follow_up"] + r["comments"]["kept"]
+        assert s["handled"] == r["changes"]["unrequested"] - r["changes"]["to_check"]
+
+    assert counts(call("ingest", paper=p, source=str(FIXTURE / "v2"))["state"]) == (3, 0, 1, 0)
+    agree()
+    call("verdict", paper=p, id="R1-01", verdict="verified")
+    call("verdict", paper=p, id="R1-02", verdict="reopened", note="Say which window.")
+    assert counts(call("verdict", paper=p, id="R1-03", verdict="wontfix")["state"]) == (0, 3, 1, 0)
+    agree()
+    assert counts(call("check_change", paper=p, id="c02")["state"]) == (0, 3, 0, 1)
+    agree()
+    call("check_change", paper=p, id="c02", checked=False)
+    # a comment of the round on c02 asks about it: handled, not to check
+    state = call("comment", paper=p, page=3, rects=[[80.0, 101.0, 140.0, 109.0]], text="", note="Why?",
+                 kind="note")["state"]
+    assert next(ch for ch in state["changes"] if ch["id"] == "c02")["commented_by"]
+    assert counts(state) == (0, 3, 0, 1)
+    agree()
+    open_ = counts(state)
+    assert counts(call("finish", paper=p)["state"]) == (0, 0, 0, 0)
+    assert counts(call("resume_round", paper=p)["state"]) == open_
+    # a failed Round 3 after Round 2's comments: nothing to judge, answered or handled
+    call("finish", paper=p)
+    broken = tmp_path / "broken"
+    shutil.copytree(FIXTURE / "v2", broken)
+    (broken / "main.tex").write_text((broken / "main.tex").read_text().replace("{article}", "{nosuchclassxyz}", 1))
+    state = call("ingest", paper=p, source=str(broken))["state"]
+    assert state["summary"]["status"] == "failed" and counts(state) == (0, 0, 0, 0)
+    assert call("overview", papers=[p])["papers"][0]["overview"]["summary"]["answered"] == 0
 
 
 def test_a_round_finished_now_uses_the_students_words(paper, standin):

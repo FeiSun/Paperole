@@ -22,18 +22,33 @@ struct RightPanel: View {
         .background(Color(nsColor: Palette.panel))
     }
 
-    /// The two tabs across the panel (POLISH §2.3, §3 row 6; v2.2: a segment that slides, `PanelTabs`), measured once
+    /// The tabs across the panel (POLISH §2.3, §3 row 6; v2.2: a segment that slides, `PanelTabs`; the Checks' third,
+    /// UX.md §39), measured once
     /// (MeasuredOnce, UX.md §10.10); the cards' underline toggle is in the View menu (Underline Changed Words).
     private var tabs: some View {
         // what needs doing there, not how many there are (UX.md §1, §16)
         let comments = model.roundIsOpen ? model.commentsToCheck : 0
-        return MeasuredOnce {
-            PanelTabs(tab: $model.tab, comments: comments > 0 ? "Comments \(comments)" : "Comments",
-                      changes: model.roundIsOpen && model.toCheck > 0 ? "Changes \(model.toCheck)" : "Changes")
-        }
+        return PanelTabsBar(checks: model.checks, tab: $model.tab, comments: comments > 0 ? "Comments \(comments)" : "Comments",
+                            changes: model.roundIsOpen && model.toCheck > 0 ? "Changes \(model.toCheck)" : "Changes",
+                            checksOn: model.checksOn)
         .padding(.horizontal, 12)
         .padding(.top, 12)
         .padding(.bottom, 8)
+    }
+}
+
+/// The tabs, with Checks while it is on: the bar observes the checks for the tab's count.
+private struct PanelTabsBar: View {
+    @ObservedObject var checks: ChecksModel
+    @Binding var tab: PanelTab
+    let comments: String
+    let changes: String
+    let checksOn: Bool
+
+    var body: some View {
+        MeasuredOnce {
+            PanelTabs(tab: $tab, comments: comments, changes: changes, checks: checksOn ? checks.tabTitle : nil)
+        }
     }
 }
 
@@ -287,7 +302,7 @@ struct MeasuredOnce: Layout {
 /// The sign before a group's name (POLISH §7): whose move the group is, as the rows' chips and the PDF's labels say it.
 enum HeaderGlyph: Equatable {
     case none
-    /// ○, amber in an open round (the advisor's move, the one amber of the list), grey in a closed one (Left open).
+    /// ○, vermilion in an open round (the advisor's move, the one vermilion of the list), grey in a closed one (Left open).
     case toCheck(open: Bool)
     /// What goes to the student in the round’s final.pdf.
     case student
@@ -714,7 +729,7 @@ enum ChangesHeader {
         let more = a == 0 ? "" : " \(count(a, "more edit")) answer\(a == 1 ? "s" : "") your comments."
         var lead: AttributedString, rest: String
         if left > 0 {
-            // in the label colour, not amber (POLISH §6, 3); how many is the tab's to say (§4.4)
+            // in the label colour, not vermilion (POLISH §6, 3); how many is the tab's to say (§4.4)
             lead = AttributedString(left == 1 ? "An edit to check." : "Other edits to check.")
             rest = (left == 1 ? " No comment asked for it." : " No comment asked for them.") + more
         } else if u > 0 {

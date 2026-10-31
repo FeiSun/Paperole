@@ -572,7 +572,7 @@ final class DataTransferTests: XCTestCase {
         try fm.removeItem(atPath: pools.path)
         m.noteMissing()
         XCTAssertEqual(m.missingPapers, [pools.path], "its row says missing")
-        // a missing paper waits on no one: not counted, no amber on its tile, its line says why (the sign red)
+        // a missing paper waits on no one: not counted, no vermilion on its card, its line says why (the sign red)
         XCTAssertNil(m.status(of: pools))
         XCTAssertFalse(m.yourMove.contains { $0.paper.path == pools.path })
         XCTAssertEqual(m.statusText(pools), "Its folder is missing")

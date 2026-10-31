@@ -6,22 +6,24 @@ import CoreGraphics
 // draws a `MapScene` and asks it what is under the pointer, so the rules that keep every number readable are tested
 // here (MapLayoutTests).
 
-/// The map's text styles: the mockup's t10, t11, t11r, t12, t12s, the cells' numbers and names, and the labels of
-/// its chips and links; none under 11 pt (§19).
+/// The map's text styles: the axis and the hover's names (11), the round's date, the bands' words and the readout's
+/// second line (12), the readout and the round's name (13), the cells' numbers (13; an older round's regular) and
+/// names (12), and the Sage lines and links; none under 11 pt (§19; UI v4's type scale, mac/UX.md §40.3).
 enum MapFont: Equatable, Hashable, CaseIterable {
-    case caption, small, smallRegular, body, bodyBold, number, name, label
+    case caption, small, smallRegular, body, bodyBold, number, numberRegular, name, label
 
     var size: CGFloat {
         switch self {
         case .caption: return 11  // §19: nothing under 11 (it was 10.5, the mockup's t10)
-        case .small, .smallRegular, .label, .name: return 11
-        case .body, .bodyBold, .number: return 12.5
+        case .small, .label: return 11
+        case .smallRegular, .name: return 12
+        case .body, .bodyBold, .number, .numberRegular: return 13
         }
     }
 
     var weight: NSFont.Weight {
         switch self {
-        case .smallRegular, .name: return .regular
+        case .smallRegular, .name, .body, .numberRegular: return .regular
         case .bodyBold, .number, .label: return .semibold
         default: return .medium
         }
@@ -32,7 +34,7 @@ enum MapFont: Equatable, Hashable, CaseIterable {
     var nsFont: NSFont { Self.fonts[self]! }
 
     private static let fonts: [MapFont: NSFont] = Dictionary(uniqueKeysWithValues: allCases.map { f -> (MapFont, NSFont) in
-        (f, f == .number || f == .bodyBold || f == .body
+        (f, f == .number || f == .numberRegular || f == .bodyBold || f == .body
             ? NSFont.monospacedDigitSystemFont(ofSize: f.size, weight: f.weight) : NSFont.systemFont(ofSize: f.size, weight: f.weight))
     })
 
@@ -56,16 +58,21 @@ enum MapFont: Equatable, Hashable, CaseIterable {
 }
 
 /// The colours the map draws with (OVERVIEW-v2 §4.7, VISUAL v3 §3): one warm stone in three steps over a near-neutral
-/// track for the counts, Sage only for what is followed, amber only for ○, red only for a failed build, green only for
-/// edits asked for, slate teal for those nobody asked for. Each is resolved for the appearance by `MapInk`.
+/// track for the counts, Sage only for what is followed, vermilion only for the marks of what is to check, red only
+/// for errors, the edits' green only for the student's added words in a help tag. Each is resolved for the appearance
+/// by `MapInk`.
 enum MapRole: Hashable {
-    /// The cells: no comment (the track), then the paper's three steps; their number and name.
-    case track, s1, s2, s3, number, name
+    /// The cells: no comment (the track), then the paper's three steps; their number and name. UI v4: the one data-ink
+    /// ramp (map cells, small maps, By section, Help pictures), with `ink` its darkest (bars, edit ticks).
+    case track, s1, s2, s3, ink, number, name
+    /// An older round's ramp: the steps at 65% over the page, mixed in advance, so its text never fades (UI v4).
+    case otrack, os1, os2, os3
     /// Bands (one tone: whether a section moved, merged, split or was renamed is said by the band's shape and its
-    /// label), the band of what is followed, the lens's hairlines and its wedge over a folded part, the rail's dots.
-    case band, bandSelected, fan, wedge, railDot
-    /// The small maps on cards (a step stronger: no numbers in them), and the hierarchy's two neutral chart colours.
-    case miniTrack, mini1, mini2, mini3, chartYou, chartStudent
+    /// label), the band of what is followed, the lens's hairlines and its wedge over a folded part.
+    case band, bandSelected, fan, wedge
+    /// The days with you and with the student (Turnaround, the board's timeline), the Today rule, a dark cell's keyline
+    /// without comments, a thumbnail's page, and what closed in 1, 2 or 3+ rounds (UI v4, README §6).
+    case you, stu, today, zeroline, thumb, c1, c2, c3
     case words, other, attention, danger, accent, accentText, accentTint
     case rule, label, label2, secondary, tertiary, content, card, neutral, path
     /// A link drawn on the map (the axis's Show and Fold): the system's link colour, as every link in words
@@ -77,8 +84,10 @@ enum MapRole: Hashable {
 
     /// The fill of a cell with this level (0: no comment).
     static func cell(_ level: Int) -> MapRole { [.track, .s1, .s2, .s3][max(0, min(3, level))] }
-    /// A small map's cell.
-    static func mini(_ level: Int) -> MapRole { [.miniTrack, .mini1, .mini2, .mini3][max(0, min(3, level))] }
+    /// A small map's cell: the same ramp (UI v4: one ramp).
+    static func mini(_ level: Int) -> MapRole { cell(level) }
+    /// An older round's cell.
+    static func old(_ level: Int) -> MapRole { [.otrack, .os1, .os2, .os3][max(0, min(3, level))] }
 }
 
 /// What can be clicked on the map, and what it follows (`MapScene.item`).
@@ -127,18 +136,21 @@ struct MapText: Equatable {
     }
 }
 
-/// The map's geometry for the overview's width (OVERVIEW-v2 §2 high, the mockup's `geo`): the readout at the right in
-/// three columns from 1116 pt of overview (a 1400 pt window with its sidebar), two from 816 (1100), else one; the
-/// "+n unplaced" caps after the rows when a round has any; the map the rest, from 108 pt (the rail) to 22 pt before
-/// the readout. One page scale for every row: the paper's most pages.
+/// The map's geometry for the overview's width (OVERVIEW-v2 §2 high, the mockup's `geo`; UI v4, mac/UX.md §40.3): the
+/// readout at the right in a fixed 168 pt (Comments, and You once a shown round has answers: by the data only, never
+/// by what is followed, so the Sage line under it keeps its room); the "+n unplaced" caps after the rows when a round
+/// has any; the map the rest, from 108 pt (the round's label) to 22 pt before the readout. One page scale for every
+/// row: the paper's most pages.
 struct MapGeometry: Equatable {
     static let mapX: CGFloat = 108
     static let lens: CGFloat = 30
-    static let cell: CGFloat = 28
+    static let cell: CGFloat = 32
     static let rug: CGFloat = 8
     static let gap: CGFloat = 20
-    static var row0: CGFloat { lens + 38 }
+    static var row0: CGFloat { lens + 30 }
     static var pitch: CGFloat { cell + rug + gap }
+    /// The selected round's box behind its label (BRIEF §8.3, the mockup's `.rsel`): 10 pt left of the label column.
+    static let box = CGSize(width: 104, height: 44)
 
     var width: CGFloat
     var columns: Int
@@ -148,21 +160,22 @@ struct MapGeometry: Equatable {
     /// pt per page: the map's width over the paper's most pages, or more when parts fold (`FoldPlan`).
     var k: CGFloat
 
-    init(width: CGFloat, maxPages: Double, unplaced: Bool) {
+    init(width: CGFloat, maxPages: Double, unplaced: Bool, you: Bool = false) {
         self.width = width
-        columns = OverviewLayout.readoutColumns(width: width)
-        readoutWidth = OverviewLayout.readoutWidth(columns: columns)
+        columns = OverviewLayout.readoutColumns(you: you)
+        readoutWidth = OverviewLayout.readoutWidth
         capWidth = unplaced ? 46 : 0
         self.maxPages = max(maxPages, 1)
-        let right = width - OverviewLayout.readoutWidth(columns: columns) - 22 - capWidth
+        let right = width - OverviewLayout.readoutWidth - 22 - capWidth
         k = max(right - Self.mapX, 60) / CGFloat(self.maxPages)
     }
 
     var readoutX: CGFloat { width - readoutWidth }
     var mapRight: CGFloat { readoutX - 22 - capWidth }
     var mapWidth: CGFloat { max(mapRight - Self.mapX, 60) }
-    /// The readout's columns from its left: Comments, the student, You (OVERVIEW-v2 §4.6).
-    var columnX: [CGFloat] { columns == 3 ? [0, 66, 216] : columns == 2 ? [0, 70] : [0] }
+    /// The readout's columns' right edges (their figures are right-aligned): Comments, then You. Comments 48 pt ("128",
+    /// "12 new"), so You has the room of all three answers with a two-digit count ("✓ 11 · ↩ 2 · – 1", 97 pt, in 108).
+    var columnRight: [CGFloat] { columns == 2 ? [readoutX + 48, width] : [width] }
     var pageWidth: CGFloat { k }
 
     /// A place at the page scale, no part folded.
@@ -715,17 +728,10 @@ struct MapScene {
         var sections: [String] = []
         /// Drawn as part of a quiet segment (`Row.quiet`), with no fill of its own.
         var quiet = false
-    }
-
-    struct Chip: Equatable {
-        var section: String
-        var round: Int
-        var rect: CGRect
-        var ring: CGPoint
-        var text: MapText
-        var dim = false
-        /// A folded part's chip: its comments to check.
-        var fold: FoldKind?
+        /// Its comments still to check (the open round only), and whether it is outlined in vermilion for them: not
+        /// while nothing in the round is answered, when the round's ring says it once (UI v4, plan §5 R1).
+        var toCheck = 0
+        var outlined = false
     }
 
     struct Tick: Equatable {
@@ -753,8 +759,6 @@ struct MapScene {
         /// From a folded part's block to its block a round below.
         var fold: FoldKind?
     }
-
-    enum Node: Equatable { case dot, toCheck, failed }
 
     /// Neighbouring sections without comments, each too narrow for a cell of its own (VISUAL §6.1): one quiet track,
     /// though a click and the keys still go section by section.
@@ -785,17 +789,17 @@ struct MapScene {
     struct Row: Equatable {
         var n: Int
         var y: CGFloat
-        var node: Node
+        /// The open round's vermilion ring before its name while it has something to check, and its fill (the share
+        /// answered); nil without one (UI v4: no rail).
+        var ring: Double?
+        /// "Round 2" over the day it came in ("Oct 28"); its return and its counts are in its help tag.
         var title: MapText
         var dates: MapText
-        /// The rail's pill: the strip's round (the track), the round followed (tinted, outlined).
-        var pill: CGRect?
-        var pillSelected = false
-        var line: (CGFloat, CGFloat)?
+        /// Every row but the top one: drawn from the older rounds' ramp, its text never faded (UI v4).
+        var old = false
         var carried: MapText?
         var cells: [Cell] = []
         var quiet: [Quiet] = []
-        var chips: [Chip] = []
         var ticks: [Tick] = []
         /// Pages only (§5.5): the row's track, the gaps between its pages, its comment dots and its caption.
         var pages: CGRect?
@@ -815,10 +819,6 @@ struct MapScene {
         var sage: MapText?
         var dim = false
 
-        static func == (a: Row, b: Row) -> Bool {
-            a.n == b.n && a.y == b.y && a.cells == b.cells && a.readout == b.readout && a.ticks == b.ticks
-                && a.chips == b.chips && a.dim == b.dim && a.sage == b.sage && a.line?.0 == b.line?.0 && a.quiet == b.quiet
-        }
     }
 
     struct PathPoint: Equatable {
@@ -840,7 +840,6 @@ struct MapScene {
         var title: MapText
         var text: MapText
         var link: MapText
-        var node: CGPoint
     }
 
     /// A folded part on the page axis (VISUAL §5.1 with the critique's fix: the toggle has one home): folded, its
@@ -900,6 +899,11 @@ struct MapScene {
     var axisParts: [AxisPart] = []
     var foldLink: MapText?
     var hits: [Hit] = []
+    /// The selected round's box behind its label (the strip's round; UI v4, BRIEF §8.3): nil while its row is folded
+    /// away. `PaperMapView` draws it under the Canvas and slides it to a new round; `boxFollowed`: the round is
+    /// followed (the accent's tint and a Sage outline).
+    var box: CGRect?
+    var boxFollowed = false
     /// The rounds folded under the shown ones.
     var folded: [Int] = []
     /// The rounds shown, top to bottom, and how each row places its points (`RowScale`): a comment's previewed path
@@ -962,16 +966,13 @@ struct MapScene {
     }
 
     /// The section names over round `n`'s row while the pointer is on it (the hover layer): each from its cell's start,
-    /// as far as the next name, as much of it as fits there (`MapRules.label`), so no two touch;
-    /// a name that would cover one of the row's ○ chips (a count), a structure label, its leader or a "carried" pill is
-    /// left out (review 2026-10-19: they covered the open round's chips). The cell's help tag still names it.
-    /// The names over a hovered row: each section's, with the map's stem (`names`), as far as it fits before the
-    /// next; one that a To check chip or a gap's label is in the way of goes before the chip, else on a line of its
-    /// own above the chips (the UI audit: the sections under a chip, those most needing a name, went unnamed).
+    /// with the map's stem (`names`), as far as the next name, as much of it as fits there (`MapRules.label`), so no
+    /// two touch; one that a structure label, its leader or a "carried" pill is in the way of goes on a line of its own
+    /// above. The cell's help tag still names it.
     func hoverNames(_ n: Int, _ d: PaperOverview) -> [MapText] {
         guard let row = rows.first(where: { $0.n == n }), !row.cells.isEmpty else { return [] }
         let leaders = labels.compactMap { l in l.leader.map { CGRect(x: min($0.0.x, $0.1.x), y: $0.0.y - 1, width: abs($0.1.x - $0.0.x), height: 2) } }
-        let obstacles = row.chips.map(\.rect) + labels.map(\.text.rect) + leaders + carriedPills.map(\.0)
+        let obstacles = labels.map(\.text.rect) + leaders + carriedPills.map(\.0)
         let font = MapFont.caption
         var out: [MapText] = []
         var end = -CGFloat.infinity, endAbove = -CGFloat.infinity
@@ -992,15 +993,7 @@ struct MapScene {
                 out.append(t)
                 continue
             }
-            // before the chip in its way, on the same line
-            if let chip = row.chips.first(where: { $0.rect.maxX > a && $0.rect.minX < limit }), chip.rect.minX - a - 4 > 0,
-               let t = fit(chip.rect.minX - 3 - a).map({ MapText(text: $0, x: a, baseline: row.y - 4, font: font, ink: .label, halo: .content) }),
-               clear(t) {
-                end = t.rect.maxX
-                out.append(t)
-                continue
-            }
-            // else above the chips
+            // else on a line above
             let b = max(c.rect.minX + 2, endAbove + 6)
             if let t = fit(limit - b - 4).map({ MapText(text: $0, x: b, baseline: row.y - 24, font: font, ink: .label, halo: .content) }),
                clear(t) {
@@ -1016,7 +1009,7 @@ struct MapScene {
         rows.first { $0.n == n }?.quiet.first { $0.sections.contains(section) }
     }
 
-    /// What a click at `p` lands on: the last hit drawn there (path dots, ticks and chips over cells, cells over bands).
+    /// What a click at `p` lands on: the last hit drawn there (path dots and ticks over cells, cells over bands).
     func target(at p: CGPoint) -> MapTarget? {
         for h in hits.reversed() {
             if let poly = h.polygon {
@@ -1041,8 +1034,8 @@ struct MapScene {
 }
 
 /// What the map needs besides the engine's overview: the overview's width, the rounds folded, the strip's round,
-/// what is followed, the student's first name, the failed round's errors, whether the open round can be finished, and
-/// whether long parts fold (Settings) and which the viewer has shown.
+/// what is followed, the student's first name, the failed round's errors, whether the open round can be finished,
+/// whether long parts fold (Settings) and which the viewer has shown, and whether the strip is shown.
 struct MapInput {
     var data: PaperOverview
     var width: CGFloat
@@ -1055,6 +1048,8 @@ struct MapInput {
     var readyToFinish = false
     var foldParts = true
     var shownParts: Set<FoldKind> = []
+    /// The page strip is shown over the map (not for a folder that is not there): the axis does not number the pages.
+    var stripShown = true
 }
 
 extension MapScene {
@@ -1086,18 +1081,18 @@ extension MapScene {
         return out
     }
 
-    /// A block's least width for its words: the chevron (18 pt), its label, its largest count over the rounds, 7 pt,
-    /// and the cell's 1 pt in from each end.
+    /// A block's least width for its words: 7 pt, its label, its largest count over the rounds, 7 pt, and the cell's
+    /// 1 pt in from each end.
     static func blockLabelWidth(_ d: PaperOverview, _ kind: FoldKind, short: Bool) -> CGFloat {
         var text: CGFloat = 0, most = 0
         for r in d.rounds where r.hasSections && !r.failed {
             let spans = r.spans ?? []
             guard let range = MapFold.ranges(spans).first(where: { $0.kind == kind }) else { continue }
-            text = max(text, MapFont.small.width(MapFold.label(kind, spans[range.spans], short: short)))
+            text = max(text, MapFont.name.width(MapFold.label(kind, spans[range.spans], short: short)))
             let heat = Dictionary((r.heat ?? []).map { ($0.section, $0.present) }, uniquingKeysWith: { a, _ in a })
             most = max(most, spans[range.spans].reduce(0) { $0 + (heat[$1.section] ?? 0) })
         }
-        return 2 + 18 + text + (most > 0 ? 8 + MapFont.number.width("\(most)") + 1 : 0) + 7 + 1
+        return 2 + 7 + text + (most > 0 ? 8 + MapFont.number.width("\(most)") + 1 : 0) + 7 + 1
     }
 
     /// The floors a row's sections are drawn at (`MapScale`), for the paper's largest count in a section: `label`, a
@@ -1114,21 +1109,22 @@ extension MapScene {
     static func build(_ input: MapInput) -> MapScene {
         let d = input.data
         let maxPages = Double(d.rounds.compactMap { $0.build?.pages }.max() ?? 1)
+        let all = Array(d.rounds.reversed())
+        let foldN = input.unfold ? 0 : min(input.fold, max(0, all.count - 1))
+        let shown = Array(all.prefix(all.count - foldN)), folded = Array(all.suffix(foldN))
+        let first = d.rounds.first?.n
         var g = MapGeometry(width: input.width, maxPages: maxPages,
-                            unplaced: d.rounds.contains { ($0.unplaced ?? Self.unplacedCount(d, $0.n)) > 0 })
+                            unplaced: d.rounds.contains { ($0.unplaced ?? Self.unplacedCount(d, $0.n)) > 0 },
+                            you: shown.contains { hasAnswers($0, first: $0.n == first) })
         // the parts the paper folds at this width (VISUAL §5), and the page scale they leave
         let plan = FoldPlan.make(d, mapWidth: g.mapWidth, maxPages: maxPages, enabled: input.foldParts, shown: input.shownParts,
                                  label: { blockLabelWidth(d, $0, short: $1) })
         g.k = plan.k
-        let all = Array(d.rounds.reversed())
-        let foldN = input.unfold ? 0 : min(input.fold, max(0, all.count - 1))
-        let shown = Array(all.prefix(all.count - foldN)), folded = Array(all.suffix(foldN))
         var s = MapScene(geometry: g, height: 0, steps: MapShade.steps(MapShade.counts(d)))
         s.plan = plan
         s.folded = folded.map(\.n)
         let scope = Scope(input.selection, d)
         let strip = d.round(input.strip ?? MapRules.defaultStrip(d) ?? 0)
-        let first = d.rounds.first?.n
         // each round's map of pages: its own folded parts' blocks; a row without sections takes the nearest round's
         let sectioned = d.rounds.filter { $0.hasSections && !$0.failed }
         for r in d.rounds {
@@ -1305,10 +1301,9 @@ extension MapScene {
         }
 
         // the readout's captions; over them, a Sage one names what the Sage lines count
-        let caps = g.columns == 3 ? ["Comments", input.student.isEmpty ? "Student" : input.student, "You"]
-            : g.columns == 2 ? ["Comments", "You"] : ["Comments"]
-        for (j, c) in caps.enumerated() {
-            s.captions.append(MapText(text: c, x: g.readoutX + g.columnX[j], baseline: MapGeometry.lens + 20, font: .small, ink: .secondary))
+        for (j, c) in ["Comments", "You"].prefix(g.columns).enumerated() {
+            s.captions.append(MapText(text: c, x: g.columnRight[j], baseline: MapGeometry.lens + 20, anchor: .end, font: .smallRegular,
+                                      ink: .secondary))
         }
         if let label = scope.caption(d) {
             s.sageCaption = MapText(text: MapRules.fitParts([label], .label, g.readoutWidth - 12), x: g.readoutX + 10,
@@ -1442,34 +1437,36 @@ extension MapScene {
         for (i, r) in shown.enumerated() {
             let y = g.rowY(i), cy = y + MapGeometry.cell / 2
             let open = !r.isClosed && !r.failed
-            let toCheck = (r.comments?.toCheck ?? 0) + (r.changes?.toCheck ?? 0)
-            var row = Row(n: r.n, y: y, node: r.failed ? .failed : open && toCheck > 0 ? .toCheck : .dot,
-                          title: MapText(text: "Round \(r.n)", x: 23, baseline: cy - 2, font: .bodyBold, ink: .label),
-                          dates: MapText(text: OverviewText.dates(r.created, r.isClosed ? r.closedAt : nil),
-                                         x: 23, baseline: cy + 11, font: .smallRegular, ink: .secondary))
+            let old = i > 0
+            // the round's name over the day it came in, older rounds' in secondary; the open round's ring while it has
+            // something to check, filled by what is answered (UI v4: no rail, no dots)
+            var row = Row(n: r.n, y: y, ring: open ? ringFill(r) : nil,
+                          title: MapText(text: "Round \(r.n)", x: Self.labelX, baseline: y + 12.5, font: .bodyBold,
+                                         ink: old ? .secondary : .label),
+                          dates: MapText(text: shortDate(r.created) ?? "", x: Self.labelX, baseline: y + 28.5,
+                                         font: .smallRegular, ink: .secondary))
+            row.old = old
             row.dim = scope.round.map { $0 != r.n } ?? false
-            if r.n == strip?.n || scope.round == r.n {
-                row.pill = CGRect(x: 0, y: y - 3, width: MapGeometry.mapX - 10, height: MapGeometry.cell + 6)
-                row.pillSelected = scope.round == r.n
+            if r.n == strip?.n {
+                s.box = CGRect(x: -10, y: y - 6, width: MapGeometry.box.width, height: MapGeometry.box.height)
+                s.boxFollowed = scope.round == r.n
             }
             if i < shown.count - 1 || !folded.isEmpty {
-                let next = i < shown.count - 1 ? g.rowY(i + 1) + MapGeometry.cell / 2 : g.rowY(shown.count) + 11
-                row.line = (cy + 7, next - 7)
-                let my = y + MapGeometry.cell + MapGeometry.rug + MapGeometry.gap / 2 + 1
                 let n = r.failed ? waiting(d, r.n) : (r.comments?.carried ?? 0)
-                row.carried = MapText(text: "\(n) carried", x: 23, baseline: my + 4, font: .smallRegular, ink: .secondary,
-                                      opacity: scope.isScoped ? 0.5 : 1)
+                // between this round's box and the next's
+                row.carried = MapText(text: "↑ \(n) carried", x: Self.labelX, baseline: y + MapGeometry.cell + 19, font: .smallRegular,
+                                      ink: .secondary, opacity: scope.isScoped ? 0.5 : 1)
             }
-            let railHit = CGRect(x: 0, y: y - 3, width: MapGeometry.mapX - 10, height: MapGeometry.cell + 6)
+            let railHit = CGRect(x: 0, y: y - 6, width: MapGeometry.box.width - 10, height: MapGeometry.box.height)
             s.hits.append(Hit(target: .round(r.n), rect: railHit))
 
             // the readout: the round's own numbers, never re-scoped (§4.6)
-            row.readout = readout(d, r, first: r.n == first, geometry: g, y: y, ready: input.readyToFinish && open)
+            row.readout = readout(d, r, first: r.n == first, geometry: g, y: y, ready: input.readyToFinish && open, old: old)
             if scope.isScoped {
                 let parts = scope.sageParts(d, r)
                 if !parts.isEmpty {
                     row.sage = MapText(text: MapRules.fitParts(parts, .label, g.readoutWidth - 12), x: g.readoutX + 10,
-                                       baseline: y + 41, font: .label, ink: .accentText)
+                                       baseline: y + MapGeometry.cell + 14, font: .label, ink: .accentText)
                 }
             }
             s.hits.append(Hit(target: .round(r.n), rect: CGRect(x: g.readoutX - 8, y: y - 3, width: g.readoutWidth + 8,
@@ -1502,6 +1499,7 @@ extension MapScene {
                 let heat = heats[r.n] ?? [:]
                 let us = rowUnits[r.n] ?? []
                 let runs = quietRuns[r.n] ?? []
+                var shownNames: [String] = []  // the row's names so far: no two alike
                 for (j, u) in us.enumerated() {
                     let xa = X(r.n, u.start) + (joined(r.n, j, left: true) ? 0 : 1)
                     let xb = X(r.n, u.end) - (joined(r.n, j, left: false) ? 0 : 1), w = xb - xa
@@ -1511,6 +1509,7 @@ extension MapScene {
                     cell.fold = u.fold
                     cell.sections = u.sections
                     cell.quiet = runs.contains { $0.contains(j) }
+                    if open { cell.toCheck = u.sections.reduce(0) { $0 + (heat[$1]?.toCheck ?? 0) } }
                     // a block holding the section followed stands for it (the model shows the part first: a fallback)
                     cell.selected = u.sections.contains { scope.followsSection($0) }
                     if scope.isSection { cell.dim = !cell.selected }
@@ -1520,7 +1519,7 @@ extension MapScene {
                     let numText = "\(n)"
                     let cw = MapFont.number.width(numText) + 1
                     // its name as it fits (`MapRules.label`), in the normal spacing when that fits it, else the narrow
-                    // one; none in a quiet segment (a block: the part's label after its chevron)
+                    // one; none in a quiet segment (a block: the part's label, on a pad over its stripes)
                     var name: String?
                     var spacing = MapRules.CellSpacing.normal
                     if let kind = u.fold {
@@ -1534,20 +1533,25 @@ extension MapScene {
                         name = s.names[nameID(u.key, u.title)]?.fit(.name, MapRules.CellSpacing.tight.room(w, count: count))
                         // a lone "I" or "l" beside a count reads as the digit 1 (the UI audit: "I 3"): the count alone
                         if n > 0, let t = name, MapRules.readsAsDigit(t) { name = nil }
+                        // a section without a name of its own (nothing fits its narrowest cell) takes the first form
+                        // that fits here; never one a section before it in the row shows ("Re." for Related and
+                        // References in a narrow window: the hover and the help tag name it)
+                        if let t = name, shownNames.contains(where: { MapRules.bare($0) == MapRules.bare(t) }) { name = nil }
                         if let t = name, MapFont.name.width(t) > spacing.room(w, count: count) { spacing = .tight }
                     }
-                    let font: MapFont = u.fold == nil ? .name : .small
-                    let lead: CGFloat = u.fold == nil ? 0 : 11  // the block's chevron: its label starts 18 pt in
-                    let place = MapRules.placeNumber(xa: xa, xb: xb, width: cw, count: n, dots: dots, name: name.map { lead + font.width($0) },
+                    let place = MapRules.placeNumber(xa: xa, xb: xb, width: cw, count: n, dots: dots, name: name.map { MapFont.name.width($0) },
                                                      spacing: spacing)
                     if place.nudge { for x in dots { nudges.insert(Self.dotKey(r.n, x)) } }
+                    // the open round's at full ink; an older round's numbers regular and its words in label2 (UI v4)
                     if n > 0 && w >= 12 {
-                        cell.number = MapText(text: numText, x: place.x, baseline: cy + 4.4, anchor: place.anchor, font: .number, ink: .number,
-                                              halo: !dots.isEmpty || place.nudge ? MapRole.cell(lv) : nil)
+                        cell.number = MapText(text: numText, x: place.x, baseline: cy + 4.6, anchor: place.anchor, font: old ? .numberRegular : .number,
+                                              ink: old || u.fold != nil ? .label2 : .number,
+                                              halo: !dots.isEmpty || place.nudge ? (old ? MapRole.old(lv) : MapRole.cell(lv)) : nil)
                     }
                     if place.name, let name {
-                        cell.name = MapText(text: name, x: xa + spacing.pad + lead, baseline: cy + 4, font: font,
-                                            ink: u.fold == nil ? .name : .secondary)
+                        shownNames.append(name)
+                        cell.name = MapText(text: name, x: xa + spacing.pad, baseline: cy + 4.2, font: .name,
+                                            ink: u.fold != nil ? .label2 : lv == 0 ? .secondary : old ? .label2 : lv >= 3 ? .label : .name)
                     }
                     row.cells.append(cell)
                     let target: MapTarget = u.fold.map { .block($0, round: r.n) } ?? .cell(u.key, round: r.n)
@@ -1561,31 +1565,18 @@ extension MapScene {
                     // ("Rel. · Disc."), else the first's and how many more ("Related +1"), else the first's as it fits
                     let parts = run.map { s.names[nameID(us[$0].key, us[$0].title)] }
                     if let t = Self.quietName(parts, room: MapRules.CellSpacing.tight.room(q.rect.width, count: 0)) {
-                        q.name = MapText(text: t, x: q.rect.minX + MapRules.CellSpacing.tight.pad, baseline: cy + 4, font: .name, ink: .name)
+                        q.name = MapText(text: t, x: q.rect.minX + MapRules.CellSpacing.tight.pad, baseline: cy + 4.2, font: .name, ink: .secondary)
                     }
                     q.dim = run.allSatisfy { row.cells[$0].dim }
                     row.quiet.append(q)
                 }
                 row.cells = keepNumbersApart(row.cells)
-                // still to check, in the open round only: its own mark over the cell, never on its number (§4.2)
-                if open {
-                    var chips: [Chip] = []
-                    for c in row.cells {
-                        let t = c.sections.reduce(0) { $0 + (heat[$1]?.toCheck ?? 0) }
-                        guard t > 0 else { continue }
-                        let text = "\(t)", w = 17 + MapFont.label.width(text)
-                        let x = c.rect.width >= 44 ? c.rect.maxX - w : c.rect.midX - w / 2
-                        chips.append(Chip(section: c.section, round: r.n, rect: CGRect(x: x, y: y - 19, width: w, height: 16),
-                                          ring: .zero, text: MapText(text: text, x: 0, baseline: y - 7.1, font: .label, ink: .attention),
-                                          dim: c.dim, fold: c.fold))
-                    }
-                    row.chips = spread(chips, minX: MapGeometry.mapX, maxX: g.mapRight, gap: 4).map { c in
-                        var c = c
-                        c.ring = CGPoint(x: c.rect.minX + 7.5, y: c.rect.midY)
-                        c.text.x = c.rect.minX + 12.5
-                        return c
-                    }
-                    for c in row.chips { s.hits.append(Hit(target: c.fold.map { .block($0, round: r.n) } ?? .cell(c.section, round: r.n), rect: c.rect)) }
+                // still to check, in the open round only: a vermilion outline on its cells (no chip: each cell prints
+                // its count), left out while nothing in the round is answered, as the round's ring says it once (§5 R1;
+                // by the answers, not the cells' counts: those hold the advisor's new comments too)
+                let c = r.comments ?? .init()
+                if c.resolved + c.followUp + c.kept > 0 {
+                    for j in row.cells.indices where row.cells[j].toCheck > 0 { row.cells[j].outlined = true }
                 }
             }
             // a shorter row ends with a cap and its page count
@@ -1611,7 +1602,7 @@ extension MapScene {
                 placer.take(row.unplacedCaption!.rect)
                 s.hits.append(Hit(target: .unplaced(r.n), rect: row.unplaced!))
             }
-            // edits: a bar asked for, a short bar with a dot nobody asked for, an amber ring still to check (§4.3)
+            // edits: a tick asked for, a short tick nobody asked for, with a vermilion ring while it is to check (UI v4)
             let left = r.hasSections ? X(r.n, 0) : P(r.n, 0), right = end
             for e in r.edits ?? [] {
                 guard let pos = e.pos else { continue }
@@ -1630,7 +1621,7 @@ extension MapScene {
                 }
                 row.ticks.append(t)
                 s.hits.append(Hit(target: .edit(e.id, round: r.n), rect: CGRect(x: x - 4, y: y + MapGeometry.cell + 1, width: 8,
-                                                                                    height: MapGeometry.rug + 2)))
+                                                                                    height: MapGeometry.rug + 4)))
             }
             s.rows.append(row)
         }
@@ -1643,9 +1634,9 @@ extension MapScene {
             let text = "\(count(folded.count, "older round")) folded: \(count(written, "comment")) written, \(count(edits, "edit"))"
             let t = MapText(text: text + " · ", x: g.x(0) + 10, baseline: y + 15, font: .smallRegular, ink: .secondary)
             let link = MapText(text: "Show all \(d.rounds.count) rounds", x: t.rect.maxX, baseline: y + 15, font: .label, ink: .link)
-            s.fold = Fold(rect: rect, title: MapText(text: lo == hi ? "Round \(lo)" : "Rounds \(lo)–\(hi)", x: 23, baseline: y + 15,
-                                                      font: .bodyBold, ink: .label),
-                          text: t, link: link, node: CGPoint(x: 10, y: y + 11))
+            s.fold = Fold(rect: rect, title: MapText(text: lo == hi ? "Round \(lo)" : "Rounds \(lo)–\(hi)", x: Self.labelX, baseline: y + 15,
+                                                      font: .bodyBold, ink: .secondary),
+                          text: t, link: link)
             s.hits.append(Hit(target: .unfold, rect: CGRect(x: 0, y: y - 2, width: g.mapRight, height: 26)))
         }
 
@@ -1694,10 +1685,14 @@ extension MapScene {
         for labels in gaps where !labels.isEmpty { s.labels += placer.placeGap(labels) }
 
         // the page axis: under each page its number, under a folded part its pages and Show; a shown part a bracket with
-        // its name, its pages and Fold (the strip's round, else the top row with sections, says where)
+        // its name, its pages and Fold (the strip's round, else the top row with sections, says where). While the strip
+        // shows the pages, they are not numbered again here (UI v4): only the parts' pages, Show and Fold.
         let yEnd = folded.isEmpty ? g.rowY(max(0, shown.count - 1)) + MapGeometry.cell + MapGeometry.rug : g.rowY(shown.count) + 22
         let ya = yEnd + 18
-        s.axis.append(MapText(text: "page", x: MapGeometry.mapX - 10, baseline: ya, anchor: .end, font: .caption, ink: .secondary))
+        let numbered = !(input.stripShown && strip.map { !$0.failed && ($0.build?.pages ?? 0) > 0 } == true)
+        if numbered {
+            s.axis.append(MapText(text: "page", x: MapGeometry.mapX - 10, baseline: ya, anchor: .end, font: .caption, ink: .secondary))
+        }
         // a part that row lacks (a latest round without its appendix) is said under the top row that has it (the code
         // audit: the older rows' blocks had neither Show nor Fold)
         let partRanges = plan.foldable.compactMap { kind in
@@ -1743,7 +1738,7 @@ extension MapScene {
         }
         let every = min(g.pageWidth, drawnPages.min() ?? g.pageWidth) < 20 ? 2 : 1
         var lastNumber: CGRect?
-        for p in 1...max(1, Int(maxPages)) where (p - 1) % every == 0 {
+        for p in 1...max(1, Int(maxPages)) where numbered && (p - 1) % every == 0 {
             let mid = Double(p) - 0.5
             if p <= axisPages, let ar, s.pageMaps[ar.n]?.block(at: mid) != nil { continue }  // under its block: its pages
             let t = MapText(text: "\(p)", x: p <= axisPages ? AX(mid) : g.x(mid), baseline: ya, anchor: .middle, font: .caption, ink: .secondary)
@@ -1752,7 +1747,7 @@ extension MapScene {
             lastNumber = t.rect
             s.axis.append(t)
         }
-        s.height = ya + 12 + (hasBracket ? 18 : 0)
+        s.height = s.axis.isEmpty && s.axisParts.isEmpty ? yEnd + 8 : ya + 12 + (hasBracket ? 18 : 0)
         if input.unfold && input.fold > 0 {
             s.foldLink = MapText(text: "Fold", x: MapGeometry.mapX - 10, baseline: ya + 16, anchor: .end, font: .label, ink: .link)
             s.hits.append(Hit(target: .fold, rect: s.foldLink!.rect.insetBy(dx: -4, dy: -3)))
@@ -1808,20 +1803,6 @@ extension MapScene {
         }
     }
 
-    /// Chips side by side: pushed right where two would come closer than `gap`, and kept inside the map.
-    static func spread(_ chips: [Chip], minX: CGFloat, maxX: CGFloat, gap: CGFloat = 4) -> [Chip] {
-        var out = chips.sorted { $0.rect.minX < $1.rect.minX }
-        for i in out.indices {
-            let lo = i == 0 ? minX : out[i - 1].rect.maxX + gap
-            if out[i].rect.minX < lo { out[i].rect.origin.x = lo }
-        }
-        for i in out.indices.reversed() {
-            let hi = i == out.count - 1 ? maxX : out[i + 1].rect.minX - gap
-            if out[i].rect.maxX > hi { out[i].rect.origin.x = hi - out[i].rect.width }
-        }
-        return out
-    }
-
     /// "Limitations" from "5 Limitations"; the front matter is the abstract.
     static func shortName(_ title: String) -> String {
         title == "Title and abstract" ? "Abstract" : OverviewText.shortTitle(title)
@@ -1852,20 +1833,52 @@ extension MapScene {
         }.count
     }
 
-    /// The readout's two lines per column (§4.6): Comments (present, how many new); the student's responses (three
+    /// The round labels' left edge: after the open round's 11 pt ring (UI v4, the mockup's `.rlab`).
+    static let labelX: CGFloat = 18
+
+    /// The open round's ring fill: what is answered (comments with a verdict, unasked edits handled) over that and
+    /// what is still to check, `PaperSummary.fill` (D1, the sidebar's and headers' ring) from the round's own counts,
+    /// which an older engine's summary lacks; nil with nothing to check (the summary's 1.0: no ring then).
+    static func ringFill(_ r: PaperOverview.Round) -> Double? {
+        let c = r.comments ?? .init(), e = r.changes ?? .init()
+        let toCheck = c.toCheck + e.toCheck
+        guard toCheck > 0 else { return nil }
+        let done = c.resolved + c.followUp + c.kept + max(0, e.unrequested - e.toCheck)
+        return Double(done) / Double(done + toCheck)
+    }
+
+    /// A round with answers, for the readout's You column: anything resolved, followed up, kept or left open after
+    /// Round 1.
+    static func hasAnswers(_ r: PaperOverview.Round, first: Bool) -> Bool {
+        guard !first, !r.failed, let c = r.comments else { return false }
+        return c.resolved + c.followUp + c.kept + c.leftOpen > 0
+    }
+
+    /// The student's responses to the carried comments, in the response bar's words (UI v4, BRIEF §3): "11 revised",
+    /// "1 explained", "2 unchanged", "1 not asked"; the ones not 0.
+    static func responses(_ c: PaperOverview.Round.Comments) -> [String] {
+        [(c.edited, "revised"), (c.noteOnly, "explained"), (c.untouched, "unchanged"), (c.waiting, "not asked")]
+            .filter { $0.0 > 0 }.map { "\($0.0) \($0.1)" }
+    }
+
+    /// Your answers in a round: "✓ 11 · ↩ 2 · – 1" ("" without any).
+    static func answers(_ c: PaperOverview.Round.Comments) -> String {
+        [c.resolved > 0 ? "✓ \(c.resolved)" : nil, c.followUp > 0 ? "↩ \(c.followUp)" : nil,
+         c.kept > 0 ? "\(Status.keptAsIs.glyph) \(c.kept)" : nil].compactMap { $0 }.joined(separator: " · ")
+    }
+
+    /// The table's readout lines per column (§4.6): Comments (present, how many new); the student's responses (three
     /// columns only); your answers ("so far" while the round is open).
     static func readoutColumns(_ d: PaperOverview, _ r: PaperOverview.Round, first: Bool, columns: Int, ready: Bool) -> [(String, String)] {
         let c = r.comments ?? .init()
         let c1 = ("\(c.present)", c.present == 0 ? "" : first ? "all new" : "\(c.new) new")
-        func join(_ a: [String?]) -> String { a.compactMap { $0 }.joined(separator: " · ") }
+        let resp = responses(c)
         let student: (String, String) = first ? ("first draft", "")
-            : (join([c.edited > 0 ? "\(c.edited) edited" : nil, c.noteOnly > 0 ? "\(c.noteOnly) note only" : nil]).nonEmpty ?? "none",
-               join([c.untouched > 0 ? "\(c.untouched) untouched" : nil, c.waiting > 0 ? "\(c.waiting) waiting" : nil]))
+            : (resp.prefix(2).joined(separator: " · ").nonEmpty ?? "none", resp.dropFirst(2).joined(separator: " · "))
         var you = ("", "")
         // your answers: "none" only when the round had nothing to answer ("–" is Kept as is, as in Review: the UI
         // audit found "=" here and "–" there, and "–" also meaning nothing)
-        let done = join([c.resolved > 0 ? "✓ \(c.resolved)" : nil, c.followUp > 0 ? "↩ \(c.followUp)" : nil,
-                         c.kept > 0 ? "\(Status.keptAsIs.glyph) \(c.kept)" : nil])
+        let done = answers(c)
         if !first && !r.isClosed {
             you = (done.isEmpty ? (c.carried > 0 ? "none yet" : "none") : done + " so far", ready ? "ready to finish" : "")
         } else if !first {
@@ -1875,28 +1888,58 @@ extension MapScene {
         return columns == 3 ? [c1, student, you] : columns == 1 ? [c1] : [c1, you]
     }
 
+    /// The map's readout lines (UI v4, plan §3 step 3): Comments, its count ("–" for none) over "N new" in a later
+    /// round; with `you`, your answers ("–" for none; "so far" while open) over what was left open; "ready to finish"
+    /// under the last column. The student's responses are in the round's help tag.
+    static func readoutLines(_ r: PaperOverview.Round, first: Bool, you: Bool, ready: Bool) -> [[String]] {
+        let c = r.comments ?? .init()
+        let new = !first && c.new > 0 ? "\(c.new) new" : ""
+        let count = c.present > 0 ? "\(c.present)" : "–"
+        guard you else { return [[count, [new, ready ? "ready to finish" : ""].filter { !$0.isEmpty }.joined(separator: " · ")]] }
+        let done = answers(c), left = c.leftOpen > 0 ? "\(c.leftOpen) left open" : ""
+        var answered: [String]  // the forms to try, longest first
+        var under = ""
+        if first || r.failed {
+            answered = ["–"]
+        } else if !r.isClosed {
+            answered = done.isEmpty ? ["–"] : [done + " so far", done]
+            under = ready ? "ready to finish" : ""
+        } else if done.isEmpty {
+            answered = [left.nonEmpty ?? "–"]
+        } else {
+            answered = [done]
+            under = left
+        }
+        return [[count, new], answered + [under]]
+    }
+
     static func readout(_ d: PaperOverview, _ r: PaperOverview.Round, first: Bool, geometry g: MapGeometry, y: CGFloat,
-                        ready: Bool) -> [MapText] {
+                        ready: Bool, old: Bool = false) -> [MapText] {
         if r.failed {
             // cut to the readout's room as every line of it, in fewer words first (one column: "7 wait for a PDF")
             let room = g.readoutWidth - 6, n = waiting(d, r.n)
             let what = [waitWords(n), waitWords(n, counted: false)].first { MapFont.body.width($0) <= room }
                 ?? MapRules.fit(waitWords(n, counted: false), .body, room) ?? "\(n)"
             let how = ["Show Log… in the toolbar", "Show Log…"].first { MapFont.smallRegular.width($0) <= room } ?? "Show Log…"
-            return [MapText(text: what, x: g.readoutX, baseline: y + 12, font: .body, ink: .danger),
-                    MapText(text: how, x: g.readoutX, baseline: y + 26, font: .smallRegular, ink: .secondary)]
+            return [MapText(text: what, x: g.width, baseline: y + 14, anchor: .end, font: .body, ink: .danger),
+                    MapText(text: how, x: g.width, baseline: y + 29, anchor: .end, font: .smallRegular, ink: .secondary)]
         }
+        let cols = readoutLines(r, first: first, you: g.columns == 2, ready: ready)
+        // one line in the cell's middle; two, over each other
+        let two = cols.contains { !($0.last ?? "").isEmpty }
         var out: [MapText] = []
-        for (j, col) in readoutColumns(d, r, first: first, columns: g.columns, ready: ready).enumerated() {
-            let x = g.readoutX + g.columnX[j]
-            let room = (j + 1 < g.columnX.count ? g.columnX[j + 1] : g.readoutWidth) - g.columnX[j] - 6
-            if !col.0.isEmpty {
-                out.append(MapText(text: MapRules.fit(col.0, j == 0 ? .bodyBold : .body, room) ?? col.0, x: x, baseline: y + 12,
-                                   font: j == 0 ? .bodyBold : .body, ink: .label))
-            }
-            if !col.1.isEmpty {
-                out.append(MapText(text: MapRules.fit(col.1, .smallRegular, room) ?? col.1, x: x, baseline: y + 26, font: .smallRegular,
-                                   ink: .secondary))
+        for (j, col) in cols.enumerated() {
+            let x = g.columnRight[j]
+            let room = (j == 0 ? g.columnRight[0] - g.readoutX : g.columnRight[1] - g.columnRight[0] - 8) - 2
+            // the open round's count in the label colour, semibold; older rounds' and every "–" quieter (UI v4)
+            let font: MapFont = j == 0 && !old ? .bodyBold : .body
+            let forms = Array(col.dropLast())
+            let text = forms.first { font.width($0) <= room } ?? MapRules.fit(forms.last ?? "", font, room) ?? forms.last ?? ""
+            let ink: MapRole = text == "–" ? .tertiary : old ? .secondary : .label
+            out.append(MapText(text: text, x: x, baseline: y + (two ? 14 : 20.5), anchor: .end, font: font, ink: ink))
+            if let under = col.last, !under.isEmpty, col.count > 1 {
+                out.append(MapText(text: MapRules.fit(under, .smallRegular, room) ?? under, x: x, baseline: y + 29, anchor: .end,
+                                   font: .smallRegular, ink: .secondary))
             }
         }
         return out
@@ -1976,7 +2019,8 @@ struct Scope {
         }
     }
 
-    static let responses = ["edited": "edited", "note_only": "note only", "untouched": "untouched", "waiting": "waiting for you"]
+    /// The student's responses in the response bar's words (UI v4); the engine's keys are unchanged.
+    static let responses = ["edited": "revised", "note_only": "explained", "untouched": "unchanged", "waiting": "not asked"]
     /// Kept as is: Review's sign (`Status.keptAsIs.glyph`), the student's final.pdf's too.
     static let keptSign = Status.keptAsIs.glyph
     static let answers = ["resolved": "✓ resolved", "kept": keptSign + " kept as is", "follow_up": "↩ followed up", "left_open": "left open",
@@ -2004,8 +2048,8 @@ struct Scope {
             if !first && !carried.isEmpty {
                 let e = n(carried) { $0.response == "edited" }, no = n(carried) { $0.response == "note_only" },
                     u = n(carried) { $0.response == "untouched" }, w = n(carried) { $0.response == "waiting" }
-                out.append([e > 0 ? "\(e) edited" : nil, no > 0 ? "\(no) note" : nil, u > 0 ? "\(u) untouched" : nil,
-                            w > 0 ? "\(w) waiting" : nil].compactMap { $0 }.joined(separator: " · "))
+                out.append([e > 0 ? "\(e) revised" : nil, no > 0 ? "\(no) explained" : nil, u > 0 ? "\(u) unchanged" : nil,
+                            w > 0 ? "\(w) not asked" : nil].compactMap { $0 }.joined(separator: " · "))
                 let a = { (w: String) in n(carried) { $0.answer == w } }
                 if !r.isClosed {
                     out.append([a("resolved") > 0 ? "✓ \(a("resolved")) so far" : nil, a("to_check") > 0 ? "○ \(a("to_check"))" : nil]

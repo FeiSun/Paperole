@@ -3,11 +3,12 @@ import Foundation
 // The engine's numbers for the writing tags (CONTRACT amendment "Tags, key page and Reopen": `overview`'s paper `tags`
 // and `students[].tags`). Every field decodes as optional, so an engine with more or fewer fields still decodes and a
 // student's page never loses its other numbers to a field it does not know. Dictionary keys are tag ids (no
-// underscores, so the decoder's snake-case conversion leaves them alone); the per-paper counts keyed by path are not
-// read for that reason.
+// underscores, so the decoder's snake-case conversion leaves them alone); the per-paper counts keyed by path (a path
+// may hold one) are read through `TagRow.count(in:)`, which looks a path up as the decoder gives keys.
 
 /// One tag's row (or the Not tagged row): its comments each once, how many are open, how they closed (after 1, 2 or
-/// 3+ rounds the advisor answered in), followed up, reopened, and the sections they were written in (most first).
+/// 3+ rounds the advisor answered in), followed up, reopened, the sections they were written in (most first), and per
+/// paper its comments in it (a student's row; UI v4's Topics per paper).
 struct TagRow: Decodable, Equatable {
     var comments = 0
     var open = 0
@@ -15,6 +16,8 @@ struct TagRow: Decodable, Equatable {
     var revived = 0
     var closedAfter: [String: Int] = [:]
     var writtenIn: [(key: String, count: Int)] = []
+    /// Keyed by path as the decoder gives keys: read with `count(in:)`.
+    var papers: [String: Int] = [:]
 
     init() {}
 
@@ -26,9 +29,27 @@ struct TagRow: Decodable, Equatable {
         revived = (try? c.decodeIfPresent(Int.self, forKey: .revived)) ?? 0
         closedAfter = (try? c.decodeIfPresent([String: Int].self, forKey: .closedAfter)) ?? [:]
         writtenIn = ((try? c.decodeIfPresent([Pair].self, forKey: .writtenIn)) ?? []).map { ($0.key, $0.count) }
+        papers = (try? c.decodeIfPresent([String: Int].self, forKey: .papers)) ?? [:]
     }
 
-    private enum Keys: String, CodingKey { case comments, open, followedUp, revived, closedAfter, writtenIn }
+    private enum Keys: String, CodingKey { case comments, open, followedUp, revived, closedAfter, writtenIn, papers }
+
+    /// The row's comments in the paper at `path`: looked up as given and as the app's decoder turns that key (a
+    /// Foundation that applies the snake-case conversion to dictionary keys makes "my_paper" "myPaper").
+    func count(in path: String) -> Int {
+        papers[path] ?? papers[Self.decoded(path)] ?? 0
+    }
+
+    /// The decoder's form of a path key, worked out once per path (Topics asks for each tag and paper as it draws).
+    private static let keys = NSCache<NSString, NSString>()
+
+    private static func decoded(_ path: String) -> String {
+        if let k = keys.object(forKey: path as NSString) { return k as String }
+        let json = try? JSONSerialization.data(withJSONObject: [path: 0])
+        let key = json.flatMap { try? makeDecoder().decode([String: Int].self, from: $0).keys.first } ?? path
+        keys.setObject(key as NSString, forKey: path as NSString)
+        return key
+    }
 
     /// A `[key, k]` pair.
     private struct Pair: Decodable {
@@ -44,7 +65,7 @@ struct TagRow: Decodable, Equatable {
     static func == (a: TagRow, b: TagRow) -> Bool {
         a.comments == b.comments && a.open == b.open && a.followedUp == b.followedUp && a.revived == b.revived
             && a.closedAfter == b.closedAfter && a.writtenIn.map(\.key) == b.writtenIn.map(\.key)
-            && a.writtenIn.map(\.count) == b.writtenIn.map(\.count)
+            && a.writtenIn.map(\.count) == b.writtenIn.map(\.count) && a.papers == b.papers
     }
 
     /// Closed after 1, 2 and 3+ answered rounds.

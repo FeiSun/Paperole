@@ -102,7 +102,7 @@ enum PaperStore {
     }
 }
 
-/// Debug launch arguments: --paper <folder> (again for more papers, listed but not selected), --select <comment id>, --tab comments|changes, --fixture <state.json>,
+/// Debug launch arguments: --paper <folder> (again for more papers, listed but not selected), --select <comment id>, --tab comments|changes|checks, --fixture <state.json>,
 /// --debug-open-comment <phrase> (select the phrase in an open round's PDF and open the new-comment popover),
 /// --debug-note <text> (with --debug-open-comment: type the note, try to close the popover, press Save),
 /// --debug-switch-to <folder> (select this paper right after --paper's, while its first request runs),
@@ -113,6 +113,7 @@ enum PaperStore {
 /// --drafts <folder> (where unsent drafts are kept instead of Application Support; a --background run without it keeps
 /// them in a temporary folder of its own),
 /// --reading on|off (Settings' "Mark changed paragraphs to read" for this run, never saved; UX.md §18),
+/// --checks on|off (Settings' Checks for this run, never saved; UX.md §39),
 /// --fold on|off (Settings' "Fold the appendix and long reference lists" for this run, never saved; UX.md §21),
 /// --tags <file> (the writing tags' catalogue for this run instead of Application Support's; UX.md §24),
 /// --icon-style automatic|light|dark (Settings › General's app icon style for this run: a test run, which reads and
@@ -125,6 +126,7 @@ enum PaperStore {
 /// --list <papers.json> (a --background run's papers list read from that file instead of Application Support's, never
 /// saved: a test of the list's own copies, such as a missing paper's title and student),
 /// --hub all|move|student:<name> (open at All Students, Your Move or that student's page instead of a paper; UX.md §22),
+/// --all-view board|students (All Students' Board or Students for this run, never saved; UX.md §40.6),
 /// --background (a test run: never activated, no Dock icon, the window behind all others; README).
 struct LaunchOptions {
     static var background: Bool { CommandLine.arguments.contains("--background") }
@@ -159,6 +161,8 @@ struct LaunchOptions {
     var focus = false  // --focus: Focus once the PDF is shown (test runs: the Focus perf check)
     /// --reading on|off: reading marks on or off for this run, whatever the user's setting, which it never changes.
     var reading: Bool?
+    /// --checks on|off: the sidebar's Checks on or off for this run, whatever the user's setting, which it never changes.
+    var checks: Bool?
     /// --level overview|review: the level a paper given at launch opens at (Review when not given).
     var level: Level?
     /// --overview-fixture: an `overview` reply (OVERVIEW-v2 §5.2) read instead of the engine's.
@@ -173,6 +177,8 @@ struct LaunchOptions {
     var hub: HubPage?
     /// --fold on|off: Settings' folding of a long appendix for this run, whatever the user's setting, never saved.
     var fold: Bool?
+    /// --all-view board|students: All Students' view for this run, whatever the viewer's choice, never saved.
+    var allView: AllStudentsView?
     /// --tags <file>: the tag catalogue of this run (a test run without it keeps one in a temporary folder of its own).
     var tags: String?
     /// --icon-style: the app icon's style for this run (AppIcons.swift), never saved.
@@ -201,6 +207,7 @@ struct LaunchOptions {
             case "--drafts": o.drafts = value; i += 1
             case "--focus": o.focus = true
             case "--reading": o.reading = value.map { $0 != "off" }; i += 1
+            case "--checks": o.checks = value.map { $0 != "off" }; i += 1
             case "--level": o.level = value.flatMap(Level.init(rawValue:)); i += 1
             case "--overview-fixture": o.overviewFixture = value; i += 1
             case "--cache": o.cache = value; i += 1
@@ -208,6 +215,7 @@ struct LaunchOptions {
             case "--list": o.list = value; i += 1
             case "--hub": o.hub = value.flatMap(HubPage.init(argument:)); i += 1
             case "--fold": o.fold = value.map { $0 != "off" }; i += 1
+            case "--all-view": o.allView = value.flatMap(AllStudentsView.init(rawValue:)); i += 1
             case "--tags": o.tags = value; i += 1
             case "--icon-style": o.iconStyle = value.flatMap(AppIconStyle.init(rawValue:)); i += 1
             default: break

@@ -125,16 +125,19 @@ final class ScreensTests: XCTestCase {
     }
 
     /// POLISH §3 row 14: one tip under the answer buttons of a card to check, until Got it or the first answer; a test
-    /// run never remembers it.
+    /// run never remembers it. UI v4: in the paper map's tip's look (`InlineTip`), the two tips dismissed one by one
+    /// (HelpTests.testTheTips).
     func testTheTipShowsUntilGotIt() throws {
         let t = Tips()
         XCTAssertTrue(t.answer)
         t.dismiss()
         XCTAssertFalse(t.answer)
+        XCTAssertTrue(t.follow, "Got it on the answer tip leaves the map's")
         t.load(remember: false)
         XCTAssertTrue(t.answer, "a fixture run does not remember it")
         let m = makeModel()
         XCTAssertTrue(m.actions.tips.answer)
+        XCTAssertTrue(m.actions.tips.follow)
 
         _ = NSApplication.shared
         let actions = CardActions(), edit = EditState()

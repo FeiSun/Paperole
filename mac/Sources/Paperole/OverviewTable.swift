@@ -193,7 +193,7 @@ struct MapTableView: View {
                     Text(t.label).font(.system(size: 12, weight: t.bold ? .semibold : .medium)).foregroundStyle(Ink.label2)
                         .frame(width: nameWidth, alignment: .leading)
                     ForEach(Array(t.values.enumerated()), id: \.offset) { i, v in
-                        amberRings(v).font(.system(size: t.bold ? 12.5 : 11.5, weight: t.bold ? .semibold : .regular))
+                        ringText(v).font(.system(size: t.bold ? 12.5 : 11.5, weight: t.bold ? .semibold : .regular))
                             .foregroundStyle(t.bold ? Ink.label : Ink.secondary)
                             .multilineTextAlignment(.trailing)
                             .fixedSize(horizontal: false, vertical: true)
@@ -220,7 +220,7 @@ struct MapTableView: View {
         VStack(alignment: .trailing, spacing: 0) {
             Text(Self.roundTitle(c.n, room: columnWidth - 8)).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(Ink.label)
             Text(c.failed ? "build failed" : c.dates).font(.system(size: 11))
-                .foregroundStyle(c.failed ? Color(nsColor: Palette.danger) : Ink.secondary)
+                .foregroundStyle(c.failed ? Ink.label2 : Ink.secondary)
         }
         .lineLimit(1)
         .frame(width: columnWidth - 8, alignment: .trailing)
@@ -258,7 +258,7 @@ struct MapTableView: View {
         return HStack(spacing: 4) {
             Spacer(minLength: 0)
             if let a = c.absent {
-                Text(a).font(.system(size: 11)).foregroundStyle(Ink.tertiary)
+                Text(a).font(.system(size: 11)).foregroundStyle(Ink.secondary)
             } else {
                 if c.toCheck > 0 {
                     HStack(spacing: 2) {

@@ -856,6 +856,11 @@ def _students(items, buckets, today, latest=None, tag_order=None):
                     time.append({"path": path, "round": r["n"], "next": None, "open": True,
                                  "you": _days(r["created"], today), "student": None, "received": None,
                                  "failed": failed})
+                elif not nx and not failed:  # a closed last round: your days, and the student's so far
+                    time.append({"path": path, "round": r["n"], "next": None, "open": False, "last": True,
+                                 "you": _days(r["created"], r["closed_at"]),
+                                 "student": None if ov["paper"].get("finished") else _days(r["closed_at"], today),
+                                 "received": None})
         closed = []
         for path, ov in group:
             if not ov["rounds"]:

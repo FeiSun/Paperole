@@ -130,6 +130,14 @@ def _parser():
     p = sub.add_parser("links", help="print a round's link table (rN/links.json): what each reference points to")
     p.add_argument("paper")
     p.add_argument("--round", type=int, help="an earlier round")
+    p = sub.add_parser("checks", help="print a round's checks (rN/checks.json): references, bibliography, consistency, "
+                                      "typesetting and submission")
+    p.add_argument("paper")
+    p.add_argument("--round", type=int, help="an earlier round")
+    p = sub.add_parser("check-ok", help="mark a check OK (its key, from checks): the paper is fine there")
+    p.add_argument("paper")
+    p.add_argument("key")
+    p.add_argument("--clear", action="store_true", help="mark it not OK")
     p = sub.add_parser("read", help="mark paragraphs (block indices) of this round read")
     p.add_argument("paper")
     p.add_argument("blocks", type=int, nargs="+")
@@ -257,6 +265,8 @@ def main(argv=None):
         "state": lambda: ("state", {"round": args.round}),
         "prose": lambda: ("prose", {"round": args.round, "state": not args.no_state}),
         "links": lambda: ("links", {"round": args.round}),
+        "checks": lambda: ("checks", {"round": args.round}),
+        "check-ok": lambda: ("check_ok", {"key": args.key, "ok": not args.clear}),
         "read": lambda: ("read", {"blocks": args.blocks, "read": not args.clear}),
         "email-preview": lambda: ("email_preview", {}),
         "edit-paper": lambda: ("edit_paper", dict({"title": args.title, "student": args.student},

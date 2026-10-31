@@ -93,6 +93,18 @@ struct PaperSummary: Decodable, Equatable {
     /// finished (CONTRACT amendment "Resume a finished round"). nil from an engine before Resume.
     var closedAt: String? = nil
     var resumable: Bool? = nil
+    /// What is done in the open round (CONTRACT amendment "UI v4 data"): carried comments with a verdict, and unrequested
+    /// changes no longer to check. nil from an engine before them (the official app's frozen one).
+    var answered: Int? = nil
+    var handled: Int? = nil
+
+    /// The status ring's fill (UI v4): the share of the open round's carried comments and unrequested changes that is
+    /// done. nil (an empty ring, never a guess) without answered and handled, or with nothing to answer or check.
+    var fill: Double? {
+        guard let answered, let handled else { return nil }
+        let total = answered + handled + toJudge + toCheck
+        return total > 0 ? Double(answered + handled) / Double(total) : nil
+    }
 
     enum Step: Equatable { case noRounds, buildFailed, waiting, toCheck(Int), toRead(Int), open, allChecked }
 

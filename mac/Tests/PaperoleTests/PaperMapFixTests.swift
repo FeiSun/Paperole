@@ -52,7 +52,10 @@ final class PaperMapFixTests: XCTestCase {
     func testNoTwoSectionsOfARowShareAName() throws {
         let d = try Self.paper([(Self.promo, 13), (Self.promo, 13)])
         var nameless = 0
-        for w in MapLayoutTests.widths {
+        // UI v4 (12 pt names, a 168 pt readout): the old 960 pt window's case arises at about 1060 pt (780 of overview);
+        // at 960 the narrow cells hold their counts alone, and no two names of a row are alike there either
+        let narrowest: CGFloat = 780
+        for w in MapLayoutTests.widths + [narrowest] {
             let s = MapScene.build(MapInput(data: d, width: w))
             for row in s.rows {
                 let named = row.cells.compactMap { c in c.name.map { (c.section, $0.text) } }
@@ -72,7 +75,7 @@ final class PaperMapFixTests: XCTestCase {
         XCTAssertGreaterThan(nameless, 0, "the narrow window has sections whose short forms all read as another's")
         // the narrowest: Analysis comes after the abstract took "A", the only form that fits it, so it has no short name;
         // nor has appendix A
-        let narrow = MapScene.build(MapInput(data: d, width: MapLayoutTests.widths[2]))
+        let narrow = MapScene.build(MapInput(data: d, width: narrowest))
         let analysis = try XCTUnwrap(narrow.names[MapScene.nameID("analysis", "5 Analysis")])
         XCTAssertTrue(analysis.nameless)
         XCTAssertEqual(narrow.names[MapScene.nameID("front", "Title and abstract")]?.base.map(MapRules.bare), "a")
@@ -133,7 +136,9 @@ final class PaperMapFixTests: XCTestCase {
                                                 ("results", "2 Results", 11), ("references", "References", 2)]
         let appendix: [(String, String, Double)] = [("a", "A Proofs", 5), ("b", "B More results", 5)]
         let d = try Self.paper([(body + appendix, 30), (body + appendix, 30), (body, 20)])
-        for w in MapLayoutTests.widths {
+        // UI v4: at 960 pt the block's label (12 pt) no longer saves room over its 10 pages, so nothing folds there
+        XCTAssertTrue(MapScene.build(MapInput(data: d, width: MapLayoutTests.widths[2])).plan.folded.isEmpty)
+        for w in MapLayoutTests.widths.prefix(2) {
             let s = MapScene.build(MapInput(data: d, width: w))
             XCTAssertEqual(s.plan.folded, [.appendix], "at \(w)")
             let part = try XCTUnwrap(s.axisParts.first, "Show at \(w)")
@@ -234,7 +239,7 @@ final class PaperMapFixTests: XCTestCase {
     /// A4a-01: each style's font is made once, and a heading's number is still found.
     func testFontsAreMadeOnce() {
         for f in MapFont.allCases { XCTAssertTrue(f.nsFont === f.nsFont, "\(f)") }
-        XCTAssertEqual(MapFont.number.nsFont.pointSize, 12.5)
+        XCTAssertEqual(MapFont.number.nsFont.pointSize, 13, "UI v4: 13 (it was 12.5)")
         XCTAssertEqual(Outline.numbers(["2.1 Setup", "A Details", "B More", "Results"]), ["2.1", "A", "B", nil])
     }
 }

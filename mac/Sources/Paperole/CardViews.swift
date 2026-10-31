@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 /// A status sign and the id (POLISH §2.2, §3 rows 7 and 8; UX.md §2). On a card's header, a chip: To check outlined in
-/// amber (amber is near the yellow and orange marks, so its shape tells it apart), Not found tinted red, a decided status
+/// vermilion (near the orange mark, so its shape tells it apart; UI v4), Not found tinted red, a decided status
 /// on a quiet fill with a neutral sign. In a row (`compact`), the sign and the id with no fill: the group's header says
 /// whose move it is, so only Not found is coloured. Status never relies on colour alone. In a closed round (`open`
 /// false) nothing is the advisor's move, so To check is neutral too.
@@ -150,20 +150,21 @@ struct MarkBar: View {
     }
 }
 
-/// A row's word: secondary; position uncertain in amber with its question mark (the triangle is Not found's; the UI
-/// audit); not found in red (the chip has the sign).
+/// A row's word: secondary; position uncertain with its question mark in vermilion, the words secondary (the
+/// triangle is Not found's; the UI audit; UI v4: vermilion for the sign only); not found in red (the chip has the sign).
 struct StateWord: View {
     let text: String
     let tone: CardModel.Tone
 
     var body: some View {
         let colour: Color = switch tone {
-        case .plain: Ink.secondary
-        case .attention: Color(nsColor: Palette.toCheck)
+        case .plain, .attention: Ink.secondary
         case .danger: Color(nsColor: Palette.danger)
         }
         HStack(spacing: 3) {
-            if tone == .attention { Image(systemName: BuildSign.uncertain).font(.system(size: 11)) }
+            if tone == .attention {
+                Image(systemName: BuildSign.uncertain).font(.system(size: 11)).foregroundStyle(Color(nsColor: Palette.toCheck))
+            }
             Text(text)
         }
         .font(.system(size: 12))
@@ -183,15 +184,18 @@ struct StudentNoteSign: View {
     }
 }
 
-/// "unsent draft": text in a card's follow-up field that was not sent (UX.md §8), in the attention colour.
+/// "unsent draft": text in a card's follow-up field that was not sent (UX.md §8), after a small vermilion ring (UI v4:
+/// the mark colour for the sign, the words in label2).
 struct UnsentTag: View {
     var body: some View {
-        Text("unsent draft")
-            .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(Color(nsColor: Status.toCheck.color))
-            .padding(.horizontal, 6)
-            .frame(height: 17)
-            .background(RoundedRectangle(cornerRadius: 5).fill(Color(nsColor: Status.toCheck.color).opacity(0.10)))
+        HStack(spacing: 4) {
+            StatusRing(fill: 0, color: Color(nsColor: Palette.toCheck)).frame(width: 8, height: 8)
+            Text("unsent draft").foregroundStyle(Ink.label2)
+        }
+        .font(.system(size: 11, weight: .medium))
+        .padding(.horizontal, 6)
+        .frame(height: 17)
+        .background(RoundedRectangle(cornerRadius: 5).fill(Color(nsColor: Palette.chipFill)))
     }
 }
 
@@ -287,9 +291,10 @@ struct ExpandedCard: View, Equatable {
         HStack(spacing: 8) {
             let tinted = card.status.tinted && (card.open || card.status != .toCheck)
             Chip(id: card.id, status: card.status, open: card.open)
+            // To check in the label colour, its chip's ring vermilion (UI v4: the mark colour is never the words')
             Text(card.status.word(open: card.open))
                 .font(.system(size: 12, weight: tinted ? .medium : .regular))
-                .foregroundStyle(tinted ? Color(nsColor: card.status.color) : Ink.secondary)
+                .foregroundStyle(!tinted ? Ink.secondary : card.status == .toCheck ? Ink.label : Color(nsColor: card.status.color))
             Spacer(minLength: 4)
             if edit.saving && edit.id == card.id { ProgressView().controlSize(.small) }
             HStack(spacing: 12) {
@@ -797,26 +802,19 @@ struct ExpandedCard: View, Equatable {
     }
 }
 
-/// The one first-run tip (POLISH §3 row 14), under the answer buttons of a card to check: how answering goes, in mouse
-/// words (POLISH §6), until Got it or the first answer. Only it observes `Tips`, so a J/K step costs nothing once it is
-/// gone.
+/// The first-run tip (POLISH §3 row 14), under the answer buttons of a card to check: how answering goes, in mouse
+/// words (POLISH §6), until Got it or the first answer; the paper map's tip's look (`InlineTip`, UI v4), its arrow at
+/// the answer buttons. Only it observes `Tips`, so a J/K step costs nothing once it is gone.
 struct AnswerTip: View {
     @ObservedObject var tips: Tips
 
+    static let title = "Answer each comment"
+    static let text = "Answer with Resolve, Follow up or Keep as is. The next comment to check then takes this one’s place."
+
     var body: some View {
         if tips.answer {
-            HStack(alignment: .top, spacing: 10) {
-                Image(systemName: "lightbulb").font(.system(size: 13)).foregroundStyle(Ink.accentText).padding(.top, 1)
-                Text("Answer with Resolve, Follow up or Keep as is. The next comment to check then takes this one’s place.")
-                    .font(.system(size: 12)).lineSpacing(2).foregroundStyle(Ink.label2)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 0)
-                Button("Got it") { tips.dismiss() }.controlSize(.small).help("Do not show this tip again")
-            }
-            .padding(.horizontal, 11)
-            .padding(.vertical, 9)
-            .background(RoundedRectangle(cornerRadius: 9).fill(Color(nsColor: Palette.accentTint)))
-            .padding(.top, 2)
+            InlineTip(title: Self.title, text: Self.text, arrow: 28) { tips.dismiss() }
+                .padding(.top, 4)
         }
     }
 }
@@ -1018,23 +1016,24 @@ struct AnswerRow: Layout {
 
 }
 
-/// A tag beside a section label: "unchanged in R2", "position uncertain" (amber, with its question mark).
+/// A tag beside a section label: "unchanged in R2", "position uncertain" (its question mark vermilion, the words
+/// label2; UI v4).
 struct Tag: View {
     let text: String
     var attention = false
 
     var body: some View {
-        let amber = Color(nsColor: Palette.toCheck)
         HStack(spacing: 3) {
-            if attention { Image(systemName: BuildSign.uncertain).font(.system(size: 10)) }
+            if attention {
+                Image(systemName: BuildSign.uncertain).font(.system(size: 10)).foregroundStyle(Color(nsColor: Palette.toCheck))
+            }
             Text(text).lineLimit(1)
         }
         .font(.system(size: 11, weight: .medium))
-        .foregroundStyle(attention ? amber : Ink.secondary)
+        .foregroundStyle(attention ? Ink.label2 : Ink.secondary)
         .padding(.horizontal, 6)
         .frame(height: 17)
-        .background(RoundedRectangle(cornerRadius: 5)
-            .fill(attention ? amber.opacity(0.10) : Color(nsColor: Palette.chipFill)))
+        .background(RoundedRectangle(cornerRadius: 5).fill(Color(nsColor: Palette.chipFill)))
     }
 }
 

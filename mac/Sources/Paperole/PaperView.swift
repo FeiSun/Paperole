@@ -175,18 +175,13 @@ struct PaperView: View {
 }
 
 extension PaperView {
-    /// The overview's toolbar (OVERVIEW-v2 §5.1, the mockup's): ‹ ›, the title with "Mei Lin · Round 4 · 7 comments
-    /// and 2 edits to check" under it (no round menu: the overview has every round), the engine's progress, then
-    /// "Following …", More and Continue Round N.
+    /// The overview's toolbar (OVERVIEW-v2 §5.1; UI v4, mac/UX.md §40.4): ‹ › and no title (the page has its own; the
+    /// window keeps it for the Window menu), the engine's progress, then "Following …", Map | Table, More and Continue
+    /// Round N.
     @ToolbarContentBuilder
     var overviewToolbar: some ToolbarContent {
         ToolbarItem(placement: .navigation) {
-            HStack(spacing: 8) {
-                HistoryButtons(model: model)
-                if #available(macOS 15, *) {
-                    ToolbarTitle(model: model, overview: model.overview, reserve: 300, following: 210)
-                }
-            }
+            HistoryButtons(model: model)
         }
         ToolbarItemGroup(placement: .primaryAction) {
             Spacer()
@@ -271,8 +266,8 @@ private let monthDay: DateFormatter = {
     return f
 }()
 
-/// The build in one line under the PDF (design/ui-v2/PROPOSAL.md §3): a grey tick when it built, red only when it is
-/// broken; Details… for the warnings, errors and log; on the right the reading count with Next and Mark Read (POLISH
+/// The build in one line under the PDF (design/ui-v2/PROPOSAL.md §3): a grey tick when it built, red only for errors,
+/// label2 for a failed build (UI v4); Details… for the warnings, errors and log; on the right the reading count with Next and Mark Read (POLISH
 /// §3 row 3; `ReadingStatusView`, which observes only its own count) and the page shown. It observes only the PDF's
 /// position, so scrolling redraws nothing else.
 struct BuildStatusLine: View {
@@ -285,12 +280,12 @@ struct BuildStatusLine: View {
     private var build: Build { round.build }
 
     var body: some View {
-        let broken = build.status != "ok"
-        let danger = Color(nsColor: Palette.danger)
+        // errors in red with the triangle; a failed build's octagon and words in label2 (UI v4: red only for an error)
+        let tone = build.status == "errors" ? Color(nsColor: Palette.danger) : build.status == "ok" ? Ink.secondary : Ink.label2
         HStack(spacing: 6) {
             Image(systemName: build.status == "ok" ? "checkmark" : build.status == "errors" ? BuildSign.errors : BuildSign.failed)
-                .foregroundStyle(broken ? danger : Ink.secondary)
-            (Text(headline).foregroundColor(broken ? danger : Ink.secondary) + Text(details + " ·"))
+                .foregroundStyle(tone)
+            (Text(headline).foregroundColor(tone) + Text(details + " ·"))
                 .lineLimit(1)
             Button("Details…") { showDetails = true }
                 .buttonStyle(LinkStyle())
@@ -429,11 +424,11 @@ struct FailedBuildView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // the palette's red and the one "did not build" sign (the UI audit: the system red read at 3.0:1, and the
-            // filled octagon was a third look for the same state)
+            // the one "did not build" sign (the UI audit: the filled octagon was a third look for the same state), in
+            // label2 (UI v4, BRIEF §8.4: its shape and words say it, so red means only an error)
             Label("Round \(round.n) did not build", systemImage: BuildSign.failed)
                 .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Color(nsColor: Palette.danger))
+                .foregroundStyle(Ink.label2)
             if let file = missingFile(round.build) {
                 Text("Missing file: \(file) — ask the student to resend it, or Retry with a corrected folder.")
                     .font(.headline)

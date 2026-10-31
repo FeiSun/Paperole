@@ -613,6 +613,22 @@ def test_students_land_where_written_and_a_failed_last_round():
     assert trips == [(1, 2, False, 2, 7, None), (2, None, True, 2, None, True)]
 
 
+def test_a_closed_last_round_has_a_row():
+    """UI v4 (CONTRACT amendment "UI v4 data"): a closed last round gets a `last` row, your days and the student's so
+    far (today − closed_at), the student's null once the paper is finished; a failed last round still has none."""
+    today = datetime.date(2026, 10, 12)
+    a = _ov("Ana Sousa", [], [_round(1, "2026-10-01T10:00:00+02:00", "2026-10-03T10:00:00+02:00"),
+                              _round(2, "2026-10-08T10:00:00+02:00", "2026-10-09T23:30:00+02:00")])
+    b = _ov("Ana Sousa", [], [_round(1, "2026-10-02T10:00:00+02:00", "2026-10-04T10:00:00+02:00")])
+    b["paper"]["finished"] = "2026-10-05"
+    c = _ov("Ana Sousa", [], [_round(1, "2026-10-06T10:00:00+02:00", "2026-10-07T10:00:00+02:00", status="failed")])
+    [s] = overview._students([("/a", a), ("/b", b), ("/c", c)], {}, today)
+    trips = [(t["path"], t["round"], t["next"], t["open"], t.get("last"), t["you"], t["student"], t["received"])
+             for t in s["time"]]
+    assert trips == [("/a", 1, 2, False, None, 2, 5, None), ("/a", 2, None, False, True, 1, 3, None),
+                     ("/b", 1, None, False, True, 2, None, None)]
+
+
 def test_digests_are_kept_per_file(tmp_path, monkeypatch):
     """More rounds than an LRU of fixed size held made every hierarchy request read every prose.json again (review
     2026-10-19); the digests are kept per file, and read again only when the file changes."""

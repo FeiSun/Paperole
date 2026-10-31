@@ -49,7 +49,7 @@ final class OverviewReviewTests: XCTestCase {
         XCTAssertTrue(followed.labels.contains { $0.text.text == "renamed" && $0.text.opacity == 1 })
     }
 
-    func testTheHoveredRowsNamesCoverNoChipOrLabel() throws {
+    func testTheHoveredRowsNamesCoverNoLabel() throws {
         for d in [try MapLayoutTests.kelp(), try MapLayoutTests.stress(), try renamedEverywhere()] {
             for w in widths {
                 let s = MapScene.build(MapInput(data: d, width: w))
@@ -57,7 +57,6 @@ final class OverviewReviewTests: XCTestCase {
                     let names = s.hoverNames(row.n, d)
                     let leaders = s.labels.compactMap { l in l.leader.map { CGRect(x: min($0.0.x, $0.1.x), y: $0.0.y - 1, width: abs($0.1.x - $0.0.x), height: 2) } }
                     for n in names {
-                        for c in row.chips { XCTAssertFalse(n.rect.intersects(c.rect), "\(n.text) over a chip, Round \(row.n) at \(w)") }
                         for l in s.labels { XCTAssertFalse(n.rect.intersects(l.text.rect), "\(n.text) over \(l.text.text)") }
                         for l in leaders + s.carriedPills.map(\.0) { XCTAssertFalse(n.rect.intersects(l)) }
                     }
@@ -65,16 +64,15 @@ final class OverviewReviewTests: XCTestCase {
                 }
             }
         }
-        // the sections under a To check chip are named too, on a line over the chips (the UI audit of 2026-10-21)
+        // every section of the open round named (the UI audit of 2026-10-21; UI v4: no chips in the way)
         let kelp = try MapLayoutTests.kelp()
         for w in widths {
             let s = MapScene.build(MapInput(data: kelp, width: w))
             let top = try XCTUnwrap(s.rows.first)
             let names = s.hoverNames(top.n, kelp)
             XCTAssertEqual(names.count, top.cells.filter { $0.fold == nil }.count, "every section named at \(w): \(names.map(\.text))")
-            if w == widths[2] { XCTAssertTrue(names.contains { $0.baseline < top.y - 20 }, "some over the chips at \(w)") }
         }
-        // a closed round without chips keeps its names (the engine's for a lone appendix: "Extra")
+        // a closed round keeps its names (the engine's for a lone appendix: "Extra")
         let k = try MapLayoutTests.kelp()
         let s = MapScene.build(MapInput(data: k, width: widths[0]))
         XCTAssertTrue([1, 2, 3].contains { s.hoverNames($0, k).map(\.text).contains { $0.hasSuffix("Extra") } })
@@ -100,7 +98,7 @@ final class OverviewReviewTests: XCTestCase {
         let created = try XCTUnwrap(OverviewText.day(r4.created))
         XCTAssertTrue(OverviewText.firstSentence(d, student: "Mei Lin").hasPrefix("Round 4 came in on \(created)."))
         let s = MapScene.build(MapInput(data: d, width: widths[0]))
-        XCTAssertEqual(s.rows.first?.dates.text, OverviewText.dates(r4.created, nil))
+        XCTAssertEqual(s.rows.first?.dates.text, shortDate(r4.created), "UI v4: the map's label the arrival date only")
         XCTAssertTrue(MapSpeech.row(d, r4, student: "Mei").hasPrefix("Round 4, " + MapSpeech.spoken(OverviewText.dates(r4.created, nil))))
         XCTAssertEqual(MapTable.make(d, selection: nil, student: "Mei").columns.last?.dates, OverviewText.dates(r4.created, nil))
         XCTAssertTrue(OverviewPanel.round(4, d, student: "Mei")?.meta.hasPrefix(OverviewText.dates(r4.created, nil)) == true)
@@ -135,8 +133,9 @@ final class OverviewReviewTests: XCTestCase {
             for t in r5.readout { XCTAssertLessThanOrEqual(t.rect.maxX, s.geometry.width + 0.5, "\(t.text) at \(w)") }
             XCTAssertTrue(r5.readout[0].text.hasSuffix(" for a PDF"), r5.readout[0].text)
         }
+        // UI v4: the readout a fixed 168 pt at every width, which holds the longer pointer
         let narrow = MapScene.build(MapInput(data: d, width: widths[2], buildErrors: "1 error"))
-        XCTAssertEqual(narrow.rows.first?.readout.map(\.text), [MapScene.waitWords(MapScene.waiting(d, 5), counted: false), "Show Log…"])
+        XCTAssertEqual(narrow.rows.first?.readout.map(\.text), [MapScene.waitWords(MapScene.waiting(d, 5), counted: false), "Show Log… in the toolbar"])
     }
 
     func testNamesTitlesAndTheReadoutsWords() throws {
@@ -170,6 +169,17 @@ final class OverviewReviewTests: XCTestCase {
         var empty = try XCTUnwrap(d.round(1))
         empty.comments = PaperOverview.Round.Comments()
         XCTAssertEqual(MapScene.readoutColumns(d, empty, first: true, columns: 1, ready: false)[0].1, "", "no comment: not \"all new\"")
+        // the map's readout (UI v4): "–" for none, "so far" while open, what was left open under a closed round's answers
+        c.resolved = 2
+        c.followUp = 1
+        c.leftOpen = 0
+        open.comments = c
+        XCTAssertEqual(MapScene.readoutLines(open, first: false, you: true, ready: true)[1], ["✓ 2 · ↩ 1 so far", "✓ 2 · ↩ 1", "ready to finish"])
+        c.leftOpen = 2
+        closed.comments = c
+        XCTAssertEqual(MapScene.readoutLines(closed, first: false, you: true, ready: false)[1], ["✓ 2 · ↩ 1", "2 left open"])
+        XCTAssertEqual(MapScene.readoutLines(empty, first: true, you: true, ready: false), [["–", ""], ["–", ""]])
+        XCTAssertEqual(MapScene.readoutLines(open, first: false, you: false, ready: true), [["5", "ready to finish"]])
         XCTAssertTrue(MapSpeech.row(d, empty, student: "Mei").contains("0 comments. "))
         // the fold counts its comments as words
         let one = MapScene.build(MapInput(data: try MapLayoutTests.stress(), width: widths[1], fold: 2))
@@ -195,25 +205,10 @@ final class OverviewReviewTests: XCTestCase {
     }
 }
 
-/// The hierarchy's fixes (UX.md §22): the Student page's lede capped, a failed last round's open row in Where the time
-/// goes; and the toolbar laid out again once the window's width settles (UX.md §21 "The toolbar").
+/// The hierarchy's fixes (UX.md §22): a failed last round's open row in Where the time goes; and the toolbar laid out
+/// again once the window's width settles (UX.md §21 "The toolbar"). (The Student page's lede went with UI v4.)
 @MainActor
 final class HierarchyReviewTests: XCTestCase {
-    func testAStudentWithManyPapersHasAShortLede() {
-        func ref(_ i: Int) -> PaperRef { PaperRef(path: "/p\(i)", title: "Paper \(i)", student: "Ana Sousa") }
-        var rows: [(paper: PaperRef, status: PaperStatus?, data: PaperOverview?)] = []
-        for i in 0..<12 { rows.append((ref(i), .toCheck(comments: 2, edits: 0), nil)) }
-        for i in 12..<20 { rows.append((ref(i), .waiting, nil)) }
-        rows.append((ref(20), .failed, nil))
-        let lede = HubText.studentLede(rows)
-        let text = lede.map(\.text).joined()
-        XCTAssertTrue(text.hasPrefix("Paper 20 did not build. ○ Paper 0 is your move. ○ Paper 1 is your move."), text)
-        XCTAssertEqual(lede.filter(\.bold).count, 3, "three papers said, by what they need")
-        XCTAssertTrue(text.hasSuffix(" Of 18 other papers, 10 are your move and 8 are with Ana."), text)
-        XCTAssertTrue(HubText.studentLede(Array(rows[12..<18])).map(\.text).joined().hasSuffix(" 3 other papers are with Ana."))
-        XCTAssertEqual(HubText.studentLede(Array(rows.prefix(4))).filter(\.bold).count, 4, "four or fewer: each said")
-    }
-
     func testAFailedRoundsTripDecodes() throws {
         let json = #"{"papers": [], "students": [{"student": "A", "papers": ["/a"], "time": [{"path": "/a", "round": 1, "next": 2, "open": false, "you": 2, "student": 7, "received": null}, {"path": "/a", "round": 2, "next": null, "open": true, "you": 2, "student": null, "received": null, "failed": true}]}]}"#
         let s = try XCTUnwrap(PaperOverview.decodeReply(Data(json.utf8)).students?.first)

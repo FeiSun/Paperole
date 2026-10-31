@@ -156,12 +156,6 @@ enum Hierarchy {
         }.map(\.element.item)
     }
 
-    /// Your Move's two kinds (OVERVIEW-v2 §3.1): to review or finish, and failed builds.
-    static func counts(_ items: [MoveItem]) -> (review: Int, failed: Int) {
-        let failed = items.filter { $0.status == .failed }.count
-        return (items.count - failed, failed)
-    }
-
     /// An engine time ("2026-10-16T09:30:00+08:00"), with one formatter made once (a new one cost about 0.1 ms).
     static func date(_ iso: String?) -> Date? {
         guard let iso else { return nil }
@@ -171,8 +165,8 @@ enum Hierarchy {
     private static let isoFormatter = ISO8601DateFormatter()
 }
 
-/// The hierarchy's words (OVERVIEW-v2 §3.1–3.2, the mockup's `statusLine`, `allStudentsView`, `studentView`), in
-/// English as the rest of the app: the student by first name, no pronoun (UX.md §12), each number said once.
+/// The hierarchy's words (OVERVIEW-v2 §3.1–3.2, the mockup's `statusLine`, `studentView`; UI v4's), in English as the
+/// rest of the app: the student by first name, no pronoun (UX.md §12), each number said once.
 enum HubText {
     static let posix = Locale(identifier: "en_US_POSIX")
 
@@ -211,38 +205,27 @@ enum HubText {
         n == 0 ? "Nothing waits on you" : n == 1 ? "1 paper waits on you" : "\(n) papers wait on you"
     }
 
-    /// "3 to review or finish · 1 build failed".
-    static func waitsDetail(review: Int, failed: Int) -> String {
-        [review > 0 ? "\(review) to review or finish" : nil, failed > 0 ? count(failed, "build") + " failed" : nil]
-            .compactMap { $0 }.joined(separator: " · ")
-    }
-
     /// The status line of a paper on the hierarchy's pages (the mockup's `statusLine`): "Round 4 · 7 comments and 2
-    /// edits to check" ("7 comments, 2 edits to check" short), "Round 3 · ready to finish", "Round 5 · build failed", "With
-    /// Priya since Oct 3", "Finished Jul 20".
-    static func status(_ s: PaperStatus, round n: Int?, student: String, since: String?, short: Bool = false) -> String {
+    /// edits to check", "Round 3 · ready to finish", "Round 5 · build failed", "With Priya · 6 d" (UI v4: the days since
+    /// it went back; the date is the line's hover), "Finished Jul 20".
+    static func status(_ s: PaperStatus, round n: Int?, student: String, since: String?,
+                       today: Date = Date(), calendar: Calendar = .current) -> String {
         let r = n.map { "Round \($0) · " } ?? ""
         switch s {
         case .noRounds: return "No rounds yet"
         case .firstDraft: return r + "first draft, in progress"
         case .toCheck(let c, let e):
             let parts = [c > 0 ? count(c, "comment") : nil, e > 0 ? count(e, "edit") : nil].compactMap { $0 }
-            // short still says "to check": beside "6 comments" in all, "6 comments" alone read as the same count (UI audit)
-            return r + (short ? parts.joined(separator: ", ") + " to check" : parts.joined(separator: " and ") + " to check")
+            return r + parts.joined(separator: " and ") + " to check"
         case .toRead(let u): return r + count(u, "changed paragraph") + " to read"
         case .ready: return r + "ready to finish"
         case .failed: return r + "build failed"
         case .waiting:
             let name = OverviewText.firstName(student)
-            return "With " + (name.isEmpty ? "the student" : name) + (day(since).map { " since " + $0 } ?? "")
+            return "With " + (name.isEmpty ? "the student" : name)
+                + (Hierarchy.date(since).map { " · " + dayCounter($0, today: today, calendar: calendar) } ?? "")
         case .finished(let d): return "Finished" + (day(d).map { " " + $0 } ?? "")
         }
-    }
-
-    /// "One", "Two" … "Ten", then digits: a count that starts a sentence.
-    static func spelled(_ n: Int) -> String {
-        let w = ["No", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten"]
-        return w.indices.contains(n) ? w[n] : String(n)
     }
 
     /// "a, b and c".
@@ -251,169 +234,79 @@ enum HubText {
         return items.dropLast().joined(separator: ", ") + " and " + items.last!
     }
 
-    /// "Priya’s" ("Tomás’s").
-    static func possessive(_ first: String) -> String { first + "’s" }
+    // UI v4's words (design/ui-v4/BRIEF §3, §5; plan §2): the to-check figure, the badge, day counters and hovers.
 
-    /// The last seven days, today included: "Oct 13–19", "Sep 28 – Oct 4".
-    static func week(_ today: Date, calendar: Calendar = .current) -> String {
-        let start = calendar.date(byAdding: .day, value: -6, to: today) ?? today, tz = calendar.timeZone
-        let a = format(start, "MMM d", tz), b = format(today, "MMM d", tz)
-        return format(start, "MMM", tz) == format(today, "MMM", tz) ? a + "–" + format(today, "d", tz) : a + " – " + b
+    /// The to-check figure's words: "14 comments + 2 edits", "3 comments", "1 comment", "2 edits".
+    static func figure(_ c: Int, _ e: Int) -> String {
+        let edits = count(e, "edit")
+        return c == 0 ? edits : count(c, "comment") + (e > 0 ? " + " + edits : "")
     }
 
-    /// One part of a sentence: plain or bold (a paper's title), or the amber ○ of a paper that is your move.
-    struct Run: Equatable {
-        var text: String
-        var bold = false
-        var amber = false
+    /// The sidebar's badge: "14 + 2", "3", "+ 2".
+    static func badge(_ c: Int, _ e: Int) -> String {
+        c == 0 ? "+ \(e)" : e > 0 ? "\(c) + \(e)" : "\(c)"
     }
 
-    /// All Students' lede (the mockup's): the rounds that came in this week, what the papers that wait on you need
-    /// beyond review, and who has the papers that do not: "Four rounds came in this week: Priya’s **Mangrove sediment
-    /// cores** (Mon), … Mangrove sediment cores is decided and only needs Finish; Seagrass carbon budget did not
-    /// build. Blue carbon review is with Priya."
-    static func thisWeek(_ rows: [(paper: PaperRef, status: PaperStatus?, data: PaperOverview?)], today: Date,
-                         calendar: Calendar = .current) -> [Run] {
+    /// Calendar days from `from` to `today`, each on its own date in the calendar's time zone (0 for a later `from`).
+    static func dayCount(_ from: Date, today: Date, calendar: Calendar = .current) -> Int {
+        max(0, calendar.dateComponents([.day], from: calendar.startOfDay(for: from), to: calendar.startOfDay(for: today)).day ?? 0)
+    }
+
+    /// A card corner's counter: "2 d", "today".
+    static func dayCounter(_ from: Date, today: Date, calendar: Calendar = .current) -> String {
+        let n = dayCount(from, today: today, calendar: calendar)
+        return n == 0 ? "today" : "\(n) d"
+    }
+
+    /// Your Move's Waiting: "2 days", "1 day", "today".
+    static func days(_ from: Date, today: Date, calendar: Calendar = .current) -> String {
+        let n = dayCount(from, today: today, calendar: calendar)
+        return n == 0 ? "today" : count(n, "day")
+    }
+
+    /// "came in 2 days ago", "came in 1 day ago", "came in today".
+    static func cameIn(_ created: Date, today: Date, calendar: Calendar = .current) -> String {
+        let n = dayCount(created, today: today, calendar: calendar)
+        return "came in " + (n == 0 ? "today" : count(n, "day") + " ago")
+    }
+
+    /// "Came in Wed, Oct 28".
+    static func hoverCameIn(_ created: Date, calendar: Calendar = .current) -> String {
+        "Came in " + format(created, "EEE, MMM d", calendar.timeZone)
+    }
+
+    /// "Sent back Sat, Oct 24"; with a round, "Round 1 sent back Sat, Oct 24".
+    static func hoverSentBack(_ closed: Date, round: Int? = nil, calendar: Calendar = .current) -> String {
+        (round.map { "Round \($0) sent back " } ?? "Sent back ") + format(closed, "EEE, MMM d", calendar.timeZone)
+    }
+
+    /// A finished paper's line: "2 rounds · 12 of 16 closed" (closed: resolved and kept as is).
+    static func finishedLine(rounds: Int, closed: Int, of comments: Int) -> String {
+        count(rounds, "round") + " · \(closed) of \(comments) closed"
+    }
+
+    /// The ring's hover once something is answered: "6 of 16 answered so far".
+    static func answeredSoFar(_ done: Int, of total: Int) -> String { "\(done) of \(total) answered so far" }
+
+    /// All Students' numbers, the help of its Board | Students control (plan §5 R12): "3 students · 4 papers · 9 rounds".
+    static func allCounts(students: Int, papers: Int, rounds: Int) -> String {
+        [count(students, "student"), count(papers, "paper"), count(rounds, "round")].joined(separator: " · ")
+    }
+
+    /// "3 to review or finish · 1 build failed" (the old subtitle's numbers): the help of Your move's lane head and of
+    /// Your Move's title.
+    static func waitsDetail(review: Int, failed: Int) -> String {
+        [review > 0 ? "\(review) to review or finish" : nil, failed > 0 ? count(failed, "build") + " failed" : nil]
+            .compactMap { $0 }.joined(separator: " · ")
+    }
+
+    /// "5 rounds came in this week" (the old lede's count; the last seven days): the timeline title's help.
+    static func cameThisWeek(_ data: [PaperOverview], today: Date, calendar: Calendar = .current) -> String {
         let from = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -6, to: today) ?? today)
-        // each paper once, with its rounds of the week: the day of the last, or how many came
-        var came: [(last: Date, paper: PaperRef, n: Int)] = []
-        for r in rows {
-            let days = (r.data?.rounds ?? []).compactMap { Hierarchy.date($0.created) }.filter { $0 >= from && $0 <= today }
-            if let last = days.max() { came.append((last, r.paper, days.count)) }
-        }
-        came.sort { $0.last < $1.last }
-        let rounds = came.map(\.n).reduce(0, +)
-        let most = 5, shown = came.count > most ? Array(came.prefix(most - 1)) : came
-        var out: [Run] = []
-        if came.isEmpty {
-            out.append(Run(text: "No rounds came in this week."))
-        } else {
-            out.append(Run(text: "\(spelled(rounds)) \(rounds == 1 ? "round" : "rounds") came in this week: "))
-            for (i, c) in shown.enumerated() {
-                if i > 0 { out.append(Run(text: i == came.count - 1 ? " and " : ", ")) }
-                let first = OverviewText.firstName(StudentName.shown(c.paper.student))
-                if !first.isEmpty { out.append(Run(text: possessive(first) + " ")) }
-                out.append(Run(text: c.paper.title, bold: true))
-                out.append(Run(text: " (" + (c.n == 1 ? format(c.last, "EEE", calendar.timeZone) : "\(c.n) rounds") + ")"))
-            }
-            if shown.count < came.count { out.append(Run(text: " and " + count(came.count - shown.count, "other paper"))) }
-            out.append(Run(text: "."))
-        }
-        let needs = rows.compactMap { r -> String? in
-            switch r.status {
-            case .ready?: return r.paper.title + " is decided and only needs Finish"
-            case .failed?: return r.paper.title + " did not build"
-            default: return nil
-            }
-        }
-        if !needs.isEmpty { out.append(Run(text: " " + needs.joined(separator: "; ") + ".")) }
-        let away = rows.filter { $0.status == .waiting }.map { r -> String in
-            let first = OverviewText.firstName(StudentName.shown(r.paper.student))
-            return r.paper.title + " is with " + (first.isEmpty ? "the student" : first)
-        }
-        if !away.isEmpty { out.append(Run(text: " " + away.joined(separator: "; ") + ".")) }
-        return out
+        let n = data.flatMap(\.rounds).compactMap { Hierarchy.date($0.created) }.filter { $0 >= from && $0 <= today }.count
+        return n == 0 ? "No rounds came in this week" : count(n, "round") + " came in this week"
     }
 
-    /// The Student page's lede (the mockup's): "○ **Reef choruses** is your move: Round 4 came in Oct 16. Shrimp snap
-    /// detector finished on Jul 20 after 2 rounds." The papers by what they need (a failed build, your move, ready to
-    /// finish, with the student, finished, no rounds), at most `most` of them said, the others in one sentence ("Of 20
-    /// other papers, 12 are your move and 8 are with Ana."), as All Students' sentence stops at five (review 2026-10-19:
-    /// a student with 24 papers had a screen of sentences).
-    static func studentLede(_ rows: [(paper: PaperRef, status: PaperStatus?, data: PaperOverview?)], most: Int = 4) -> [Run] {
-        func rank(_ s: PaperStatus?) -> Int {
-            switch s {
-            case .failed?: return 0
-            case .toCheck?, .toRead?, .firstDraft?: return 1
-            case .ready?: return 2
-            case .waiting?: return 3
-            case .finished?: return 4
-            case .noRounds?: return 5
-            case nil: return 6
-            }
-        }
-        let ordered = rows.enumerated().sorted { (rank($0.element.status), $0.offset) < (rank($1.element.status), $1.offset) }.map(\.element)
-        let shown = ordered.count > most ? Array(ordered.prefix(most - 1)) : ordered
-        var out: [Run] = []
-        for r in shown {
-            let latest = r.data?.latest, t = r.paper.title
-            let first = OverviewText.firstName(StudentName.shown(r.paper.student))
-            let s: [Run]
-            switch r.status {
-            case .toCheck?, .toRead?, .firstDraft?:
-                s = [Run(text: "○", amber: true), Run(text: " "), Run(text: t, bold: true),
-                     Run(text: " is your move" + (latest.map { r in ": Round \(r.n) came in" + (day(r.created).map { " " + $0 } ?? "") } ?? "") + ".")]
-            case .ready?: s = [Run(text: t, bold: true), Run(text: " is decided and ready to finish.")]
-            case .failed?: s = [Run(text: t, bold: true), Run(text: " did not build" + (latest.map { " (Round \($0.n))" } ?? "") + ".")]
-            case .waiting?:
-                s = [Run(text: t + " is with " + (first.isEmpty ? "the student" : first)
-                         + (day(latest?.closedAt).map { " since " + $0 } ?? "") + ".")]
-            case .finished(let d)?:
-                let n = r.data?.rounds.count
-                s = [Run(text: t + " finished" + (day(d).map { " on " + $0 } ?? "") + (n.map { " after " + count($0, "round") } ?? "") + ".")]
-            case .noRounds?: s = [Run(text: t + " has no rounds yet.")]
-            case nil: s = []
-            }
-            if !s.isEmpty {
-                if !out.isEmpty { out.append(Run(text: " ")) }
-                out += s
-            }
-        }
-        let rest = ordered.dropFirst(shown.count)
-        guard !rest.isEmpty else { return out }
-        let who = OverviewText.firstName(StudentName.shown(rest.first?.paper.student ?? ""))
-        func are(_ n: Int, _ what: String, _ verbs: (String, String) = ("is", "are")) -> String? {
-            n == 0 ? nil : "\(n) \(n == 1 ? verbs.0 : verbs.1) " + what
-        }
-        let parts = [are(rest.filter { $0.status?.yourMove == true }.count, "your move"),
-                     are(rest.filter { $0.status == .waiting }.count, "with " + (who.isEmpty ? "the student" : who)),
-                     are(rest.filter { $0.status?.isFinished == true }.count, "finished"),
-                     are(rest.filter { $0.status == .noRounds }.count, "no rounds yet", ("has", "have"))].compactMap { $0 }
-        let lead = parts.count == 1 ? count(rest.count, "other paper") + " " + (parts[0].split(separator: " ", maxSplits: 1).last.map(String.init) ?? "")
-            : "Of \(count(rest.count, "other paper")), " + list(parts)
-        if !parts.isEmpty { out.append(Run(text: (out.isEmpty ? "" : " ") + lead + ".")) }
-        return out
-    }
-
-    /// "Most comments land in Methods (18), then Results (11)." from a Where the comments land total row.
-    static func land(_ titles: [String], _ totals: [Int]) -> String {
-        let order = zip(titles, totals).filter { $0.1 > 0 }.sorted { $0.1 > $1.1 }
-        guard let top = order.first else { return "No comments yet." }
-        var s = "Most comments land in \(top.0) (\(top.1))"
-        if order.count > 1 { s += ", then \(order[1].0) (\(order[1].1))" }
-        return s + "."
-    }
-
-    /// Where the time goes (the mockup's `tripsHTML`): "Mei’s revisions took 9, 14 and 7 days on Reef choruses; 39
-    /// days on Shrimp snap detector. You returned each round in 2–3 days." A revision that came in on the day the
-    /// round went back (0 calendar days) took "under a day", and a round you returned on the day it came in, "the
-    /// same day" (the UI audit: "took 0 and 0 days", "returned each round in the same day").
-    static func time(_ trips: [StudentStats.Trip], titles: [String: String], first: String) -> String {
-        let name = first.isEmpty ? "The student" : first
-        var parts: [String] = []
-        var seen: [String] = []
-        for t in trips where !seen.contains(t.path) { seen.append(t.path) }
-        for p in seen {
-            let days = trips.filter { $0.path == p && !$0.open }.compactMap(\.student)
-            guard !days.isEmpty else { continue }
-            let took: String
-            if !days.contains(0) {
-                took = list(days.map(String.init)) + " " + (days.count == 1 && days[0] == 1 ? "day" : "days")
-            } else if days.allSatisfy({ $0 == 0 }) {
-                took = "under a day" + (days.count > 1 ? " each time" : "")
-            } else {
-                took = list(days.map { $0 == 0 ? "under a day" : count($0, "day") })
-            }
-            parts.append(took + " on " + (titles[p] ?? "a paper"))
-        }
-        var s = parts.isEmpty ? "No round has gone back to \(first.isEmpty ? "the student" : first) yet." : possessive(name) + " revisions took " + parts.joined(separator: "; ") + "."
-        let yours = trips.filter { !$0.open }.compactMap(\.you)
-        if let lo = yours.min(), let hi = yours.max() {
-            let span = lo == hi ? (lo == 0 ? "the same day" : "in \(lo) " + (lo == 1 ? "day" : "days")) : "in \(lo)–\(hi) days"
-            s += yours.count == 1 ? " You returned the round \(span)." : " You returned each round \(span)."
-        }
-        return s
-    }
 }
 
 // MARK: - The engine's `students`
@@ -449,6 +342,8 @@ struct StudentStats: Decodable, Equatable {
         var received: Int?
         /// The open row of a round whose build failed (with you all the same, decision 10).
         var failed: Bool?
+        /// A closed last round (CONTRACT amendment "UI v4 data"): `student` is the days so far, nil once finished.
+        var last: Bool?
     }
 
     /// How the comments closed: after 1, 2 or 3+ rounds you answered in, still open, followed up, untouched after a
@@ -495,7 +390,7 @@ struct StudentStats: Decodable, Equatable {
 
 /// A paper's small map (OVERVIEW-v2 §3.1, the mockup's `miniMapSVG`; VISUAL v3 §6.2): one row per round, newest on
 /// top, each section where it is in that round and shaded like the paper's map (its own three steps, `MapShade`), the
-/// round's comments at the right; no numbers in the cells and no bands (in rows this small they are only stripes: the
+/// round's comments in its help tag; no numbers in the cells and no bands (in rows this small they are only stripes: the
 /// structure is the paper page's). A long appendix (and a long References list) folds as on the paper map, decided once
 /// for the paper: a block exactly two pages wide (one and a half for References), shaded by its busiest section.
 struct MiniMap: Equatable {
@@ -517,8 +412,6 @@ struct MiniMap: Equatable {
         var failed = false
         /// No sections known yet (§5.5): the row is drawn as plain pages.
         var plain = false
-        /// The open round with something to check: an amber ring before its name.
-        var ring = false
     }
 
     var rows: [Row]
@@ -529,13 +422,12 @@ struct MiniMap: Equatable {
     var folded: ClosedRange<Int>?
 
     /// `fold`: Settings' folding (the paper map's rule, at the small maps' fixed block widths).
-    static func make(_ d: PaperOverview, maxRows: Int = 9, ring: Bool = false, fold: Bool = true) -> MiniMap {
+    static func make(_ d: PaperOverview, maxRows: Int = 9, fold: Bool = true) -> MiniMap {
         let steps = MapShade.steps(MapShade.counts(d))
         let all = Array(d.rounds.reversed())
         let foldRows = all.count > max(2, maxRows)
         let shown = foldRows ? Array(all.prefix(max(2, maxRows) - 1)) : all
         let folded = foldRows ? all.last.flatMap { lo in all.dropFirst(shown.count).first.map { lo.n...$0.n } } : nil
-        let latestOpen = d.latest.map { !$0.isClosed && !$0.failed } ?? false
         // the parts the paper folds: longer than their threshold in the round where they are longest
         let sectioned = d.rounds.filter { $0.hasSections && !$0.failed }
         let parts: [FoldKind] = fold ? FoldKind.allCases.filter { k in
@@ -565,7 +457,6 @@ struct MiniMap: Equatable {
             } else if !r.failed {
                 row.plain = true
             }
-            row.ring = ring && latestOpen && r.n == d.latest?.n
             rows.append(row)
         }
         let most = max(1, rows.map(\.pages).max() ?? 1)
@@ -595,9 +486,11 @@ struct MiniMap: Equatable {
     }
 }
 
-/// All Students' "Rounds in 2026" (the mockup's `timelineSVG`): one lane per paper, each round a dot at its import,
-/// a thick line while it is with you, a dotted one while it is with the student; the open round's ring (amber when it
-/// waits on you), a failed build's red triangle, a finished paper's diamond. Days are calendar days from `start`.
+/// All Students' "Rounds in 2026" (UI v4, BRIEF §8.2, mockup `timeline()`): one lane per paper, a dot at each round's
+/// arrival, a line while it is with you and a dotted one while it is with the student; a paper that waits on you has
+/// the vermilion stretch from its last arrival to today (`open`), one ready to finish an ink line; a failed build its
+/// octagon, a finished paper its checkmark after its last point. No round numbers on the plot: each lane's hover gives
+/// its rounds' dates. Days are calendar days from `start`.
 struct Timeline: Equatable {
     enum Kind: Equatable { case imported, yourMove, ready, failed }
 
@@ -610,10 +503,16 @@ struct Timeline: Equatable {
     struct Lane: Equatable {
         var path: String
         var title: String
+        /// The lane's label (`ShortTitle`); the full title is in `hover`.
+        var short: String
         var you: [ClosedRange<Double>] = []
         var student: [ClosedRange<Double>] = []
         var marks: [Mark] = []
+        /// The open round that waits on you, from its arrival to today: the vermilion stretch.
+        var open: ClosedRange<Double>?
         var finished: Double?
+        /// "Easy Before Hard: … · Round 2 came in Oct 28 · Round 1 Oct 14 – Oct 16", newest first.
+        var hover = ""
     }
 
     var start: Date
@@ -635,15 +534,14 @@ struct Timeline: Equatable {
         let firsts = dated.compactMap { Hierarchy.date($0.data?.rounds.first?.created) }
         guard let earliest = firsts.min() else { return nil }
         let today = cal.startOfDay(for: now)
+        // the first round's month (UI v4, BRIEF §4 05: no three-month minimum)
         var startC = cal.dateComponents([.year, .month], from: earliest)
         startC.day = 1
-        var start = cal.date(from: startC) ?? earliest
-        // at least three months, so a lane's rounds do not crowd
-        if let three = cal.date(byAdding: .month, value: -2, to: cal.date(from: cal.dateComponents([.year, .month], from: today)) ?? today),
-           three < start { start = three }
+        let start = cal.date(from: startC) ?? earliest
         let endMonth = cal.date(byAdding: .month, value: 1, to: cal.date(from: cal.dateComponents([.year, .month], from: today)) ?? today) ?? today
         func day(_ d: Date) -> Double { Double(cal.dateComponents([.day], from: start, to: cal.startOfDay(for: d)).day ?? 0) }
         func day(_ iso: String?) -> Double? { Hierarchy.date(iso).map(day) }
+        func shown(_ iso: String?) -> String { Hierarchy.date(iso).map { HubText.format($0, "MMM d", cal.timeZone) } ?? "–" }
         var months: [(String, Double)] = []
         var m = start
         while m < endMonth {
@@ -654,11 +552,17 @@ struct Timeline: Equatable {
         var lanes: [Lane] = []
         for r in dated {
             guard let d = r.data else { continue }
-            var lane = Lane(path: r.paper.path, title: r.paper.title)
+            var lane = Lane(path: r.paper.path, title: r.paper.title, short: ShortTitle.of(r.paper.title))
+            var done: String?, dates: [String] = []
             if case .finished(let f)? = r.status {
-                lane.finished = HubText.formatter("yyyy-MM-dd", cal.timeZone).date(from: f).map(day)
+                let date = HubText.formatter("yyyy-MM-dd", cal.timeZone).date(from: f)
+                lane.finished = date.map(day)
+                done = date.map { "Finished " + HubText.format($0, "MMM d", cal.timeZone) }
             }
             for (i, round) in d.rounds.enumerated() {
+                dates.append("Round \(round.n) " + (round.failed ? "came in \(shown(round.created)), build failed"
+                                                     : round.isClosed ? shown(round.created) + " – " + shown(round.closedAt)
+                                                     : "came in " + shown(round.created)))
                 guard let a = day(round.created) else { continue }
                 let next = d.rounds.indices.contains(i + 1) ? day(d.rounds[i + 1].created) : nil
                 if round.failed {
@@ -670,11 +574,15 @@ struct Timeline: Equatable {
                     let end = next ?? lane.finished ?? t
                     if end > c { lane.student.append(c...end) }
                     lane.marks.append(Mark(day: a, n: round.n, kind: .imported))
-                } else {
+                } else if r.status == .ready {
                     lane.you.append(a...max(a, t))
-                    lane.marks.append(Mark(day: a, n: round.n, kind: r.status == .ready ? .ready : .yourMove))
+                    lane.marks.append(Mark(day: a, n: round.n, kind: .ready))
+                } else {
+                    lane.open = a...max(a, t)
+                    lane.marks.append(Mark(day: a, n: round.n, kind: .yourMove))
                 }
             }
+            lane.hover = ([r.paper.title, done].compactMap { $0 } + dates.reversed()).filter { !$0.isEmpty }.joined(separator: " · ")
             lanes.append(lane)
         }
         // "Rounds in 2026" while every round and today are in one year, else "Rounds since Sep 2025"

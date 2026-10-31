@@ -222,7 +222,7 @@ def cm(cid, created, path, tags_=(), revived=(), note=""):
 
 
 def rd(n, created, closed=True, pages=10, added=None, status="ok"):
-    return {"n": n, "created": created, "closed": closed, "closed_at": None, "received": None,
+    return {"n": n, "created": created, "closed": closed, "closed_at": created if closed else None, "received": None,
             "build": {"status": status, "pages": pages}, "words": {"body": 1000, "added": added or 0, "deleted": 0}}
 
 

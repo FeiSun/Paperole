@@ -618,27 +618,51 @@ final class TagDataTests: XCTestCase {
         XCTAssertEqual(s.facts.count, 2)
         XCTAssertEqual(s.focus.map(\.tag), ["logic", "math"])
         XCTAssertEqual(s.praise?.comments, 1)
+        // UI v4 (plan D9): a student's rows per paper, for Topics' bars; a path the decoder may have turned is found
+        XCTAssertEqual(s.byTag["grammar"].map { r in ["/synthetic/shrimp", "/synthetic/reef", "/synthetic/kelp"].map(r.count(in:)) }, [3, 2, 1])
+        XCTAssertEqual(s.byTag["structure"]?.count(in: "/synthetic/kelp"), 0)
+        XCTAssertEqual(s.untagged.count(in: "/synthetic/reef"), 2)
+        let row = try makeDecoder().decode(TagRow.self, from: Data(#"{"comments": 2, "papers": {"/papers/my_paper": 2}}"#.utf8))
+        XCTAssertEqual(row.count(in: "/papers/my_paper"), 2)
+        XCTAssertEqual(try makeDecoder().decode(TagRow.self, from: Data(#"{"comments": 2}"#.utf8)).papers, [:], "an engine before")
     }
 
-    /// Topics (TAGS.md §6.2): the advisor's order in groups, Not tagged and New comments last, one column a round, the
-    /// oldest folded when they do not fit; counts only.
+    /// Topics (TAGS.md §6.2; UI v4, mac/UX.md §40.4): rows by count, ties in the advisor's order, Not tagged and All
+    /// last; a column a round that has a comment, the oldest folded when they do not fit; Open only when some row has
+    /// closed comments; Mostly in one section, all in the help tag; counts only. (Before v4: the advisor's order in
+    /// groups, a "New comments" total, every round's column, "Open now", up to three sections.)
     func testTopics() throws {
         let reef = try XCTUnwrap(Self.reply().papers.first { $0.path == "/synthetic/reef" }?.overview)
+        let tags = try XCTUnwrap(reef.tags)
         var cat = TagCatalog()
-        cat.move(from: IndexSet(integer: 3), to: 0)  // Logic & claims first: its group (Thinking) leads
-        let table = TopicsTable.make(try XCTUnwrap(reef.tags), data: reef, catalog: cat)
-        XCTAssertEqual(table.columns, ["Round 1", "Round 2", "Round 3", "Round 4"])
-        XCTAssertEqual(table.rows.first?.id, "logic")
-        XCTAssertEqual(table.rows.map(\.group).prefix(5).map { $0?.rawValue }, ["thinking", "thinking", "thinking", "thinking", "language"])
-        XCTAssertEqual(table.rows.suffix(2).map(\.name), ["Not tagged", "New comments"])
+        cat.move(from: IndexSet(integer: 3), to: 0)  // Logic & claims first: it wins a tie
+        let table = TopicsTable.make(tags, data: reef, catalog: cat)
+        XCTAssertEqual(table.columns, ["Round 1", "Round 2", "Round 3"], "Round 4 has no new comment")
+        let tagRows = table.rows.filter { $0.kind == .tag }
+        let counts = tagRows.map { tags.byTag[$0.id]?.comments ?? 0 }
+        XCTAssertEqual(counts, counts.sorted(by: >), "by count")
+        for (a, b) in zip(tagRows, tagRows.dropFirst()) where tags.byTag[a.id]?.comments == tags.byTag[b.id]?.comments {
+            XCTAssertLessThan(cat.sorted([a.id, b.id]).firstIndex(of: a.id) ?? 1, 1, "a tie in the advisor's order: \(a.id), \(b.id)")
+        }
+        XCTAssertEqual(table.rows.suffix(2).map(\.name), ["Not tagged", "All"])
         let total = try XCTUnwrap(table.rows.last)
-        XCTAssertEqual(total.counts, [13, 3, 1, 0])
+        XCTAssertEqual(total.counts, [13, 3, 1])
         XCTAssertEqual(total.open, 6)
-        XCTAssertTrue(table.note.contains("Round 4 has no new comments yet."))
+        XCTAssertTrue(table.showsOpen, "6 of 17 open")
+        XCTAssertTrue(total.help.hasPrefix("15 of 17 tagged."), total.help)
+        XCTAssertTrue(total.help.contains("Round 4 has no new comments yet."))
+        XCTAssertFalse(table.rows.contains { $0.writtenIn.contains(" · ") }, "one section")
+        XCTAssertTrue(table.rows.contains { $0.writtenAll.contains(" · ") }, "all of them in the help tag")
         XCTAssertFalse(table.rows.contains { $0.writtenIn.contains("%") || $0.name.contains("%") }, "no shares")
-        let folded = TopicsTable.make(try XCTUnwrap(reef.tags), data: reef, catalog: cat, maxColumns: 3)
-        XCTAssertEqual(folded.columns, ["R1–R2", "Round 3", "Round 4"])
-        XCTAssertEqual(folded.rows.last?.counts, [16, 1, 0])
+        let folded = TopicsTable.make(tags, data: reef, catalog: cat, maxColumns: 3)
+        XCTAssertEqual(folded.columns, ["R1–R2", "Round 3"])
+        XCTAssertEqual(folded.rows.last?.counts, [16, 1])
+        // a round just in: no Open while every comment is open
+        var fresh = tags
+        fresh.open = fresh.comments
+        fresh.untagged.open = fresh.untagged.comments
+        fresh.byTag = fresh.byTag.mapValues { r in var r = r; r.open = r.comments; return r }
+        XCTAssertFalse(TopicsTable.make(fresh, data: reef, catalog: cat).showsOpen)
     }
 
     /// Following a tag (the critique's fix): the cells without it step back, none is outlined, no path is drawn and
@@ -678,9 +702,13 @@ final class TagDataTests: XCTestCase {
         let r = try Self.reply()
         let t = try XCTUnwrap(r.students?.first?.tags)
         let titles = ["/synthetic/reef": "Reef choruses", "/synthetic/shrimp": "Shrimp snap detector", "/synthetic/kelp": "Kelp holdfast survey"]
-        let lede = ProfileText.lede(t, catalog: TagCatalog(), titles: titles)
-        XCTAssertEqual(lede, "Three papers, eight rounds. Wording: 0 comments in Round 3 of Reef choruses, on 9 new words. "
-                       + "Structure: none since Round 2 of Reef choruses.")
+        // UI v4: the lede's facts are the Topics rows' hovers (its papers and rounds are the header's figures)
+        let facts = t.facts.compactMap { ProfileText.fact($0, catalog: TagCatalog(), titles: titles) }
+        XCTAssertEqual(facts, ["Wording: 0 comments in Round 3 of Reef choruses, on 9 new words.", "Structure: none since Round 2 of Reef choruses."])
+        let g = StudentGroup(key: "mei", name: "Mei Lin", papers: titles.map { PaperRef(path: $0.key, title: $0.value, student: "Mei Lin") })
+        let rows = try XCTUnwrap(StudentTiles.make(g, stats: r.students?.first, data: [:], statuses: [:], catalog: TagCatalog()).topics?.rows)
+        XCTAssertTrue(rows.first { $0.id == "structure" }?.nameHelp.hasSuffix("\n" + facts[1]) == true)
+        let lede = facts.joined(separator: " ")
         XCTAssertEqual(ProfileText.trend("same"), "about the same")
         XCTAssertEqual(ProfileText.trend("mixed"), "no clear trend")
         XCTAssertNil(ProfileText.trend(nil))

@@ -288,12 +288,12 @@ struct RoundStats: Equatable {
         wrote.isEmpty ? nil : "in your " + TransferText.list(wrote)
     }
 
-    /// The grid beside the word count. Round 1: New, Pages with a mark and Done well (when some); later: New,
+    /// The grid beside the word count. Round 1: New, Pages with a mark and Well done (when some); later: New,
     /// Resolved, Followed up and Kept as is, and with no new comment the three answers and Left open (when some).
     var figures: [Figure] {
         if round <= 1 {
             return [Figure(value: new, label: "New"), Figure(value: Set(marks.map(\.page)).count, of: pages, label: "Pages with a mark")]
-                + (praise > 0 ? [Figure(value: praise, label: "Done well")] : [])
+                + (praise > 0 ? [Figure(value: praise, label: "Well done")] : [])
         }
         let answers = [Figure(value: resolved, label: "Resolved"), Figure(value: followedUp, label: "Followed up"),
                        Figure(value: kept, label: "Kept as is")]

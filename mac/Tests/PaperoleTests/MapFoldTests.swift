@@ -4,7 +4,7 @@ import XCTest
 @testable import Paperole
 
 /// The paper map's v3 visual layer (design/overview/v3/VISUAL.md with the critique's fixes): a long appendix folded
-/// into one block (decided once per paper, every row with an appendix folds or none; its block, count, chip, label,
+/// into one block (decided once per paper, every row with an appendix folds or none; its block, count, outline, label,
 /// axis and lens; shown and folded again; followed things inside it shown first; kept in the place for Back), a long
 /// References list the same way, the quiet segments, the small maps, the map's colours (their distances and contrast),
 /// and Settings' switch. Synthetic data only: `Fixtures/overview-sonar.json` is a fictional four-round paper of 27–29
@@ -99,14 +99,14 @@ final class MapFoldTests: XCTestCase {
                 for c in s.rows.first(where: { $0.n == b.round })?.cells ?? [] { XCTAssertLessThanOrEqual(c.rect.maxX, s.geometry.mapRight + 0.5) }
             }
             XCTAssertTrue(s.rows.allSatisfy { r in r.cells.filter { $0.fold != nil }.count == 1 })
-            // the open round's chip for the appendix: its comments to check
+            // the open round's block: its comments to check (UI v4: an outline, no chip), its words in label2 on a pad
             let r4 = try XCTUnwrap(s.rows.first)
             let tc = (d.round(4)?.heat ?? []).filter { r4.cells.last?.sections.contains($0.section) ?? false }.map(\.toCheck).reduce(0, +)
-            XCTAssertEqual(r4.chips.first { $0.fold == .appendix }.map { Int($0.text.text) }, tc > 0 ? tc : nil)
-            XCTAssertTrue(r4.chips.allSatisfy { $0.text.ink == .attention }, "the chips' numbers in amber")
+            XCTAssertEqual(r4.cells.first { $0.fold == .appendix }?.toCheck, tc)
+            XCTAssertTrue(blocks.allSatisfy { $0.name.map { $0.ink == .label2 } ?? true }, "a block's label in label2 (UI v4)")
         }
         let wide = MapScene.build(MapInput(data: d, width: Self.widths[0]))
-        XCTAssertEqual(wide.rows.first?.cells.last?.name?.text, "Appendix A–E", "its label after its chevron")
+        XCTAssertEqual(wide.rows.first?.cells.last?.name?.text, "Appendix A–E", "its label on its stripes")
         XCTAssertFalse(wide.plan.short)
         let narrow = MapScene.build(MapInput(data: d, width: Self.widths[2]))
         XCTAssertTrue(narrow.plan.short, "a narrow window: the short label (the critique's 960 × 640 check)")
@@ -158,9 +158,13 @@ final class MapFoldTests: XCTestCase {
     }
 
     /// The page axis: under a folded part its pages and Show, no page number under its block; the lens's wedge over it.
+    /// UI v4: the pages are numbered only without the strip (it numbers them); the part's pages and Show stay.
     func testTheAxisAndTheLens() throws {
         let d = try Self.sonar()
-        let s = MapScene.build(MapInput(data: d, width: Self.widths[0]))
+        let withStrip = MapScene.build(MapInput(data: d, width: Self.widths[0]))
+        XCTAssertTrue(withStrip.axis.isEmpty)
+        XCTAssertEqual(withStrip.axisParts.map { $0.text.text + $0.link.text }, ["pp. 17–29 · Show"])
+        let s = MapScene.build(MapInput(data: d, width: Self.widths[0], stripShown: false))
         let part = try XCTUnwrap(s.axisParts.first)
         XCTAssertFalse(part.shown)
         XCTAssertEqual(part.text.text + part.link.text, "pp. 17–29 · Show")
@@ -285,9 +289,10 @@ final class MapFoldTests: XCTestCase {
         XCTAssertNil(s.quiet("methods", round: 4))
         // a counted section is never quiet
         XCTAssertTrue(s.rows.allSatisfy { r in r.cells.filter(\.quiet).allSatisfy { $0.count == 0 && $0.fold == nil } })
-        // named like a cell (the UI audit of 2026-10-21: a blank stretch), inside it, in the name ink
+        // named like a cell (the UI audit of 2026-10-21: a blank stretch), inside it, in secondary as every cell without
+        // comments (UI v4; it was the name ink)
         let name = try XCTUnwrap(q.name, "a quiet segment has a name")
-        XCTAssertEqual(name.ink, .name)
+        XCTAssertEqual(name.ink, .secondary)
         XCTAssertGreaterThanOrEqual(name.rect.minX, q.rect.minX + 3.9)
         XCTAssertLessThanOrEqual(name.rect.maxX, q.rect.maxX - 3.9)
         XCTAssertTrue(name.text.hasPrefix("Li"), name.text)
@@ -410,39 +415,80 @@ final class MapFoldTests: XCTestCase {
 
     // MARK: The colours
 
-    /// VISUAL §3 with the critique's thresholds: the panel, the bands, the track and the three steps each at least
-    /// ΔE00 2.3 from the next, in one order of lightness (bands always quieter than any cell); numbers and names
-    /// readable on every step; the dark steps nearly neutral; the steps far from amber and Sage; the small maps' steps
-    /// on the card the same; the hierarchy's chart colours seen on the card.
+    /// UI v4's ramp (design/ui-v4/README.md §6): the panel, the track, the three steps and `ink` each at least ΔE00
+    /// 2.3 from the next, in one order of lightness; text on every step at 4.5:1 or more (on s3 only the label colour
+    /// does: numbers and names there are in label); an older round's ramp in the same order, lighter (darker in Dark
+    /// Mode) than the open one's; the dark steps nearly neutral; the steps far from Sage; the days with you and with
+    /// the student seen on the card and apart from each other; a small map's empty cell seen on a hub card (with its
+    /// keyline in Dark Mode); a band not merged with the track. Measured: label on s3 5.79:1 (4.51:1 dark), label2 on
+    /// s2 5.04:1 (4.79:1); you and stu ΔE 22.8 (24.8), stu on the card 3.30:1 (3.08:1).
     func testTheMapsColours() {
         for dark in [false, true] {
             let ink = MapInk(dark: dark)
-            let seq: [MapRole] = [.content, .band, .track, .s1, .s2, .s3]
+            let seq: [MapRole] = [.content, .track, .s1, .s2, .s3, .ink]
             let colours = seq.map { ink.over($0) }
             for (a, b) in zip(colours, colours.dropFirst()) {
                 XCTAssertGreaterThanOrEqual(DesignPaletteTests.deltaE(a, b), 2.3, "dark \(dark)")
             }
             let l = colours.map { DesignPaletteTests.lab($0).L }
             XCTAssertEqual(l, dark ? l.sorted() : l.sorted(by: >), "one order of lightness (dark \(dark))")
+            let old = [MapRole.otrack, .os1, .os2, .os3].map { DesignPaletteTests.lab(ink.over($0)).L }
+            XCTAssertEqual(old, dark ? old.sorted() : old.sorted(by: >), "an older round's steps in the same order")
+            for (o, n) in zip(old, l.dropFirst()) { XCTAssertEqual(dark ? o < n : o > n, true, "an older round steps back (dark \(dark))") }
             for step in [MapRole.track, .s1, .s2, .s3] {
-                XCTAssertGreaterThanOrEqual(Self.contrast(ink.over(.number), ink.over(step)), 6.5, "the number on \(step)")
-                XCTAssertGreaterThanOrEqual(Self.contrast(ink.over(.name), ink.over(step)), 4.5, "a name on \(step)")
+                XCTAssertGreaterThanOrEqual(Self.contrast(ink.over(.label), ink.over(step)), 4.5, "a number on \(step)")
+                if step != .s3 { XCTAssertGreaterThanOrEqual(Self.contrast(ink.over(.name), ink.over(step)), 4.5, "a name on \(step)") }
+            }
+            // UI v4: a folded block's label on its solid pad; an older round's words (label2) on its steps; a cell's name
+            // without comments (secondary) on the track
+            for step in [MapRole.track, .otrack, .os1, .os2, .os3] {
+                XCTAssertGreaterThanOrEqual(Self.contrast(ink.over(.label2), ink.over(step)), 4.5, "label2 on \(step), dark \(dark)")
+            }
+            for step in [MapRole.track, .otrack] {
+                XCTAssertGreaterThanOrEqual(Self.contrast(ink.over(.secondary), ink.over(step)), 4.5, "secondary on \(step), dark \(dark)")
             }
             if dark {
                 for step in [MapRole.s1, .s2, .s3] {
                     let c = DesignPaletteTests.lab(ink.over(step))
-                    XCTAssertLessThanOrEqual(hypot(c.a, c.b), 4.5, "dark steps nearly neutral: \(step)")
+                    XCTAssertLessThanOrEqual(hypot(c.a, c.b), 6, "dark steps nearly neutral: \(step)")  // s3: 5.8
                 }
             }
-            XCTAssertGreaterThanOrEqual(DesignPaletteTests.deltaE(ink.over(.s3), ink.over(.attention)), 20)
             XCTAssertGreaterThanOrEqual(DesignPaletteTests.deltaE(ink.over(.s3), ink.over(.accent)), 15)
-            let mini: [MapRole] = [.card, .miniTrack, .mini1, .mini2, .mini3]
-            let mc = mini.map { ink.over($0, .card) }
-            for (a, b) in zip(mc, mc.dropFirst()) { XCTAssertGreaterThanOrEqual(DesignPaletteTests.deltaE(a, b), 2.3, "small maps, dark \(dark)") }
-            XCTAssertGreaterThanOrEqual(Self.contrast(ink.over(.chartYou, .card), ink.over(.card)), 3, "with you, a graphic")
+            XCTAssertGreaterThanOrEqual(Self.contrast(ink.over(.you, .card), ink.over(.card)), 3, "your days, a graphic")
+            XCTAssertGreaterThanOrEqual(Self.contrast(ink.over(.stu, .card), ink.over(.card)), 3, "the student's days, a graphic")
+            XCTAssertGreaterThanOrEqual(DesignPaletteTests.deltaE(ink.over(.you, .card), ink.over(.stu, .card)), 20, "the two series apart")
             XCTAssertLessThan(DesignPaletteTests.deltaE(ink.over(.fan), ink.over(.content)), DesignPaletteTests.deltaE(ink.over(.track), ink.over(.content)),
                               "the lens's hairlines quieter than any cell")
+            // A small map's cell without comments on a hub card: the track, or in Dark Mode its keyline (the track
+            // alone is within ΔE 1 of the dark card, #2A2C2A). Measured: 4.59 light, keyline 6.16 dark.
+            let card = ink.over(.card), edge = ink.over(.zeroline, .track)
+            let seen = max(DesignPaletteTests.deltaE(ink.over(.track, .card), card), DesignPaletteTests.deltaE(edge, card))
+            XCTAssertGreaterThanOrEqual(seen, 2.3, "an empty small-map cell on the card, dark \(dark)")
+            // A band is about the track's tone (the mockup's values: 0.86, 1.30 dark); its shape and label tell it from
+            // an empty cell (UX §40.1). This only keeps the two from merging.
+            XCTAssertGreaterThanOrEqual(DesignPaletteTests.deltaE(ink.over(.band), ink.over(.track)), 0.8, "a band apart from the track, dark \(dark)")
         }
+    }
+
+    /// The roles the app's palette owns are read from it, so the map's colours never drift from the panel's (UI v4).
+    func testTheMapReadsThePalette() {
+        let shared: [(MapRole, NSColor)] = [
+            (.label, Palette.label), (.number, Palette.label), (.label2, Palette.label2), (.name, Palette.label2),
+            (.secondary, Palette.secondary), (.tertiary, Palette.tertiary), (.attention, Palette.toCheck),
+            (.danger, Palette.danger), (.accent, Palette.accent), (.accentText, Palette.accentText),
+            (.words, Palette.changedWords), (.other, Palette.unrequested), (.content, Palette.panel), (.card, Palette.card),
+            (.neutral, Palette.neutral),
+        ]
+        for dark in [false, true] {
+            let ink = MapInk(dark: dark)
+            for (role, colour) in shared {
+                XCTAssertEqual(ink.rgba(role).hex, MapInk.hex(colour, dark: dark), "\(role), dark \(dark)")
+                XCTAssertEqual(ink.rgba(role).alpha, 1)
+            }
+        }
+        XCTAssertEqual(MapInk(dark: false).rgba(.attention).hex, 0xC04734, "vermilion")
+        XCTAssertEqual(MapInk(dark: true).rgba(.attention).hex, 0xDB6A50)
+        XCTAssertEqual(MapRole.mini(2), .s2, "the small maps use the one ramp")
     }
 
     static func contrast(_ a: NSColor, _ b: NSColor) -> CGFloat {

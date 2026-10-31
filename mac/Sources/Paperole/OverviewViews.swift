@@ -2,8 +2,7 @@ import AppKit
 import SwiftUI
 
 /// The overview's geometry (OVERVIEW-v2 §2 and the mockup's `geo`): the window's content inset 24 pt, and the readout
-/// at the right in three columns from 1400 pt of window (1116 of overview), two from 1100 (816), else one. The map's
-/// own is `MapGeometry`.
+/// at the right (UI v4, mac/UX.md §40.3). The map's own is `MapGeometry`.
 enum OverviewLayout {
     static let inset: CGFloat = 24
     /// The overview's scrolled content, where the map's top is measured.
@@ -11,12 +10,12 @@ enum OverviewLayout {
     /// The overview's visible frame, where its help tags are placed.
     static let viewport = "overview viewport"
 
-    /// The readout's columns for the overview's width (the window less the 236 pt sidebar and the insets): three
-    /// (Comments, the student, You) from 1360 pt (a window of about 1650), two from 816, else one. The student's
-    /// column is in the round's help tag too; the UI audit of 2026-10-21: at 1440 and 1280 the readout took the room
-    /// the map's cells needed for their names (it had three columns from 1116).
-    static func readoutColumns(width: CGFloat) -> Int { width >= 1360 ? 3 : width >= 816 ? 2 : 1 }
-    static func readoutWidth(columns: Int) -> CGFloat { columns == 3 ? 320 : columns == 2 ? 214 : 132 }
+    /// The readout's columns, by the data only (UI v4): Comments, and You once a shown round has answers. The
+    /// student's responses are in the round's help tag and the table (the UI audit of 2026-10-21: a wide readout took
+    /// the room the map's cells needed for their names).
+    static func readoutColumns(you: Bool) -> Int { you ? 2 : 1 }
+    /// A fixed width, whatever the columns, so the Sage line under the readout keeps its room (plan §5 R2).
+    static let readoutWidth: CGFloat = 168
 }
 
 /// One round as the overview lists it without the engine's overview (the map is `MapScene`'s): from the paper's
@@ -107,9 +106,9 @@ struct OverviewScrollProbe: NSViewRepresentable {
     }
 }
 
-/// A paper's overview (OVERVIEW-v2 §3.3, UX.md §21), over Review, which stays hidden behind it: the header with the
-/// title, the first sentence and the facts; the pages of the strip's round and the section ruler; the paper map with
-/// its readout and its legend; and the panel of what it follows. Older rounds fold when the map would run past the
+/// A paper's overview (OVERVIEW-v2 §3.3, UX.md §21, §40.4), over Review, which stays hidden behind it: the header with
+/// the title and the figure of the paper's state; the pages of the strip's round and the section ruler; the paper map
+/// with its readout and its Key; Topics, or the panel of what it follows. Older rounds fold when the map would run past the
 /// window's bottom (§4.1): the room is measured from the map's top in the scrolled content.
 struct OverviewScreen: View {
     let model: AppModel
@@ -129,21 +128,21 @@ struct OverviewScreen: View {
                         if !folderGone {
                             PageStripView(model: model, overview: overview, thumbs: model.thumbnails, hover: overview.hover, width: width,
                                           names: scene?.names ?? [:])
-                                .padding(.top, 12)
                         }
                         map(width: width, scene: scene)
                             .padding(.top, 1)
-                        // Topics under the legend while nothing is followed, or a tag is: its row then on the accent's
+                        // Topics under the Key while nothing is followed, or a tag is: its row then on the accent's
                         // tint and the tag's comments under it, so nothing moves under the pointer (UX.md §24)
                         if case .tag? = overview.selection {
-                            TopicsView(model: model, overview: overview, tags: model.tags, width: width).padding(.top, 14)
+                            TopicsView(model: model, overview: overview, tags: model.tags, width: width)
                         }
                         if let s = overview.selection {
                             OverviewPanelView(model: model, overview: overview, selection: s, width: width, student: firstName)
                                 .padding(.top, 14)
                         } else {
-                            TopicsView(model: model, overview: overview, tags: model.tags, width: width).padding(.top, 14)
+                            TopicsView(model: model, overview: overview, tags: model.tags, width: width)
                         }
+                        PageHelpLink(model: model, topic: .paperMap)
                     }
                     .padding(EdgeInsets(top: 18, leading: OverviewLayout.inset, bottom: 26, trailing: OverviewLayout.inset))
                     .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -186,37 +185,32 @@ struct OverviewScreen: View {
         model.papers.first { $0.path == model.selectedPath }.flatMap(model.missingWords) != nil
     }
 
-    /// The title (New York 20 Semibold), the first sentence in one line (the whole in its help tag), and the facts at
-    /// the right (OVERVIEW-v2 mockup `paperHeader`).
+    /// The title (New York 22 Semibold, two lines at most) over the student, and at the right the figure the paper's
+    /// state calls for (UI v4, mac/UX.md §40.4; mockup `.ph`). The first sentence and the facts are its help tag and
+    /// VoiceOver's, so no number of the older header is lost.
     private var header: some View {
         let sentence = OverviewText.firstSentence(overview.data, student: student, fallback: model.state?.rounds ?? [], errors: buildErrors)
         let facts = OverviewText.facts(overview.data, rounds: model.state?.rounds ?? [], pages: model.round?.build.pages)
-        return HStack(alignment: .top, spacing: 24) {
-            VStack(alignment: .leading, spacing: 3) {
+        let help = OverviewText.headerHelp(sentence, facts)
+        return HStack(alignment: .top, spacing: 48) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(title)
                     .font(PageType.paperTitle)
-                    .lineLimit(1).truncationMode(.tail)
-                    .help(title)
-                Text(sentence)  // two lines rather than cut off (the UI audit); the facts at the right give way
-                    .font(.system(size: 13)).foregroundStyle(Ink.label2)
                     .lineLimit(2).truncationMode(.tail)
                     .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: 760, alignment: .leading)
-                    .help(sentence)
+                Text(StudentName.shown(student)).font(TypeScale.body).foregroundStyle(Ink.secondary).lineLimit(1)
             }
-            .layoutPriority(1)
-            Spacer(minLength: 0)
-            VStack(alignment: .trailing, spacing: 0) {
-                (Text(facts.comments ?? "").fontWeight(.semibold).foregroundColor(Ink.label)
-                    + Text([facts.comments == nil ? nil : "", facts.rounds].compactMap { $0 }.joined(separator: " · ")))
-                Text(facts.details.joined(separator: " · "))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            if let h = model.paperHeader {
+                PaperHeaderFigure(header: h, round: overview.data?.latest?.n)
+                    .frame(width: 300, alignment: .leading)
             }
-            .font(.system(size: 12)).foregroundStyle(Ink.secondary)
-            .lineLimit(1)
-            .fixedSize()
-            .padding(.top, 3)
         }
-        .accessibilityElement(children: .combine)
+        .padding(.bottom, 16)
+        .help(help)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel([title, model.paperHeader?.words, model.paperHeader?.response?.words, model.paperHeader?.closedHelp,
+                             model.paperHeader?.answered, help].compactMap { $0 }.joined(separator: ". "))
     }
 
     /// The map's scene for the overview's width (nil as a table, or without the engine's overview); built before the
@@ -228,12 +222,12 @@ struct OverviewScreen: View {
         let scene = MapScene.build(MapInput(data: d, width: width, fold: fold, unfold: overview.unfold, strip: model.stripRound,
                                             selection: overview.selection, student: firstName, buildErrors: buildErrors,
                                             readyToFinish: d.summary?.step == .allChecked, foldParts: model.foldParts,
-                                            shownParts: overview.shownParts))
+                                            shownParts: overview.shownParts, stripShown: !folderGone))
         MapTiming.built(since: t0)
         return scene
     }
 
-    /// The map and its legend, or, without the engine's overview, why not and the rounds the state knows.
+    /// The map and its Key, or, without the engine's overview, why not and the rounds the state knows.
     @ViewBuilder
     private func map(width: CGFloat, scene: MapScene?) -> some View {
         if let d = overview.data, !d.rounds.isEmpty {
@@ -251,8 +245,21 @@ struct OverviewScreen: View {
                 .background(GeometryReader { g in
                     Color.clear.preference(key: MapTopKey.self, value: g.frame(in: .named(OverviewLayout.space)).minY)
                 })
-                MapLegend(steps: MapShade.steps(MapShade.counts(d)), table: overview.asTable, folded: !(scene?.plan.folded.isEmpty ?? true),
-                          setTable: { model.setMapAsTable($0) })
+                // the first-use tip at the left (UI v4 BRIEF 03), the Key at the right
+                HStack(alignment: .top, spacing: 16) {
+                    let place = OverviewTip.place(scene)
+                    OverviewTip(tips: model.actions.tips, x0: place.x0, arrow: place.arrow)
+                    Spacer(minLength: 0)
+                    Button("Key") { overview.keyOpen.toggle() }
+                        .controlSize(.small)
+                        .help("What the marks on this map mean")
+                        .popover(isPresented: $overview.keyOpen, arrowEdge: .bottom) {
+                            MapKeyPopover(rows: MapKeyRow.rows(scene, d), steps: MapShade.steps(MapShade.counts(d))) {
+                                overview.keyOpen = false
+                                model.openHelp(.paperMap)
+                            }
+                        }
+                }
             }
         } else {
             VStack(alignment: .leading, spacing: 6) {
@@ -263,7 +270,7 @@ struct OverviewScreen: View {
                     HStack(spacing: 8) {
                         Text("Round \(r.n)").font(.system(size: 12.5, weight: .semibold))
                         Text(r.dates).font(.system(size: 11)).foregroundStyle(Ink.secondary)
-                        if r.failed { Text("build failed").font(.system(size: 11)).foregroundStyle(Color(nsColor: Palette.danger)) }
+                        if r.failed { Text("build failed").font(.system(size: 11)).foregroundStyle(Ink.label2) }
                     }
                     .clicks({ model.overviewClicked(.round(r.n)) }, double: { model.overviewClicked(.round(r.n), double: true) })
                 }
@@ -282,6 +289,65 @@ struct OverviewScreen: View {
         case .loading, .idle: return "Reading the rounds…"
         default: return nil
         }
+    }
+}
+
+/// The paper page's header figure (UI v4, mac/UX.md §40.4; mockup `.pfig`), by the paper's state (plan §5 R7): to
+/// check, the 22 pt figure and the response bar under it; ready, to read, a first draft or a failed build, its sign
+/// and words; with the student or finished, comments, closed and open.
+struct PaperHeaderFigure: View {
+    let header: PaperHeader
+    /// The round that came in, for the response bar's help tag.
+    var round: Int?
+    /// After the to-check figure's nouns; none on the student page's action card.
+    var tail: String? = "to check"
+
+    var body: some View {
+        switch header.figure {
+        case .toCheck(let c):
+            let tc = ToCheckFigure(comments: c.comments, edits: c.edits, fill: fill, size: 22, tail: tail,
+                                       answered: header.answered)
+            VStack(alignment: .leading, spacing: 12) {
+                if let n = header.closed {
+                    let closed = (Text("\(n)").fontWeight(.semibold).foregroundColor(Ink.label2) + Text(" closed"))
+                        .font(TypeScale.body).foregroundStyle(Ink.secondary).fixedSize()
+                        .help(ifAny: header.closedHelp)
+                    // beside the figure, else under it when the line is wider than the column
+                    ViewThatFits(in: .horizontal) {
+                        HStack(alignment: .firstTextBaseline, spacing: 10) { tc; closed }.frame(height: 28)
+                        VStack(alignment: .leading, spacing: 4) { tc.frame(height: 28); closed }
+                    }
+                } else {
+                    tc.frame(height: 28)
+                }
+                if let r = header.response { ResponseBar(response: r, round: round) }
+            }
+        case .ready: line(.ready, "Ready to finish")
+        case .toRead(let n): figure(.ring(1), n, n == 1 ? "paragraph to read" : "paragraphs to read")
+        case .firstDraft: line(.ring(0), "First draft")
+        case .failed: line(.failed, "Build failed")
+        case .totals(let t, let finished): FigureColumns(figures: header.columns(t, finished: finished))
+        }
+    }
+
+    private var fill: Double { if case .ring(let f) = header.glyph { return f } else { return 0 } }
+
+    private func line(_ g: StatusGlyph, _ words: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            StatusGlyphView(g, text: 22)
+            Text(words).font(TypeScale.title1).lineLimit(1).fixedSize()
+        }
+        .frame(height: 28)
+    }
+
+    private func figure(_ g: StatusGlyph, _ n: Int, _ words: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            StatusGlyphView(g, text: 22)
+            Text("\(n)").font(TypeScale.title1).monospacedDigit()
+            Text(words).font(TypeScale.body).foregroundStyle(Ink.secondary)
+        }
+        .lineLimit(1).fixedSize()
+        .frame(height: 28)
     }
 }
 
@@ -412,8 +478,8 @@ struct ToolbarTitle: View {
     }
 }
 
-/// The overview's toolbar on the right (§5.1): "Following Methods ×" while it follows something, the More menu, and
-/// Continue Round N, the window's one Sage button (or Show Log… / Open Round N, plain).
+/// The overview's toolbar on the right (§5.1; UI v4): "Following Methods ×" while it follows something, Map | Table,
+/// the More menu ("⋯"), and Continue Round N, the window's one Sage button (or Show Log… / Open Round N, plain).
 struct OverviewToolbarTrail: View {
     @ObservedObject var model: AppModel
     @ObservedObject var overview: OverviewModel
@@ -436,6 +502,15 @@ struct OverviewToolbarTrail: View {
                 .fixedSize()
                 .padding(.horizontal, 8).frame(height: 22)
                 .background(Capsule().fill(Color(nsColor: Palette.accentTint)))
+            }
+            if overview.data?.rounds.isEmpty == false {
+                Picker("View", selection: Self.mapOrTable(model)) {
+                    Image(systemName: "square.grid.3x2").help("Map").accessibilityLabel("Map").tag(false)
+                    Image(systemName: "tablecells").help("Table").accessibilityLabel("Table").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .fixedSize()
             }
             Menu {
                 if let r = overview.data?.rounds.last(where: { $0.isClosed && $0.finalPdf != nil }), let final = r.finalPdf {
@@ -463,23 +538,26 @@ struct OverviewToolbarTrail: View {
                     Button("Show in Finder") { NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: p)]) }
                 }
             } label: {
-                Label("More", systemImage: "ellipsis.circle")
+                Label("More", systemImage: "ellipsis.circle").labelStyle(.iconOnly)
             }
             .menuIndicator(.hidden)
             .fixedSize()
             .help("More for this paper")
             if let c = model.continueButton {
                 if c.prominent {
-                    Button { model.openReview(ReviewTarget(round: c.round)) } label: {
-                        HStack(spacing: 6) { Text(c.title); Image(systemName: "arrow.right") }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .help("Review Round \(c.round): its PDF and comments (or double-click the paper)")
+                    Button(c.title) { model.openReview(ReviewTarget(round: c.round)) }
+                        .buttonStyle(.borderedProminent)
+                        .help("Review Round \(c.round): its PDF and comments (or double-click the paper)")
                 } else {
                     Button(c.title) { model.openReview(ReviewTarget(round: c.round)) }
                         .help("Open Round \(c.round) in Review")
                 }
             }
         }
+    }
+
+    /// The Map | Table control's choice: the map as a table, the viewer's (`AppModel.setMapAsTable`).
+    static func mapOrTable(_ model: AppModel) -> Binding<Bool> {
+        Binding(get: { model.overview.asTable }, set: { model.setMapAsTable($0) })
     }
 }

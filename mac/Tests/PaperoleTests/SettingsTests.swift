@@ -205,4 +205,26 @@ final class ReadingSettingTests: XCTestCase {
         XCTAssertEqual(m.reading.status.line?.text, "6 changed paragraphs to read")
         XCTAssertEqual(SettingsView.title, "Mark changed paragraphs to read")
     }
+
+    /// The Reading tab's second switch: Checks (UX.md §39), off by default, setting the model's setting.
+    func testTheChecksToggle() throws {
+        let m = makeModel()
+        let host = NSHostingView(rootView: SettingsView(model: m, tab: .reading))
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: host.fittingSize), styleMask: [.titled],
+                              backing: .buffered, defer: true)
+        window.isReleasedWhenClosed = false
+        windows.append(window)
+        window.contentView = host
+        host.layoutSubtreeIfNeeded()
+        func find<T: NSView>(_ type: T.Type, in v: NSView) -> [T] { ((v as? T).map { [$0] } ?? []) + v.subviews.flatMap { find(type, in: $0) } }
+        let switches = find(NSSwitch.self, in: host)
+        XCTAssertEqual(switches.count, 2, "reading marks, then Checks")
+        XCTAssertFalse(m.checksOn)
+        XCTAssertEqual(switches.map(\.state), [.off, .off])
+        switches[1].performClick(nil)
+        XCTAssertTrue(m.checksOn)
+        XCTAssertFalse(m.readingMarksOn)
+        XCTAssertEqual(SettingsView.checksTitle, "Checks")
+        XCTAssertTrue(SettingsView.checksDetail.hasSuffix("Nothing reaches the student unless you comment."))
+    }
 }

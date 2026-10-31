@@ -1,9 +1,9 @@
 import AppKit
 import SwiftUI
 
-/// The page strip of one round (OVERVIEW-v2 §3.3): its title, its pages as thumbnails at their slots with the marks of
-/// the round (comments in their colours, edits as bars, an amber ring where something waits for you) and their numbers
-/// (with ○ where a page has something to check), and under it the section ruler. A click on a page follows it, a
+/// The page strip of one round (OVERVIEW-v2 §3.3; UI v4, UX.md §40.4): its pages as thumbnails at their slots with the
+/// comments' marks of the round (neutral, the followed comment in its colour) and their numbers (with a ring and the
+/// count where a page has something to check), and under it the section ruler. A click on a page follows it, a
 /// double click opens Review there; a click on a section name follows the section.
 struct PageStripView: View {
     let model: AppModel
@@ -22,28 +22,12 @@ struct PageStripView: View {
         let pages = r?.build?.pages ?? (n == model.round?.n ? model.round?.build.pages : nil) ?? 0
         let toCheck = Self.pagesToCheck(r, d)
         VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 10) {
-                Text(n.map { "Pages of Round \($0)" } ?? "Pages").font(.system(size: 13, weight: .semibold)).foregroundStyle(Ink.label)
-                    .fixedSize()
-                if pages > 0 {
-                    HStack(spacing: 4) {
-                        Text(count(pages, "page"))
-                        if !toCheck.isEmpty {
-                            Text("·")
-                            Circle().strokeBorder(Color(nsColor: Palette.toCheck), lineWidth: 2).frame(width: 8, height: 8)
-                            Text("something to check")
-                        }
-                    }
-                    .font(.system(size: 12)).foregroundStyle(Ink.secondary).fixedSize()
-                }
-                Spacer(minLength: 8)
-                Text(overview.selection == nil ? "Click a section, round, page or comment to follow it · double-click opens Review"
-                     : "Esc shows the whole paper again")
-                    .font(.system(size: 12)).foregroundStyle(Ink.secondary)
-                    .lineLimit(1).truncationMode(.tail)
-            }
-            .frame(minHeight: 22)
-            .padding(.bottom, 7)
+            // the strip's round, named only when it is not the latest; its line always there, so nothing moves when a
+            // click shows another round's pages (UI v4)
+            Text(Self.roundLabel(n, latest: d?.latest?.n) ?? " ")
+                .font(.system(size: 12, weight: .semibold)).foregroundStyle(Ink.secondary)
+                .frame(height: 16, alignment: .topLeading)
+                .padding(.bottom, 6)
             if let n, let r, pages > 0, !r.failed {
                 strip(n, r, pages: pages, toCheck: toCheck)
                 SectionRuler(model: model, overview: overview, hover: hover, round: r, pages: pages, width: width, names: names)
@@ -51,12 +35,17 @@ struct PageStripView: View {
             } else {
                 Text(Self.noPages(r, loading: overview.status == .loading))
                     .font(.system(size: 12)).foregroundStyle(Ink.secondary)
-                    .frame(height: StripGeometry.height + 18 + 21, alignment: .center)
+                    .frame(height: StripGeometry.height + 20 + 21, alignment: .center)
             }
         }
         .frame(width: width, alignment: .leading)
     }
 
+    /// "Round 1" beside the strip while it shows a round other than the latest; nil for the latest.
+    static func roundLabel(_ n: Int?, latest: Int?) -> String? {
+        guard let n, let latest, n != latest else { return nil }
+        return "Round \(n)"
+    }
 
     /// Why the strip shows no pages: the overview is being read, the round's build failed, or none to show (the
     /// overview could not be read, or the round is gone: the code audit, it said the build failed then).
@@ -66,41 +55,45 @@ struct PageStripView: View {
         return "No pages yet."
     }
 
-    /// One page of the strip: its thumbnail with the marks, its number (the ○, the key page's bookmark), its menu. The
-    /// cell is as wide as the thumbnail, so it stays at its slot (`StripGeometry.thumbX`, where clicks find it): the
-    /// row under it is centred on it and may run past it (the code audit: the key page's bookmark widened the cell).
+    /// One page of the strip: its thumbnail, its number (then the ring and the page's count to check, or the ring on
+    /// the page's corner; the key page's bookmark), its menu. The cell is as wide as the thumbnail, so it stays at its
+    /// slot (`StripGeometry.thumbX`, where clicks find it): the row under it is centred on it and may run past it (the
+    /// code audit: the key page's bookmark widened the cell).
     @ViewBuilder
     private func pageCell(_ n: Int, _ r: PaperOverview.Round, page p: Int, geo: StripGeometry,
                           framing: (framed: Set<Int>, dimmed: Set<Int>), labels: StripLabels, followed: Set<String>,
-                          pageSize: @escaping (Int) -> CGSize?, key: (page: Int, chosen: Bool)?, toCheck: Set<Int>) -> some View {
+                          pageSize: @escaping (Int) -> CGSize?, key: (page: Int, chosen: Bool)?, toCheck: [Int: Int]) -> some View {
         let image = thumbs.image(paper: model.selectedPath ?? "", pdf: r.pdf, page: p, height: geo.thumbHeight)
-        VStack(spacing: 5) {
+        let k = toCheck[p] ?? 0
+        VStack(spacing: 6) {
             PageThumb(image: image, round: r, data: overview.data, page: p, size: CGSize(width: geo.thumbWidth, height: geo.thumbHeight),
                       pageSize: image == nil ? nil : pageSize(p), followed: followed, framed: framing.framed.contains(p))
                 .overlay(alignment: .topTrailing) {
-                    // a crowded strip: the ○ on the page's corner, so the numbers keep their room
-                    if toCheck.contains(p) && !labels.ringBeside {
-                        Circle().fill(Color(nsColor: Palette.panel)).frame(width: 9, height: 9)
-                            .overlay(Circle().strokeBorder(Color(nsColor: Palette.toCheck), lineWidth: 1.8))
+                    // a crowded strip: the ring on the page's corner, so the numbers keep their room
+                    if k > 0 && !labels.ringBeside {
+                        Circle().fill(Color(nsColor: Palette.panel)).frame(width: 10, height: 10)
+                            .overlay(StatusGlyphView(.ring(0), size: 10))
                             .offset(x: 3, y: -3)
                     }
                 }
-            HStack(spacing: 3) {
-                if toCheck.contains(p) && labels.ringBeside {
-                    Circle().strokeBorder(Color(nsColor: Palette.toCheck), lineWidth: 1.8).frame(width: 7, height: 7)
-                }
+            HStack(alignment: .firstTextBaseline, spacing: 0) {
                 // the key page (TAGS.md §7): a small bookmark before its number
                 if key?.page == p {
                     Image(systemName: "bookmark.fill").font(.system(size: 8)).foregroundStyle(Ink.secondary)
+                        .padding(.trailing, 3)
                         .help(key?.chosen == true ? "Key page: chosen by you · stands for this paper on the Student page, All Students and Your Move"
                               : "Key page: the busiest page · Set as Key Page (right-click a page) to choose another")
                 }
-                if labels.shows(p, key: key?.page == p, ring: toCheck.contains(p) && labels.ringBeside) {
-                    Text("\(p + 1)").font(.system(size: 11, weight: .medium)).monospacedDigit().foregroundStyle(Ink.secondary)
+                if labels.shows(p, key: key?.page == p, ring: k > 0 && labels.ringBeside) {
+                    Text("\(p + 1)").font(.system(size: 11)).monospacedDigit().foregroundStyle(Ink.secondary)
+                }
+                if k > 0 && labels.ringBeside {
+                    StatusGlyphView(.ring(0), size: 10, text: 11).padding(.leading, 6).padding(.trailing, 3)
+                    Text("\(k)").font(.system(size: 11, weight: .semibold)).monospacedDigit().foregroundStyle(Ink.label2)
                 }
             }
             .fixedSize()
-            .frame(width: geo.thumbWidth, height: 13)
+            .frame(width: geo.thumbWidth, height: 14)
         }
         .opacity(framing.dimmed.contains(p) ? 0.4 : 1)
         .contextMenu { pageMenu(n, page: p, key: key) }
@@ -143,20 +136,20 @@ struct PageStripView: View {
         Button("Follow This Page") { model.overviewClicked(.page(round: n, page: p)) }
     }
 
-    /// The pages of the round with something to check (0-based): a comment to check, or an edit nobody asked for that
-    /// waits for you; only while the round is open.
-    static func pagesToCheck(_ r: PaperOverview.Round?, _ d: PaperOverview?) -> Set<Int> {
-        guard let r, !r.isClosed, let d else { return [] }
-        var out: Set<Int> = []
-        for c in d.comments { if let st = c.step(in: r.n), st.answer == "to_check", let p = st.page { out.insert(p) } }
-        for e in r.edits ?? [] where e.toCheck { if let p = e.page { out.insert(p) } }
+    /// The pages of the round with something to check (0-based), with how many: comments to check, and edits nobody
+    /// asked for that wait for you; only while the round is open.
+    static func pagesToCheck(_ r: PaperOverview.Round?, _ d: PaperOverview?) -> [Int: Int] {
+        guard let r, !r.isClosed, let d else { return [:] }
+        var out: [Int: Int] = [:]
+        for c in d.comments { if let st = c.step(in: r.n), st.answer == "to_check", let p = st.page { out[p, default: 0] += 1 } }
+        for e in r.edits ?? [] where e.toCheck { if let p = e.page { out[p, default: 0] += 1 } }
         return out
     }
 
-    private func strip(_ n: Int, _ r: PaperOverview.Round, pages: Int, toCheck: Set<Int>) -> some View {
+    private func strip(_ n: Int, _ r: PaperOverview.Round, pages: Int, toCheck: [Int: Int]) -> some View {
         let geo = StripGeometry(width: width, pages: pages, aspect: thumbs.aspect(pdf: r.pdf))
         let framing = Self.framing(overview.selection, r, overview.data, pages: pages)
-        let labels = StripLabels(slot: geo.slot, pages: pages)
+        let labels = StripLabels(slot: geo.slot, pages: pages, most: toCheck.values.max() ?? 0)
         let followed = Self.followed(overview.selection, overview.data)
         let pageSize = { (p: Int) in thumbs.pageSize(pdf: r.pdf, page: p) }
         let key = Self.keyPage(n, data: overview.data, chosen: model.selectedPath.flatMap(model.keyPage(of:)))
@@ -167,7 +160,7 @@ struct PageStripView: View {
                 .offset(x: geo.thumbX(p))
             }
         }
-        .frame(width: width, height: geo.thumbHeight + 18, alignment: .topLeading)
+        .frame(width: width, height: geo.thumbHeight + 20, alignment: .topLeading)
         .contentShape(Rectangle())
         // a click on a comment's mark follows the comment, elsewhere on a page the page (§5.1); a second on the same
         // thing within the double-click interval opens Review there
@@ -244,9 +237,10 @@ struct PageStripView: View {
         let tc = r.isClosed ? 0 : steps.filter { $0.answer == "to_check" }.count
         let edits = (r.edits ?? []).filter { $0.page == p }
         let unasked = edits.filter(\.unrequested).count
-        return ["Page \(p + 1) · Round \(r.n)",
+        let et = r.isClosed ? 0 : edits.filter(\.toCheck).count
+        return ["Page \(p + 1)" + (r.build?.pages.map { " of \($0)" } ?? "") + " · Round \(r.n)",
                 count(steps.count, "comment") + (tc > 0 ? " (○ \(tc) to check)" : "") + " · \(count(edits.count, "edit"))"
-                    + (unasked > 0 ? ", \(unasked) nobody asked for" : ""),
+                    + (unasked > 0 ? ", \(unasked) nobody asked for" : "") + (et > 0 ? " (○ \(et) to check)" : ""),
                 "Click to follow these comments · a mark follows its comment · double-click opens the page"]
     }
 }
@@ -276,30 +270,39 @@ extension StripGeometry {
     }
 }
 
-/// The strip's page numbers: the ○ beside a number while the slot has room for both, else on the page's corner; every
-/// number while the slots have room for the widest, else every other one (1, 3, 5 …).
+/// The strip's page numbers (UI v4, mac/UX.md §40.4): under each page its number, then 6 pt later the ring and the
+/// page's count to check while the slot has room for them, else a ring on the page's corner (the count in its help
+/// tag); every number while the slots have room for the widest, else every other one (1, 3, 5 …).
 struct StripLabels: Equatable {
     var slot: CGFloat
     var pages: Int
+    /// The most any page has to check, for its count's room.
+    var most = 9
 
-    var ringBeside: Bool { MapFont.small.width("\(pages)") + 10 + 4 <= slot }
+    /// The ring and its count after a number: 6 pt, the 10 pt ring, 3 pt, the count (11 semibold).
+    var ringWidth: CGFloat { 6 + 10 + 3 + MapFont.label.width("\(most)") }
+    var ringBeside: Bool { MapFont.small.width("\(pages)") + ringWidth + 4 <= slot }
     var every: Int { MapFont.small.width("\(pages)") + 4 <= slot ? 1 : 2 }
     func shows(_ p: Int) -> Bool { p % every == 0 }
 
-    /// Page `p`'s number beside the key page's bookmark (`key`, 7 pt and its gap; `ring`: the ○ beside it too) while
-    /// they fit the slot, else the bookmark alone, so no number runs into the next one.
+    /// Page `p`'s number beside the key page's bookmark (`key`, 7 pt and its gap; `ring`: the ring and count beside it
+    /// too) while they fit the slot, else the bookmark alone, so no number runs into the next one.
     func shows(_ p: Int, key: Bool, ring: Bool) -> Bool {
         guard shows(p) else { return false }
-        return !key || MapFont.small.width("\(p + 1)") + 10 + (ring ? 10 : 0) + 4 <= slot
+        return !key || MapFont.small.width("\(p + 1)") + 10 + (ring ? ringWidth : 0) + 4 <= slot
     }
 }
 
-/// One page: its thumbnail (white until it is drawn) and the round's marks on it.
+/// One page: its thumbnail (the page ground until it is drawn) and where its comments sit (UI v4, mac/UX.md §40.4):
+/// the comments' marks in a neutral ink, which keeps their clicks, the followed comment in its colour with a Sage
+/// outline; the edits and the to-check rings are the map's and the numbers' under the page (plan §5 R9).
 struct PageThumb: View {
-    /// In Dark Mode a page thumbnail is about 88% white, not pure white: a row of thirty white pages on the dark panel
-    /// was the most glaring thing on the screen (the UI audit; before, 96%). The full-size page in Review stays white,
-    /// as the marks' colours are tuned for it.
-    static let darkDim = 0.12
+    /// In Dark Mode a page thumbnail is dimmed to the `thumb` ground (#BDBDB9), not pure white: a row of white pages
+    /// on the dark panel was the most glaring thing on the screen (the UI audit). The full-size page in Review stays
+    /// white, as the marks' colours are tuned for it.
+    static var darkDim: Double { 1 - Double((MapInk(dark: true).rgba(.thumb).hex >> 16) & 0xFF) / 255 }
+    /// The comments' marks while not followed: black at 0.16.
+    static let markInk = 0.16
     let image: NSImage?
     let round: PaperOverview.Round
     let data: PaperOverview?
@@ -318,44 +321,8 @@ struct PageThumb: View {
             if scheme == .dark { Color.black.opacity(Self.darkDim) }  // paper, but not glaring on the dark page
             if let ps = pageSize, ps.height > 0 {
                 Canvas { ctx, _ in
-                    let k = size.height / ps.height
-                    var seen: Set<String> = []  // one bar or ring per comment or change, at its first rect
-                    for m in round.marks ?? [] where m.page == page {
-                        let firstRect = m.id.map { seen.insert(m.kind + $0).inserted } ?? true
-                        let r = CGRect(x: m.rect.minX * k, y: m.rect.minY * k, width: max(m.rect.width * k, 2), height: max(m.rect.height * k, 1.5))
-                        if m.kind == "comment" {
-                            let c = m.id.flatMap { data?.comment($0) }
-                            let st = c?.step(in: round.n)
-                            let colour = Color(nsColor: (c?.color.flatMap(MarkColor.init(name:)) ?? .yellow).fill)
-                            let closed = st?.answer == "resolved" || st?.answer == "kept"
-                            let a = closed ? 0.3 : 0.55
-                            // as the mark is drawn on the page: a highlight filled, a box outlined, a line under or through
-                            // the words, a note a dot
-                            switch c?.kind {
-                            case "box": ctx.stroke(Path(r), with: .color(colour.opacity(a + 0.3)), lineWidth: 1)
-                            case "underline": ctx.fill(Path(CGRect(x: r.minX, y: r.maxY - 0.8, width: r.width, height: 1)), with: .color(colour))
-                            case "strikeout": ctx.fill(Path(CGRect(x: r.minX, y: r.midY - 0.5, width: r.width, height: 1)), with: .color(colour))
-                            case "note": ctx.fill(Path(ellipseIn: CGRect(x: r.minX - 1.5, y: r.minY - 1.5, width: 3.5, height: 3.5)), with: .color(colour))
-                            default: ctx.fill(Path(roundedRect: r.insetBy(dx: 0, dy: -0.5), cornerRadius: 0.6), with: .color(colour.opacity(a)))
-                            }
-                            if let id = m.id, followed.contains(id) {
-                                ctx.stroke(Path(roundedRect: r.insetBy(dx: -1.5, dy: -1.8), cornerRadius: 1.5), with: .color(ink.color(.accent)), lineWidth: 1.5)
-                            }
-                            if firstRect && !round.isClosed && st?.answer == "to_check" {
-                                ctx.stroke(Path(ellipseIn: CGRect(x: 1, y: r.midY - 2.2, width: 4.4, height: 4.4)), with: .color(ink.color(.attention)),
-                                           lineWidth: 1)
-                            }
-                        } else if firstRect {
-                            let e = m.id.flatMap { id in round.edits?.first { $0.id == id } }
-                            let unasked = e?.unrequested ?? false
-                            ctx.fill(Path(CGRect(x: r.minX, y: r.maxY - 0.6, width: r.width, height: unasked ? 1.3 : 1)),
-                                     with: .color(ink.color(unasked ? .other : .words)))
-                            if e?.toCheck == true {
-                                ctx.stroke(Path(ellipseIn: CGRect(x: size.width - 5.4, y: r.maxY - 2.6, width: 4.4, height: 4.4)),
-                                           with: .color(ink.color(.attention)), lineWidth: 1)
-                            }
-                        }
-                    }
+                    Self.drawMarks(ctx, round: round, data: data, page: page, k: size.height / ps.height,
+                                   coloured: followed.contains, outline: ink.color(.accent))
                 }
             }
         }
@@ -364,6 +331,30 @@ struct PageThumb: View {
         .overlay(RoundedRectangle(cornerRadius: 1.5).strokeBorder(Color.black.opacity(scheme == .dark ? 0.3 : 0.16), lineWidth: 0.5))
         .shadow(color: .black.opacity(scheme == .dark ? 0.45 : 0.10), radius: scheme == .dark ? 3 : 1.5, y: 1)
         .overlay(RoundedRectangle(cornerRadius: 2.5).strokeBorder(framed ? ink.color(.accent) : .clear, lineWidth: 2).padding(-2))
+    }
+
+    /// The comments' marks on `page` at `k` pt a point, as each is drawn on the page: a highlight filled, a box
+    /// outlined, a line under or through the words, a note a dot. In the neutral ink, or in its colour (at 0.55 when
+    /// filled) when `coloured` (followed on the strip, outlined in `outline`; every one on a paper's icon, BRIEF §8.1).
+    static func drawMarks(_ ctx: GraphicsContext, round: PaperOverview.Round, data: PaperOverview?, page: Int, k: CGFloat,
+                          coloured: (String) -> Bool, outline: Color?) {
+        for m in round.marks ?? [] where m.page == page && m.kind == "comment" {
+            let r = CGRect(x: m.rect.minX * k, y: m.rect.minY * k, width: max(m.rect.width * k, 2), height: max(m.rect.height * k, 1.5))
+            let c = m.id.flatMap { data?.comment($0) }
+            let on = m.id.map(coloured) ?? false
+            let colour = on ? Color(nsColor: (c?.color.flatMap(MarkColor.init(name:)) ?? .yellow).fill) : Color.black.opacity(markInk)
+            let a = on ? 0.55 : 1
+            switch c?.kind {
+            case "box": ctx.stroke(Path(r), with: .color(colour.opacity(on ? 0.85 : 1)), lineWidth: 1)
+            case "underline": ctx.fill(Path(CGRect(x: r.minX, y: r.maxY - 0.8, width: r.width, height: 1)), with: .color(colour))
+            case "strikeout": ctx.fill(Path(CGRect(x: r.minX, y: r.midY - 0.5, width: r.width, height: 1)), with: .color(colour))
+            case "note": ctx.fill(Path(ellipseIn: CGRect(x: r.minX - 1.5, y: r.minY - 1.5, width: 3.5, height: 3.5)), with: .color(colour))
+            default: ctx.fill(Path(roundedRect: r.insetBy(dx: 0, dy: -0.5), cornerRadius: 0.6), with: .color(colour.opacity(a)))
+            }
+            if on, let outline {
+                ctx.stroke(Path(roundedRect: r.insetBy(dx: -1.5, dy: -1.8), cornerRadius: 1.5), with: .color(outline), lineWidth: 1.5)
+            }
+        }
     }
 }
 

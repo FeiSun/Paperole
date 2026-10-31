@@ -86,7 +86,8 @@ struct OverviewPanel: Equatable {
     var buttons: [Button]
     var body: Body
 
-    static let responses = ["edited": "edited", "note_only": "note only", "untouched": "untouched", "waiting": "waiting for you",
+    /// The student's responses in the response bar's words (UI v4); the engine's keys are unchanged.
+    static let responses = ["edited": "revised", "note_only": "explained", "untouched": "unchanged", "waiting": "not asked",
                             "moved_only": "moved only"]
 }
 
@@ -206,8 +207,7 @@ extension OverviewPanel {
             if let w = r.words?.body { meta.append(OverviewText.grouped(w) + " words") }
             if let p = r.build?.pages { meta.append(count(p, "page")) }
         } else {
-            let resp = [c.edited > 0 ? "\(c.edited) edited" : nil, c.noteOnly > 0 ? "\(c.noteOnly) note only" : nil,
-                        c.untouched > 0 ? "\(c.untouched) untouched" : nil, c.waiting > 0 ? "\(c.waiting) waiting" : nil].compactMap { $0 }
+            let resp = MapScene.responses(c)
             if !resp.isEmpty { meta.append(student + ": " + resp.joined(separator: " · ")) }
             if let w = r.words, let a = w.added { meta.append("+\(a) −\(w.deleted ?? 0) words") }
             let edits = r.edits ?? [], unasked = edits.filter(\.unrequested).count
@@ -354,8 +354,8 @@ struct OverviewPanelView: View {
 
     private func header(_ p: OverviewPanel) -> some View {
         HStack(alignment: .center, spacing: 10) {
-            Text(p.title).font(.system(size: 14, weight: .semibold)).lineLimit(1).fixedSize()
-            amberRings(p.meta).font(.system(size: 12)).foregroundStyle(Ink.secondary)
+            Text(p.title).font(TypeScale.body.weight(.semibold)).lineLimit(1).fixedSize()
+            ringText(p.meta).font(.system(size: 12)).foregroundStyle(Ink.secondary)
                 .lineLimit(1).truncationMode(.tail)
                 .help(p.meta)
             Spacer(minLength: 8)
@@ -413,7 +413,7 @@ struct PanelLines: View {
             Text(l.id).font(.system(size: 12, weight: .semibold)).monospacedDigit().frame(width: 50, alignment: .leading)
             Text(l.text).font(.system(size: 13)).lineLimit(1).truncationMode(.tail)
             Spacer(minLength: 6)
-            amberRings(l.status).font(.system(size: 12)).foregroundStyle(Ink.secondary).lineLimit(1).fixedSize()
+            ringText(l.status).font(.system(size: 12)).foregroundStyle(Ink.secondary).lineLimit(1).fixedSize()
         }
         .padding(.horizontal, 8).padding(.vertical, 4)
         .frame(minHeight: 26)
@@ -437,7 +437,7 @@ struct PanelLines: View {
                 .frame(width: 50, alignment: .leading)
             Text(e.text).font(.system(size: 13)).lineLimit(1).truncationMode(.tail)
             Spacer(minLength: 6)
-            amberRings(e.status).font(.system(size: 12)).foregroundStyle(Ink.secondary).lineLimit(1).fixedSize()
+            ringText(e.status).font(.system(size: 12)).foregroundStyle(Ink.secondary).lineLimit(1).fixedSize()
         }
         .padding(.horizontal, 8).padding(.vertical, 4)
         .frame(minHeight: 26)
@@ -529,7 +529,7 @@ struct PanelGroups: View {
     private func editChip(_ e: OverviewPanel.EditLine) -> some View {
         HStack(spacing: 5) {
             RoundedRectangle(cornerRadius: 1.5).fill(Color(nsColor: Palette.unrequested)).frame(width: 3, height: 12)
-            amberRings(([e.status, e.text]).filter { !$0.isEmpty }.joined(separator: " "))
+            ringText(([e.status, e.text]).filter { !$0.isEmpty }.joined(separator: " "))
                 .font(.system(size: 11.5, weight: .medium)).foregroundStyle(Ink.label2).lineLimit(1)
         }
         .frame(maxWidth: 320, alignment: .leading)
@@ -556,7 +556,7 @@ struct PanelComment: View {
                 NoteTitleView(title: NoteTitle(q)).foregroundStyle(Ink.label)
                     .textSelection(.enabled)
             }
-            amberRings(detail.facts).font(.system(size: 12.5)).foregroundStyle(Ink.secondary)
+            ringText(detail.facts).font(.system(size: 12.5)).foregroundStyle(Ink.secondary)
             if !detail.steps.isEmpty { table.padding(.top, 6) }
             Text("The replies themselves are in Review, on the comment’s card.")
                 .font(.system(size: 12.5)).foregroundStyle(Ink.secondary).padding(.top, 2)
@@ -582,7 +582,7 @@ struct PanelComment: View {
                     words(s)
                     Text(s.first.map { "“" + $0 + "”" } ?? "").foregroundStyle(Ink.secondary).lineLimit(1).truncationMode(.tail)
                         .frame(maxWidth: 420, alignment: .leading)
-                    amberRings(s.answer)
+                    ringText(s.answer)
                 }
                 .font(.system(size: 12.5))
                 .padding(.vertical, 5)

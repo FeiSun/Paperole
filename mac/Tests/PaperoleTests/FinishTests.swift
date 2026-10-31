@@ -108,7 +108,7 @@ final class FinishTests: XCTestCase {
                        "Edits made since R2: 1 no comment asked for, 1 answering your comments.")
         XCTAssertNil(ChangesHeader.text(try state([], round: 3), left: 0))  // the list says the source did not change
         XCTAssertNil(ChangesHeader.text(try state([change("c01")], round: 1), left: 1))
-        // its first words in the label colour, Semibold (POLISH §3 row 10: amber only where the count is, on the tab)
+        // its first words in the label colour, Semibold (POLISH §3 row 10: vermilion only where the count is, on the tab)
         let lead = try XCTUnwrap(ChangesHeader.text(mixed, left: 2))
         XCTAssertEqual(lead.runs.first?.foregroundColor, Ink.label)
         XCTAssertEqual(lead.runs.first.map { String(lead[$0.range].characters) }, "Other edits to check.")

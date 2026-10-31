@@ -41,6 +41,8 @@ struct ReviewTarget: Equatable {
     var page: Int?
     /// Back or Forward to Review as it was left: the PDF put back there, the selection kept without moving it.
     var pdf: PDFPlace? = nil
+    /// The tab it was left on, shown again when it had no comment or change selected (the Checks tab never has).
+    var tab: PanelTab? = nil
 }
 
 /// Review as it was left: the round shown, the selection and the PDF's place, so Forward (or Back across papers) opens

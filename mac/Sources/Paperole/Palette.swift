@@ -22,8 +22,9 @@ enum Palette {
     static let find = NSColor(srgbRed: 0x8C / 255, green: 0x91 / 255, blue: 0x8D / 255, alpha: 0.4)
 
     // UI v2 (design/ui-v2/PROPOSAL.md §3): one colour means one thing.
-    /// Only "your move": the To check chip, position uncertain, an unsent draft.
-    static let toCheck = NSColor(light: 0xB45309, dark: 0xF59E0B)
+    /// Only "your move": the To check chip, position uncertain, an unsent draft. UI v4 (design/ui-v4/BRIEF.md §8.4):
+    /// the icon's vermilion in place of amber, for marks only (rings, outlines, the open line), never for words.
+    static let toCheck = NSColor(light: 0xC04734, dark: 0xDB6A50)
     /// Only an error: Not found, a failed build. #C42121 (POLISH §6, 13): #DC2626 was 4.46:1 on the panel.
     static let danger = NSColor(light: 0xC42121, dark: 0xF98B8B)
     /// Every decided status (Follow-up, Resolved, Kept as is, New), told apart by its sign.
@@ -44,6 +45,8 @@ enum Palette {
     // are the system's.
     /// The AccentColor asset's values (PaletteTests checks the asset against them).
     static let sage = (light: 0x566B58, dark: 0x5D7A61)
+    /// Sage as a colour, whatever accent the user picked: Ready to finish, Well done (UI v4, BRIEF §3).
+    static let accent = NSColor(light: sage.light, dark: sage.dark)
     /// Accent-coloured words and links ("1 edit", Details…, Re-anchor…): 4.5:1 on the card and the panel in either mode,
     /// which the accent itself is not in Dark Mode.
     static let accentText = NSColor(light: 0x4D6150, dark: 0xA5BFA7)
@@ -60,11 +63,13 @@ enum Palette {
     static let card = NSColor(light: 0xFFFFFF, dark: 0x2A2C2A)
     static let cardLine = pair(.clear, NSColor(white: 1, alpha: 0.075))
     /// The panel's text: titles, notes and rows; group headers; secondary words (5.2:1 on the panel, 6.9:1 in Dark Mode;
-    /// every date too); tertiary only for placeholders (POLISH §2.2).
+    /// every date too); tertiary only for placeholders and "–" (POLISH §2.2; UI v4 raised it to 3–4.7:1, BRIEF §2).
     static let label = NSColor(light: 0x1F2621, dark: 0xE6EBE6)
     static let label2 = NSColor(light: 0x3D473F, dark: 0xC5CDC6)
     static let secondary = NSColor(light: 0x5F6A61, dark: 0x9EA89F)
-    static let tertiary = NSColor(light: 0x98A199, dark: 0x6C756D)
+    static let tertiary = NSColor(light: 0x7A837B, dark: 0x7F887F)
+    /// A quiet fill (UI v4's `fill`): the paper map's selected-round box.
+    static let fill = pair(NSColor(white: 0, alpha: 0.05), NSColor(white: 1, alpha: 0.07))
     /// A row under the pointer.
     static let hover = pair(NSColor(white: 0, alpha: 0.045), NSColor(white: 1, alpha: 0.05))
     /// The sidebar's row of the paper Review shows (`OpenPaperFill`): as the sidebar's own selection looks while the list
@@ -96,8 +101,9 @@ enum Palette {
 /// is the system's lighter grey, and a Text's own `.secondary` does not follow a hierarchical style set above it, so
 /// the panel names these.
 /// One sign per state (the UI audit: ⚠ meant four things, and "did not build" had three looks): the octagon for a
-/// round that did not build, wherever it shows; the triangle only for a build with errors and a comment not found; a
-/// question mark for a mark whose place is uncertain (amber, with its words).
+/// round that did not build, wherever it shows, in label2 (UI v4: its shape and words say it, so red means only an
+/// error); the triangle only for a build with errors and a comment not found; a question mark for a mark whose place
+/// is uncertain (the sign vermilion, its words secondary).
 enum BuildSign {
     static let failed = "xmark.octagon"
     static let errors = "exclamationmark.triangle"
@@ -105,10 +111,23 @@ enum BuildSign {
 }
 
 /// One page title for the hierarchy's three levels (the UI audit: 30, 28 and 20 pt): All Students, a student, a
-/// paper; the paper's title in New York, as the paper's own words, at the same size.
+/// paper; the paper's title in New York, as the paper's own words. UI v4: the one 26 per screen, the paper's 22.
 enum PageType {
-    static let title = Font.system(size: 24, weight: .bold)
-    static let paperTitle = Font.system(size: 24, weight: .semibold, design: .serif)
+    static let title = TypeScale.hero
+    static let paperTitle = Font.system(size: 22, weight: .semibold, design: .serif)
+}
+
+/// UI v4's type scale (design/ui-v4/BRIEF.md §2, the macOS text styles): one 26 per screen, 22 for the page's main
+/// figure, 17 for figures and tile headlines, New York for paper titles, 11–13 for everything else. No 9, 14, 16, 18,
+/// 20, 24 or 28 on the v4 pages.
+enum TypeScale {
+    static let hero = Font.system(size: 26, weight: .semibold)
+    static let title1 = Font.system(size: 22, weight: .semibold)
+    static let title2 = Font.system(size: 17, weight: .semibold)
+    static func paperTitle(_ size: CGFloat = 15) -> Font { .system(size: size, weight: .semibold, design: .serif) }
+    static let body = Font.system(size: 13)
+    static let callout = Font.system(size: 12)
+    static let small = Font.system(size: 11)
 }
 
 enum Ink {
@@ -221,8 +240,8 @@ enum Status: Equatable {
         }
     }
 
-    /// Amber only for your move (To check), red only for an error (Not found); a decided status is neutral, told apart
-    /// by its icon (design/ui-v2/PROPOSAL.md §3).
+    /// Vermilion only for your move (To check), red only for an error (Not found); a decided status is neutral, told
+    /// apart by its icon (design/ui-v2/PROPOSAL.md §3). The vermilion is a sign's, never the words' (UI v4).
     var color: NSColor {
         switch self {
         case .toCheck: return Palette.toCheck
@@ -231,8 +250,8 @@ enum Status: Equatable {
         }
     }
 
-    /// Only To check and Not found have a coloured chip: To check's is outlined in amber (POLISH §2.2: amber is near
-    /// the yellow and orange marks, so it is told apart by its shape), Not found's tinted red.
+    /// Only To check and Not found have a coloured chip: To check's is outlined in vermilion (POLISH §2.2: it is near
+    /// the orange mark, so it is told apart by its shape), Not found's tinted red.
     var tinted: Bool { self == .toCheck || self == .notFound }
 
     var icon: String {

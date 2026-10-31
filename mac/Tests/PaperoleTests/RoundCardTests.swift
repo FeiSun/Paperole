@@ -136,7 +136,7 @@ final class RoundCardTests: XCTestCase {
 
     // MARK: Round 1 and the tag table
 
-    /// Round 1: New, Pages with a mark and Done well; ten tags fold to six rows and a line, ties folding the later tag;
+    /// Round 1: New, Pages with a mark and Well done; ten tags fold to six rows and a line, ties folding the later tag;
     /// the compact card's line names how many.
     func testRoundOneAndTheFold() throws {
         let ids = ["grammar", "wording", "clarity", "logic", "evidence", "structure", "figures", "math", "format", "u-1a2b3c4d"]
@@ -155,7 +155,7 @@ final class RoundCardTests: XCTestCase {
                                             closedAt: "2026-10-15T10:00:00+08:00", pages: 5, comments: comments),
                            pageSizes: letter, catalog: TagCatalog())
         XCTAssertEqual(s.figures, [.init(value: 20, label: "New"), .init(value: 3, of: 5, label: "Pages with a mark"),
-                                   .init(value: 1, label: "Done well")])
+                                   .init(value: 1, label: "Well done")])
         XCTAssertNil(s.studentLine(named: false), "round 1 has no student line")
         XCTAssertEqual(s.tags.last?.name, "u-1a2b3c4d", "a tag the catalogue lacks keeps its place, last")
         let full = s.tagTable(maxRows: 7)
@@ -206,7 +206,7 @@ final class RoundCardTests: XCTestCase {
         ]), pageSizes: letter, catalog: TagCatalog())
         XCTAssertEqual(bare.words, 0, "punctuation alone is no word")
         XCTAssertNil(bare.wroteLine)
-        XCTAssertEqual(bare.figures.map(\.value), [2, 1, 1], "New, Pages with a mark, Done well")
+        XCTAssertEqual(bare.figures.map(\.value), [2, 1, 1], "New, Pages with a mark, Well done")
         XCTAssertFalse(bare.tagsShown, "praise alone is no tag section")
         XCTAssertEqual(PageStrip.spoken(bare), "A mark on 1 of 4 pages")
     }

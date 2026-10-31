@@ -100,6 +100,8 @@ struct PaperoleApp: App {
                 FindCommands(model: model, find: model.pdf.find)
             }
             // only while reading marks are on (Settings; UX.md §18): off, N, C and Shift-C are not keys either
+            // the Help menu (BRIEF §8, 08); the system's search field above it finds Help's sections (`HelpSearch`)
+            CommandGroup(replacing: .help) { HelpCommands(model: model) }
             if model.readingMarksOn {
                 CommandMenu("Reading") {
                     Group {
@@ -111,6 +113,12 @@ struct PaperoleApp: App {
                 }
             }
         }
+        // Help › Paperole Help (UI v4 step 8): its topics, opened at the page in front's (⌘?); never in a test run, where
+        // only the `help` debug item opens it, behind every window (plan §5 R23)
+        Window("Paperole Help", id: "help") {
+            HelpView(help: model.help)
+        }
+        .defaultSize(width: 980, height: 720)
         // Paperole › Settings… (⌘,): reading marks, off by default
         Settings {
             SettingsView(model: model)
@@ -159,6 +167,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSApp.setActivationPolicy(.regular)
             NSApp.activate(ignoringOtherApps: true)
         }
+        // the Help menu's search field lists Help's sections under Help Topics; a pick opens that section
+        NSApp.registerUserInterfaceItemSearchHandler(HelpSearch.shared)
         // the migration put everything back, or found both data folders (Migration.swift): said once, the app goes on
         if let n = Migration.notice {
             Migration.notice = nil
@@ -332,6 +342,7 @@ enum WindowLayout {
 
 struct ContentView: View {
     @EnvironmentObject var model: AppModel
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         // Focus hides the sidebar (POLISH §4.3); showing it again (its toggle, ⌃⌘S) ends Focus
@@ -352,6 +363,7 @@ struct ContentView: View {
             }
         }
         .background(WindowReader { QuitOnClose.install(on: $0) })
+        .onAppear { model.help.opener = { [openWindow] in openWindow(id: "help") } }
         // the hierarchy's sheets (UX.md §22), here so they show whether the sidebar is shown or not; each on a view
         // of its own
         .background(Color.clear.sheet(item: Binding(get: { model.editingPaper.map(SheetID.init) },
