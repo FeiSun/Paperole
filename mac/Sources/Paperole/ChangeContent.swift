@@ -146,12 +146,14 @@ struct ChangeModel: Equatable, Identifiable {
             if let s = b.short { r[b.id + ".short"] = ChangeContent.render(s, style: style, ink: ink) }
         }
         rendered = r
-        excerpt = ch.about.map(Self.excerpt) ?? diff.map { Self.excerpt($0, ink: ink) } ?? Self.excerpt(ch, kind: kind, same: same)
+        // a row's changed words: the darker Light green, 4.5:1 on the panel and the column's window (design/review-page §2)
+        let rowInk = ch.unrequested ? Palette.unrequested : Palette.rowChangedWords
+        excerpt = ch.about.map(Self.excerpt) ?? diff.map { Self.excerpt($0, ink: rowInk) } ?? Self.excerpt(ch, kind: kind, same: same)
         footer = [ch.file.map { $0 + (ch.line.map { ":\($0)" } ?? "") }, ch.kind].compactMap { $0 }.joined(separator: " · ")
         let asking = (ch.commentedBy ?? []).isEmpty ? nil : "you asked in " + (ch.commentedBy ?? []).joined(separator: ", ")
         let noted = self.notes.map { "student’s note on \($0.id)" + ($0.text.isEmpty ? "" : ": " + $0.text) }
         let ignoredWords: String = ignored.map { ". An ignored student note \($0.whereWords): " + $0.line } ?? ""
-        let summary: String = [ch.id, kind.word, unrequested ? "no comment asked for" : "answers " + ch.attachedTo.joined(separator: ", "),
+        let summary: String = [ch.id, kind.word, unrequested ? "unasked edit" : "answers " + ch.attachedTo.joined(separator: ", "),
                                place.isEmpty ? nil : place, ch.page.map { "page \($0 + 1)" }, asking, checked ? "checked" : nil]
             .compactMap { $0 }.joined(separator: ", ")
         accessibility = summary + ". " + String(excerpt.characters) + noted.map { ". " + $0 }.joined() + ignoredWords

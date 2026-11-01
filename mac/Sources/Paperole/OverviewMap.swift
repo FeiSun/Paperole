@@ -57,10 +57,10 @@ enum MapFont: Equatable, Hashable, CaseIterable {
     var descent: CGFloat { -nsFont.descender }
 }
 
-/// The colours the map draws with (OVERVIEW-v2 §4.7, VISUAL v3 §3): one warm stone in three steps over a near-neutral
-/// track for the counts, Sage only for what is followed, vermilion only for the marks of what is to check, red only
-/// for errors, the edits' green only for the student's added words in a help tag. Each is resolved for the appearance
-/// by `MapInk`.
+/// The colours the map draws with (OVERVIEW-v2 §4.7, VISUAL v3 §3): one Sage green in three steps over a near-neutral
+/// track for the counts (mac/UX.md §40.10; a warm stone before), the accent's Sage only for what is followed (`path`
+/// where it is drawn over the cells), vermilion only for the marks of what is to check, red only for errors, the edits'
+/// green only for the student's added words in a help tag. Each is resolved for the appearance by `MapInk`.
 enum MapRole: Hashable {
     /// The cells: no comment (the track), then the paper's three steps; their number and name. UI v4: the one data-ink
     /// ramp (map cells, small maps, By section, Help pictures), with `ink` its darkest (bars, edit ticks).
@@ -74,7 +74,11 @@ enum MapRole: Hashable {
     /// without comments, a thumbnail's page, and what closed in 1, 2 or 3+ rounds (UI v4, README §6).
     case you, stu, today, zeroline, thumb, c1, c2, c3
     case words, other, attention, danger, accent, accentText, accentTint
-    case rule, label, label2, secondary, tertiary, content, card, neutral, path
+    case rule, label, label2, secondary, tertiary, content, card, neutral
+    /// What is followed, drawn over the cells: a comment's path and the edits made for it, the outline of the section's
+    /// cell and of the page followed, the table's cell holding the comment followed. The accent in Light Mode; lighter
+    /// in Dark Mode, where the accent is within ΔE00 6 of the green s3 (mac/UX.md §40.10).
+    case path
     /// A link drawn on the map (the axis's Show and Fold): the system's link colour, as every link in words
     /// (`LinkStyle`; the UI audit: in the Sage text colour they read as plain words, BACKLOG O32).
     case link
@@ -216,24 +220,69 @@ enum MapShade {
     static func counts(_ d: PaperOverview) -> [Int] { d.rounds.flatMap { ($0.heat ?? []).map(\.present) } }
 }
 
-/// Where the page strip's thumbnails go (OVERVIEW-v2 §3.3): one slot per page over the overview's width, each at most
-/// 72 pt high and 8 pt narrower than its slot, in the pages' own proportion.
+/// Where the page strip's thumbnails go (OVERVIEW-v2 §3.3; mac/UX.md §40.9): every page at one scale of its own size,
+/// 72/792 (a US Letter page 72 pt high, an A4 or a landscape page in proportion), whatever the paper's or the round's
+/// length, so every paper and every round has thumbnails of one size (the advisor's decision of 2026-11-01). While the
+/// round's pages fit the width with 8 pt between them, one slot per page over the width, each thumbnail centred in its
+/// slot; else slots of the thumbnail's width and 8 pt from the left, wider than the width: the strip and its ruler
+/// scroll sideways. Pages lower than the paper's row (`row`) sit on the numbers' line. Content coordinates: a strip
+/// scrolled by `offset` shows `offset`…`offset + width`.
 struct StripGeometry: Equatable {
     var width: CGFloat
     var pages: Int
-    var aspect: CGFloat
+    /// The thumbnails' size (`thumbSize(page:)` of the round's first page).
+    var thumb: CGSize = Self.letterThumb
+    /// The paper's row of thumbnails (`PageStripView.rowHeight`), the same for each round, so the strip, its ruler and
+    /// the map under it stay where they are whichever round the strip shows.
+    var row: CGFloat = Self.height
 
+    /// A Letter page's thumbnail height, and the room between thumbnails.
     static let height: CGFloat = 72
+    static let gap: CGFloat = 8
+    /// The scale from a page to its thumbnail: a Letter page (792 pt) to 72 pt.
+    static let scale: CGFloat = 72 / 792
+    static let letter = CGSize(width: 612, height: 792)
+    static var letterThumb: CGSize { thumbSize(page: letter) }
 
-    var slot: CGFloat { width / CGFloat(max(pages, 1)) }
-    var thumbWidth: CGFloat { max(8, min(Self.height * aspect, slot - 8)) }
-    var thumbHeight: CGFloat { thumbWidth / aspect }
+    /// A page's thumbnail size: the page's own at `scale` (a Letter page's when it is not known).
+    static func thumbSize(page: CGSize?) -> CGSize {
+        guard let p = page, p.width > 0, p.height > 0 else { return thumbSize(page: letter) }
+        return CGSize(width: p.width * scale, height: p.height * scale)
+    }
+
+    var thumbWidth: CGFloat { thumb.width }
+    var thumbHeight: CGFloat { thumb.height }
+    /// Every page with at least `gap` beside it at the width: the slots spread over it, no scrolling.
+    var fits: Bool { CGFloat(max(pages, 1)) * (thumbWidth + Self.gap) <= width + 0.001 }
+    var slot: CGFloat { fits ? width / CGFloat(max(pages, 1)) : thumbWidth + Self.gap }
+    /// The strip's (and its ruler's) width: the width, or past it when it scrolls.
+    var contentWidth: CGFloat { fits ? width : CGFloat(pages) * slot }
+    var scrolls: Bool { contentWidth > width + 0.5 }
+    /// The farthest the strip scrolls.
+    var maxOffset: CGFloat { max(0, contentWidth - width) }
+    /// The room over pages lower than the row, so they sit on the numbers' line.
+    var top: CGFloat { max(0, row - thumbHeight) }
     func thumbX(_ page: Int) -> CGFloat { CGFloat(page) * slot + (slot - thumbWidth) / 2 }
     /// A place in page units on the strip.
     func x(_ pos: Double) -> CGFloat { CGFloat(pos) * slot }
+    /// The page at `x` (content coordinates); nil past the pages.
     func page(at x: CGFloat) -> Int? {
-        guard x >= 0, x < width else { return nil }
+        guard pages > 0, x >= 0, x < contentWidth else { return nil }
         return min(pages - 1, Int(x / slot))
+    }
+    /// The pages (in page units) seen at `offset`.
+    func visible(offset: CGFloat) -> ClosedRange<Double> {
+        let o = min(max(0, offset), maxOffset)
+        return Double(o / slot)...min(Double(pages), Double((o + width) / slot))
+    }
+    /// The offset that shows the pages `lo`…`hi` (page units) from `offset`, moving as little as it can, 8 pt to spare,
+    /// never past `lo`; nil when they are in view (or nothing scrolls).
+    func reveal(_ lo: Double, _ hi: Double, from offset: CGFloat) -> CGFloat? {
+        guard scrolls else { return offset > 0 ? 0 : nil }
+        let o = min(max(0, offset), maxOffset)
+        guard let t = OverviewModel.scrollToShow(top: Double(x(lo)), bottom: Double(x(hi)), offset: Double(o), height: Double(width),
+                                                 margin: Double(Self.gap)) else { return nil }
+        return min(max(0, CGFloat(t)), maxOffset)
     }
 }
 
@@ -881,11 +930,9 @@ struct MapScene {
     /// What the paper folds at this width, and each round's map of pages.
     var plan = FoldPlan(k: 1)
     var pageMaps: [Int: PageMap] = [:]
-    /// The lens: a hairline from each section's start on the strip to its place on the map (and the strip's two ends),
-    /// a faint wedge over each folded part, the wedge of the section or page followed.
-    var fans: [[CGPoint]] = []
-    var wedges: [[CGPoint]] = []
-    var lensSelected: [CGPoint]?
+    /// The lens's makings (`Lens`): drawn for the strip's scroll offset by `lens(offset:)`, so the strip's scroll redraws
+    /// the lens alone.
+    var lensInput: Lens?
     var captions: [MapText] = []
     var sageCaption: MapText?
     var bands: [Band] = []
@@ -899,9 +946,9 @@ struct MapScene {
     var axisParts: [AxisPart] = []
     var foldLink: MapText?
     var hits: [Hit] = []
-    /// The selected round's box behind its label (the strip's round; UI v4, BRIEF §8.3): nil while its row is folded
-    /// away. `PaperMapView` draws it under the Canvas and slides it to a new round; `boxFollowed`: the round is
-    /// followed (the accent's tint and a Sage outline).
+    /// The selected round's box behind its label (the strip's round, or the one previewed; UI v4, BRIEF §8.3): nil
+    /// while its row is folded away. `PaperMapView` draws it under the Canvas and slides it to a new round;
+    /// `boxFollowed`: the round is followed (the accent's tint and a Sage outline; a preview has neither).
     var box: CGRect?
     var boxFollowed = false
     /// The rounds folded under the shown ones.
@@ -1009,6 +1056,17 @@ struct MapScene {
         rows.first { $0.n == n }?.quiet.first { $0.sections.contains(section) }
     }
 
+    /// The round whose row is at `y`, for the preview under the pointer: its band from 10 pt over its cells to 10 pt
+    /// over the next row's (its label, its cells, its readout, its "carried" line); nil over the lens, the axis and the
+    /// rounds folded away.
+    func round(atY y: CGFloat) -> Int? {
+        rows.first { y >= $0.y - 10 && y < $0.y - 10 + MapGeometry.pitch }?.n
+    }
+
+    /// Over the first row's band: the lens, between the strip's ruler and the rows (the pointer on its way to the
+    /// strip's pages keeps the round previewed).
+    func overLens(_ y: CGFloat) -> Bool { y < (rows.first?.y ?? MapGeometry.row0) - 10 }
+
     /// What a click at `p` lands on: the last hit drawn there (path dots and ticks over cells, cells over bands).
     func target(at p: CGPoint) -> MapTarget? {
         for h in hits.reversed() {
@@ -1033,8 +1091,8 @@ struct MapScene {
     }
 }
 
-/// What the map needs besides the engine's overview: the overview's width, the rounds folded, the strip's round,
-/// what is followed, the student's first name, the failed round's errors, whether the open round can be finished,
+/// What the map needs besides the engine's overview: the overview's width, the rounds folded, the strip's round (and
+/// the one previewed under the pointer), what is followed, the student's first name, the failed round's errors, whether the open round can be finished,
 /// whether long parts fold (Settings) and which the viewer has shown, and whether the strip is shown.
 struct MapInput {
     var data: PaperOverview
@@ -1042,6 +1100,10 @@ struct MapInput {
     var fold: Int = 0
     var unfold = false
     var strip: Int?
+    /// The round previewed under the pointer (`OverviewModel.preview`): the box and the lens show it; the page axis
+    /// keeps the strip's round (its parts' pages, Show and Fold, its numbers), so nothing under the map moves while the
+    /// pointer does.
+    var preview: Int?
     var selection: OverviewItem?
     var student = ""
     var buildErrors: String?
@@ -1050,6 +1112,8 @@ struct MapInput {
     var shownParts: Set<FoldKind> = []
     /// The page strip is shown over the map (not for a folder that is not there): the axis does not number the pages.
     var stripShown = true
+    /// The thumbnails' size of the round the strip shows (`StripGeometry.thumbSize`), for the lens.
+    var stripThumb = StripGeometry.letterThumb
 }
 
 extension MapScene {
@@ -1124,7 +1188,8 @@ extension MapScene {
         s.plan = plan
         s.folded = folded.map(\.n)
         let scope = Scope(input.selection, d)
-        let strip = d.round(input.strip ?? MapRules.defaultStrip(d) ?? 0)
+        let held = d.round(input.strip ?? MapRules.defaultStrip(d) ?? 0)
+        let strip = input.preview.flatMap(d.round) ?? held
         // each round's map of pages: its own folded parts' blocks; a row without sections takes the nearest round's
         let sectioned = d.rounds.filter { $0.hasSections && !$0.failed }
         for r in d.rounds {
@@ -1254,50 +1319,32 @@ extension MapScene {
 
         // the row the lens and the page axis follow: the strip's round when it is shown with sections, else the top row
         // with sections (the code audit: a strip round folded or without sections fell back to the plain page scale,
-        // which no row is drawn at since each row has its own)
+        // which no row is drawn at since each row has its own). The lens follows the round previewed; the page axis the
+        // strip's own (`held`), so its parts' pages, Show and Fold and its numbers stay put under a preview (§40.9)
         let shownNs = Set(shown.map(\.n))
-        let ar = strip.flatMap { r in r.hasSections && !r.failed && shownNs.contains(r.n) ? r : nil } ?? shown.first { $0.hasSections && !$0.failed }
-        func AX(_ pos: Double) -> CGFloat { ar.map { X($0.n, pos) } ?? g.x(pos) }
+        func axisRow(_ r: PaperOverview.Round?) -> PaperOverview.Round? {
+            r.flatMap { r in r.hasSections && !r.failed && shownNs.contains(r.n) ? r : nil } ?? shown.first { $0.hasSections && !$0.failed }
+        }
+        let ar = axisRow(strip), hr = axisRow(held)
+        func HX(_ pos: Double) -> CGFloat { hr.map { X($0.n, pos) } ?? g.x(pos) }
 
-        // the lens: a hairline from each section's start on the strip to its place on the map (fewer where they crowd),
-        // the strip's ends and each folded part's edges always; a faint wedge over a folded part
+        // the lens: from the strip's pages (the round shown, at its thumbnails' slots) to the map's row; drawn for the
+        // strip's scroll offset (`lens(offset:)`)
         if let sr = strip, let pages = sr.build?.pages, pages > 0, !sr.failed {
-            let slot = g.width / CGFloat(pages)
             let ranges = sr.hasSections ? MapFold.ranges(sr.spans ?? []).filter { plan.folded.contains($0.kind) } : []
-            var lines: [(pos: Double, must: Bool)] = [(0, true), (Double(pages), true)]
-            for f in ranges { lines += [(f.start, true), (f.end, true)] }
+            var lens = Lens(strip: StripGeometry(width: g.width, pages: pages, thumb: input.stripThumb), axis: ar?.n,
+                            ranges: ranges.map { ($0.start, $0.end) })
             if sr.hasSections {
-                for sp in sr.spans ?? [] where sp.start > 0.001 && !ranges.contains(where: { $0.contains(sp.start) || abs($0.start - sp.start) < 0.001 }) {
-                    lines.append((sp.start, false))
+                lens.starts = (sr.spans ?? []).map(\.start).filter { st in
+                    st > 0.001 && !ranges.contains(where: { $0.contains(st) || abs($0.start - st) < 0.001 })
                 }
-            }
-            lines.sort { $0.pos < $1.pos }
-            let musts = lines.filter(\.must)
-            var kept: [Double] = []
-            for l in lines {
-                if l.must {
-                    if !kept.contains(where: { abs($0 - l.pos) < 0.001 }) { kept.append(l.pos) }
-                    continue
-                }
-                let sx = CGFloat(l.pos) * slot, mx = AX(l.pos)
-                let clear = (kept + musts.map(\.pos)).allSatisfy { p in abs(CGFloat(p) * slot - sx) >= 24 && abs(AX(p) - mx) >= 8 }
-                if clear { kept.append(l.pos) }
-            }
-            for pos in kept.sorted() where pos <= Double(pages) + 0.001 {
-                let mx = AX(pos)
-                s.fans.append([CGPoint(x: min(g.width, CGFloat(pos) * slot), y: 0), CGPoint(x: mx, y: MapGeometry.lens),
-                               CGPoint(x: mx, y: MapGeometry.row0 - 12)])
-            }
-            for f in ranges {
-                s.wedges.append(wedge(CGFloat(f.start) * slot, CGFloat(f.end) * slot, AX(f.start), AX(f.end)))
             }
             if sr.hasSections, case .section(let key)? = scope.kind, let sp = sr.spans?.first(where: { $0.section == key }),
                maps[sr.n]?.block(at: (sp.start + sp.end) / 2) == nil {
-                s.lensSelected = wedge(CGFloat(sp.start) * slot, CGFloat(sp.end) * slot, AX(sp.start), AX(sp.end))
+                lens.followed = (sp.start, sp.end)
             }
-            if case .page(let n, let p)? = scope.kind, n == sr.n {
-                s.lensSelected = wedge(CGFloat(p) * slot, CGFloat(p + 1) * slot, AX(Double(p)), AX(Double(p + 1)))
-            }
+            if case .page(let n, let p)? = scope.kind, n == sr.n { lens.followed = (Double(p), Double(p + 1)) }
+            s.lensInput = lens
         }
 
         // the readout's captions; over them, a Sage one names what the Sage lines count
@@ -1685,18 +1732,19 @@ extension MapScene {
         for labels in gaps where !labels.isEmpty { s.labels += placer.placeGap(labels) }
 
         // the page axis: under each page its number, under a folded part its pages and Show; a shown part a bracket with
-        // its name, its pages and Fold (the strip's round, else the top row with sections, says where). While the strip
-        // shows the pages, they are not numbered again here (UI v4): only the parts' pages, Show and Fold.
+        // its name, its pages and Fold (the strip's own round, never one previewed, else the top row with sections, says
+        // where). While the strip shows the pages, they are not numbered again here (UI v4): only the parts' pages, Show
+        // and Fold.
         let yEnd = folded.isEmpty ? g.rowY(max(0, shown.count - 1)) + MapGeometry.cell + MapGeometry.rug : g.rowY(shown.count) + 22
         let ya = yEnd + 18
-        let numbered = !(input.stripShown && strip.map { !$0.failed && ($0.build?.pages ?? 0) > 0 } == true)
+        let numbered = !(input.stripShown && held.map { !$0.failed && ($0.build?.pages ?? 0) > 0 } == true)
         if numbered {
             s.axis.append(MapText(text: "page", x: MapGeometry.mapX - 10, baseline: ya, anchor: .end, font: .caption, ink: .secondary))
         }
         // a part that row lacks (a latest round without its appendix) is said under the top row that has it (the code
         // audit: the older rows' blocks had neither Show nor Fold)
         let partRanges = plan.foldable.compactMap { kind in
-            ((ar.map { [$0] } ?? []) + shown).lazy.compactMap { r in MapFold.range(kind, r).map { (f: $0, r: r) } }.first
+            ((hr.map { [$0] } ?? []) + shown).lazy.compactMap { r in MapFold.range(kind, r).map { (f: $0, r: r) } }.first
         }
         var reserved: [CGRect] = []
         var hasBracket = false
@@ -1731,17 +1779,17 @@ extension MapScene {
         }
         // every page's number while the narrowest page drawn (the row's scale makes some narrower) has 20 pt, else every
         // other one; never one within 3 pt of the last
-        let axisPages = Int(ar.flatMap { $0.build?.pages } ?? Int(maxPages))
+        let axisPages = Int(hr.flatMap { $0.build?.pages } ?? Int(maxPages))
         let drawnPages = (1...max(1, axisPages)).compactMap { p -> CGFloat? in
-            if let ar, s.pageMaps[ar.n]?.block(at: Double(p) - 0.5) != nil { return nil }
-            return AX(Double(p)) - AX(Double(p - 1))
+            if let hr, s.pageMaps[hr.n]?.block(at: Double(p) - 0.5) != nil { return nil }
+            return HX(Double(p)) - HX(Double(p - 1))
         }
         let every = min(g.pageWidth, drawnPages.min() ?? g.pageWidth) < 20 ? 2 : 1
         var lastNumber: CGRect?
         for p in 1...max(1, Int(maxPages)) where numbered && (p - 1) % every == 0 {
             let mid = Double(p) - 0.5
-            if p <= axisPages, let ar, s.pageMaps[ar.n]?.block(at: mid) != nil { continue }  // under its block: its pages
-            let t = MapText(text: "\(p)", x: p <= axisPages ? AX(mid) : g.x(mid), baseline: ya, anchor: .middle, font: .caption, ink: .secondary)
+            if p <= axisPages, let hr, s.pageMaps[hr.n]?.block(at: mid) != nil { continue }  // under its block: its pages
+            let t = MapText(text: "\(p)", x: p <= axisPages ? HX(mid) : g.x(mid), baseline: ya, anchor: .middle, font: .caption, ink: .secondary)
             guard t.rect.maxX <= g.mapRight + 12, !reserved.contains(where: { $0.intersects(t.rect) }) else { continue }
             if let l = lastNumber, t.rect.minX < l.maxX + 3 { continue }
             lastNumber = t.rect
@@ -1773,6 +1821,62 @@ extension MapScene {
 
     /// A path dot's place in a row, for the dots moved to their cell's lower edge.
     static func dotKey(_ n: Int, _ x: CGFloat) -> String { "\(n)@\(Int((x * 10).rounded()))" }
+
+    /// The lens's makings: the strip's geometry for the round it shows, the row whose places it joins (nil: the plain
+    /// page scale), the folded parts' ranges, the sections' starts besides them, the section or page followed (all in
+    /// the round's page units).
+    struct Lens {
+        var strip: StripGeometry
+        var axis: Int?
+        var ranges: [(Double, Double)] = []
+        var starts: [Double] = []
+        var followed: (Double, Double)?
+    }
+
+    /// The lens as drawn with the strip scrolled by `offset` (UX.md §40.9): a hairline from each section's start on the
+    /// strip to its place on the map (fewer where they crowd), the ends of the strip's part in view and each folded
+    /// part's edges always; a faint wedge over a folded part; the wedge of the section or page followed. Its top edge
+    /// at the pages' places in the strip's visible frame, clipped to it: nothing from a page scrolled out of view.
+    func lens(offset: CGFloat) -> (fans: [[CGPoint]], wedges: [[CGPoint]], selected: [CGPoint]?) {
+        guard let l = lensInput else { return ([], [], nil) }
+        let g = l.strip, o = min(max(0, offset), g.maxOffset), seen = g.visible(offset: o)
+        let lo = seen.lowerBound, hi = seen.upperBound
+        func SX(_ pos: Double) -> CGFloat { min(g.width, max(0, g.x(pos) - o)) }
+        func AX(_ pos: Double) -> CGFloat { l.axis.map { x($0, pos) } ?? geometry.x(pos) }
+        func inView(_ pos: Double) -> Bool { pos >= lo - 0.001 && pos <= hi + 0.001 }
+        var lines: [(pos: Double, must: Bool)] = [(lo, true), (hi, true)]
+        for f in l.ranges { lines += [(f.0, true), (f.1, true)].filter { inView($0.0) } }
+        lines += l.starts.filter(inView).map { ($0, false) }
+        lines.sort { $0.pos < $1.pos }
+        let musts = lines.filter(\.must)
+        var kept: [Double] = []
+        for ln in lines {
+            if ln.must {
+                if !kept.contains(where: { abs($0 - ln.pos) < 0.001 }) { kept.append(ln.pos) }
+                continue
+            }
+            let sx = SX(ln.pos), mx = AX(ln.pos)
+            let clear = (kept + musts.map(\.pos)).allSatisfy { p in abs(SX(p) - sx) >= 24 && abs(AX(p) - mx) >= 8 }
+            if clear { kept.append(ln.pos) }
+        }
+        var fans: [[CGPoint]] = []
+        for pos in kept.sorted() {
+            let mx = AX(pos)
+            fans.append([CGPoint(x: SX(pos), y: 0), CGPoint(x: mx, y: MapGeometry.lens), CGPoint(x: mx, y: MapGeometry.row0 - 12)])
+        }
+        /// A range's wedge over its part in view.
+        func clipped(_ a: Double, _ b: Double) -> [CGPoint]? {
+            let a = max(a, lo), b = min(b, hi)
+            guard b > a + 0.001 else { return nil }
+            return Self.wedge(SX(a), SX(b), AX(a), AX(b))
+        }
+        return (fans, l.ranges.compactMap { clipped($0.0, $0.1) }, l.followed.flatMap { clipped($0.0, $0.1) })
+    }
+
+    /// The lens with the strip at its start.
+    var fans: [[CGPoint]] { lens(offset: 0).fans }
+    var wedges: [[CGPoint]] { lens(offset: 0).wedges }
+    var lensSelected: [CGPoint]? { lens(offset: 0).selected }
 
     private static func wedge(_ a: CGFloat, _ b: CGFloat, _ xa: CGFloat, _ xb: CGFloat) -> [CGPoint] {
         [CGPoint(x: a, y: 0), CGPoint(x: b, y: 0), CGPoint(x: xb, y: MapGeometry.lens), CGPoint(x: xb, y: MapGeometry.row0 - 12),

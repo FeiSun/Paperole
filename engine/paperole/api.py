@@ -30,6 +30,25 @@ def _paper(params):
     return Path(_param(params, "paper"))
 
 
+def _shell_escape(params):
+    """The shell_escape given (true or false), or None when it is not: whether the paper's rounds are built with shell
+    escape (project.compile)."""
+    if "shell_escape" not in params:
+        return None
+    if not isinstance(params["shell_escape"], bool):
+        raise EngineError("shell_escape is true or false.")
+    return params["shell_escape"]
+
+
+def _choose_shell_escape(p, on):
+    """Remember the advisor's choice in the ledger's paper: shell_escape true, or no key (off, as in every paper
+    before it)."""
+    if on:
+        p["shell_escape"] = True
+    else:
+        p.pop("shell_escape", None)
+
+
 def _state(paper, **extra):
     return dict(extra, state=state.build(paper))
 
@@ -125,6 +144,7 @@ def ingest(params, progress):
     main, engine = params.get("main"), params.get("engine")
     if engine is not None and engine not in project.ENGINES:
         raise EngineError("Unknown engine {!r}; use pdflatex, xelatex or lualatex.".format(engine))
+    escape = _shell_escape(params)
     with _edit(paper, keep="ingest") as lg:
         last = ledger.latest_round(lg)
         last_seq = 0
@@ -148,6 +168,8 @@ def ingest(params, progress):
             n = last["n"] + 1 if last else 1
             if last:
                 last.pop("marked_read", None)  # only Resume uses it, and round n makes the round before it final
+        if escape is not None:  # the advisor's choice, kept for the next ingests (saved with the new round only)
+            _choose_shell_escape(lg["paper"], escape)
         # The open round being replaced is kept aside, named for its record, until the ledger names the new one, so
         # a failure, or a kill before the ledger is saved, leaves the folder that the unchanged ledger describes
         # (_recover). A folder the ledger does not name (left by a crashed ingest, or by a ledger put back from
@@ -169,7 +191,8 @@ def ingest(params, progress):
 
 
 def _new_round(paper, lg, n, source, main, engine, last_seq, progress):
-    """Snapshot, detect (round 1 or when asked), compile and, from round 2, carry the open comments."""
+    """Snapshot, detect (round 1 or when asked), compile (with shell escape when the paper has it) and, from round 2,
+    carry the open comments."""
     rdir = paper / "r{}".format(n)
     src = rdir / "src"
     progress("Copying the source…")
@@ -185,7 +208,8 @@ def _new_round(paper, lg, n, source, main, engine, last_seq, progress):
         p["engine"] = engine
     if p.get("finished"):  # a new round from the student: no longer finished (the mark would show again once closed)
         p["finished"] = None
-    build = project.compile(src, rdir / "build", p["main"], p["engine"], progress)
+    shell_escape = p.get("shell_escape") is True  # the advisor's choice for this paper (ingest, edit_paper)
+    build = project.compile(src, rdir / "build", p["main"], p["engine"], progress, shell_escape)
     build["warnings"] = skipped + build["warnings"]  # kept with the round: why a skipped refs.bib leaves [?]
     build.update(comments.layout(build["pdf"]) if build["pdf"] else {"text_x": [], "columns": []})
     for key in ("pdf", "log"):
@@ -867,7 +891,8 @@ def _facts(params):
 def edit_paper(params, progress):
     """Set a paper's title or student (or both): to correct a name, or to put the papers of one student written in
     different ways under one name (the overview groups papers by student). White space is collapsed. Also its three
-    facts (_facts: finished, buckets, key_page), each when the key is given, null clearing it."""
+    facts (_facts: finished, buckets, key_page), each when the key is given, null clearing it; and shell_escape, the
+    advisor's choice without a build (from the next ingest: an open round with comments is not built again)."""
     paper = _paper(params)
     fields = {}
     for key, what in (("title", "A paper's title"), ("student", "The student's name")):
@@ -878,10 +903,13 @@ def edit_paper(params, progress):
             raise EngineError("{} cannot be empty.".format(what))
         fields[key] = " ".join(value.split())
     fields.update(_facts(params))
-    if not fields:
+    escape = _shell_escape(params)
+    if not fields and escape is None:
         raise EngineError("Give the paper's title or the student's name.")
     with _edit(paper) as lg:
         lg["paper"].update(fields)
+        if escape is not None:
+            _choose_shell_escape(lg["paper"], escape)
     return _state(paper)
 
 
@@ -926,11 +954,11 @@ def history_(params, progress):
 def put_back_ledger(params, progress):
     """Put back a saved version of the ledger (`version`: a name from history) as a new version: its rev past the
     replaced one's, the replaced one on its trail and copied into .history as it was (kept for good, even when it
-    cannot be read), so an older export never looks newer; the version's analysis.json of its open round comes back
-    with it. Refused when the version lacks a round that is on disk, or shows open a round that is closed (in the
-    ledger, or finished on disk), or is from before a Resume whose kept files (rN/earlier/) it cannot match; a version
-    from just before a Resume of a round still open gets that round's files back from rN/earlier/ (_unresumed). Works
-    when the ledger cannot be read."""
+    cannot be read), so an older export never looks newer; the paper's id and shell escape as they are now; the
+    version's analysis.json of its open round comes back with it. Refused when the version lacks a round that is on
+    disk, or shows open a round that is closed (in the ledger, or finished on disk), or is from before a Resume whose
+    kept files (rN/earlier/) it cannot match; a version from just before a Resume of a round still open gets that
+    round's files back from rN/earlier/ (_unresumed). Works when the ledger cannot be read."""
     paper = _paper(params)
     name = _param(params, "version")
     with ledger.locked(paper):
@@ -996,6 +1024,9 @@ def put_back_ledger(params, progress):
                           + [v["rev"] for v in history.versions(paper)])  # past any version kept, readable or not
         copy["paper"]["id"] = ((current or {}).get("paper") or {}).get("id") or copy["paper"].get("id") \
             or ledger.derived_id(paper, copy)
+        # shell escape stays the advisor's choice as it is now, never a version's: one kept in .history from before an
+        # import took it off (archive._distrusted) would turn it on without the advisor; off when the ledger is unread
+        _choose_shell_escape(copy["paper"], ((current or {}).get("paper") or {}).get("shell_escape") is True)
         rnd = ledger.open_round(copy)
         if rnd is not None and kept_analysis and kept_analysis[0] == rnd["n"]:
             analysis.stage(paper, rnd, kept_analysis[1])

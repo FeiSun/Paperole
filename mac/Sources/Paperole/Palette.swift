@@ -20,6 +20,12 @@ enum Palette {
     /// The matches of a find in the paper (Find.swift): a neutral grey of almost no hue, no mark's colour, on the
     /// page (white in either mode); the current match has the accent's outline too.
     static let find = NSColor(srgbRed: 0x8C / 255, green: 0x91 / 255, blue: 0x8D / 255, alpha: 0.4)
+    /// A match's mark in the column beside the scroller (design/review-page/BRIEF.md §2): the find's grey, solid, one
+    /// step darker, 3:1 or more on the page and both backdrops.
+    static let findMark = NSColor(hex: 0x7A807C)
+    /// The changed words of a Changes row and of the column's window (BRIEF §2): `changedWords` is 3.18:1 on the float
+    /// in Light Mode, so the rows take a darker green there.
+    static let rowChangedWords = NSColor(light: 0x166534, dark: 0x4ADE80)
 
     // UI v2 (design/ui-v2/PROPOSAL.md §3): one colour means one thing.
     /// Only "your move": the To check chip, position uncertain, an unsent draft. UI v4 (design/ui-v4/BRIEF.md §8.4):

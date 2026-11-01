@@ -100,7 +100,7 @@ struct TopicsTable: Equatable {
 }
 
 /// A count with its short bar (TAGS.md §6.2): one scale a table, at most 30 pt, 5 pt high and round; 1 a 6 pt capsule;
-/// none "–". The bars are the small maps' warm stone: they count comments, as the map's steps do.
+/// none "–". The bars are the ramp's `ink`: they count comments, as the map's steps do.
 struct TagCount: View {
     let value: Int
     let most: Int

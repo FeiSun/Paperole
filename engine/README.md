@@ -12,6 +12,11 @@ Setup (Python 3.9+, TeX Live in /Library/TeX/texbin), from this folder:
 
     python3 -m venv .venv && .venv/bin/pip install -e . pytest
 
+minted, in a paper built with shell escape (CONTRACT.md amendment "Shell escape per paper"), runs Pygments'
+`pygmentize`, which the engine finds beside its Python (the venv's `bin`). Pygments is one of the engine's own
+dependencies (pyproject.toml, since 2026-11-01); without it minted says "You must have `pygmentize' installed" with
+shell escape on.
+
 Paperole Dev (`../mac/build_app.sh`) runs this folder's package (`paperole`, on `PYTHONPATH`, with the venv's
 Python; nothing needs installing), so an edit here reaches it the next time it starts the engine. (The package was
 `papercollab` until 2026-10-27; a venv made before keeps a stale `papercollab` entry, which is harmless.)

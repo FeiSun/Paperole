@@ -220,9 +220,10 @@ struct OverviewScreen: View {
         let fold = MapRules.folded(rounds: d.rounds.count, room: viewport - mapTop - 52)
         let t0 = ProcessInfo.processInfo.systemUptime
         let scene = MapScene.build(MapInput(data: d, width: width, fold: fold, unfold: overview.unfold, strip: model.stripRound,
-                                            selection: overview.selection, student: firstName, buildErrors: buildErrors,
+                                            preview: overview.preview, selection: overview.selection, student: firstName, buildErrors: buildErrors,
                                             readyToFinish: d.summary?.step == .allChecked, foldParts: model.foldParts,
-                                            shownParts: overview.shownParts, stripShown: !folderGone))
+                                            shownParts: overview.shownParts, stripShown: !folderGone,
+                                            stripThumb: model.thumbnails.thumbSize(pdf: model.shownStripRound.flatMap { d.round($0) }?.pdf)))
         MapTiming.built(since: t0)
         return scene
     }

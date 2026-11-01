@@ -2,8 +2,9 @@ import AppKit
 import SwiftUI
 
 /// The map's colours for an appearance (VISUAL v3 §3.2–3.3, with the critique's values; UI v4's ramp and roles,
-/// design/ui-v4/README.md §6): one data-ink ramp, about 8–10 L* a step, text on its darkest step at 4.5:1 or more;
-/// the roles the app's palette owns (the label colours, vermilion, red, Sage, the grounds) read from `Palette`.
+/// design/ui-v4/README.md §6): one data-ink ramp, Sage green (mac/UX.md §40.10), about 8–10 L* a step, text on its
+/// darkest step at 4.5:1 or more; the roles the app's palette owns (the label colours, vermilion, red, Sage, the
+/// grounds) read from `Palette`.
 struct MapInk {
     var dark: Bool
 
@@ -11,15 +12,17 @@ struct MapInk {
     func rgba(_ r: MapRole) -> (hex: Int, alpha: Double) {
         let ink = dark ? 0xFFFFFF : 0x1F2621
         switch r {
-        case .track: return (dark ? 0x2D2E2C : 0xECEBE7, 1)
-        case .s1: return (dark ? 0x403F3B : 0xD5D3CD, 1)
-        case .s2: return (dark ? 0x55524C : 0xBEBBB3, 1)
-        case .s3: return (dark ? 0x6E6960 : 0xA29E95, 1)
-        case .ink: return (dark ? 0xA39E95 : 0x7F7A71, 1)
-        case .otrack: return (dark ? 0x272826 : 0xF0EFEC, 1)
-        case .os1: return (dark ? 0x333330 : 0xE1DFDB, 1)
-        case .os2: return (dark ? 0x413F3B : 0xD2D0CA, 1)
-        case .os3: return (dark ? 0x514E48 : 0xBFBDB6, 1)
+        // the ramp, Sage green: the advisor's choice of 2026-10-31 from the mockup's renders (the warm grey's heat cells
+        // read as too dark and dull); the mockup's `:root` values
+        case .track: return (dark ? 0x2C2F2C : 0xECEDE9, 1)
+        case .s1: return (dark ? 0x32453A : 0xD4E0D5, 1)
+        case .s2: return (dark ? 0x3C5A44 : 0xB3CBB7, 1)
+        case .s3: return (dark ? 0x476F51 : 0x8FB096, 1)
+        case .ink: return (dark ? 0x8FB898 : 0x5E7F65, 1)
+        case .otrack: return (dark ? 0x282B28 : 0xF0F1EE, 1)
+        case .os1: return (dark ? 0x2E3B31 : 0xE1EAE2, 1)
+        case .os2: return (dark ? 0x344A3B : 0xCCDBCE, 1)
+        case .os3: return (dark ? 0x3C5A44 : 0xB3CAB7, 1)
         case .band: return dark ? (0xFFFFFF, 0.06) : (0x463E32, 0.075)
         case .bandSelected: return dark ? (0x7CA080, 0.26) : (0x566B58, 0.22)
         case .fan: return (ink, dark ? 0.065 : 0.05)  // UI v4: lighter in Light Mode, quieter than the lighter track
@@ -28,7 +31,7 @@ struct MapInk {
         case .stu: return (dark ? 0x7A756C : 0x928D84, 1)
         case .today: return (dark ? 0x636964 : 0x858D86, 1)
         case .zeroline: return dark ? (0xFFFFFF, 0.08) : (0xFFFFFF, 0)
-        case .thumb: return (dark ? 0xBDBDB9 : 0xFFFFFF, 1)
+        case .thumb: return (0xFFFFFF, 1)  // white paper in either appearance (the advisor's review of 2026-10-31)
         case .c1: return (dark ? 0x7E9A82 : 0x566B58, 1)
         case .c2: return (dark ? 0x5D7A61 : 0x879988, 1)
         case .c3: return (dark ? 0x4A5A4C : 0xC3CEC4, 1)
@@ -93,6 +96,31 @@ extension MapFont {
     }
 }
 
+/// The map's lens (`MapScene.lens(offset:)`) for the strip's scroll offset, under the map's Canvas: hairlines and the
+/// wedges of folded parts; Sage only for what is followed. Apart from `MapCanvas`, so a scroll of the strip redraws
+/// the lens alone.
+struct LensCanvas: View {
+    let scene: MapScene
+    @ObservedObject var scroll: StripScroll
+    @Environment(\.colorScheme) private var scheme
+
+    var body: some View {
+        let lens = scene.lens(offset: scroll.offset)
+        Canvas { ctx, _ in
+            let ink = MapInk(dark: scheme == .dark)
+            for w in lens.wedges { ctx.fill(MapCanvas.polygon(w), with: .color(ink.color(.wedge))) }
+            for f in lens.fans {
+                var p = Path(); p.addLines(f)
+                ctx.stroke(p, with: .color(ink.color(.fan)), lineWidth: 0.75)
+            }
+            if let sel = lens.selected { ctx.fill(MapCanvas.polygon(sel), with: .color(ink.color(.accentTint))) }
+        }
+        .frame(width: scene.geometry.width, height: MapGeometry.row0)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
 /// How long the paper map took, for the debug items `ovclick` and `ovkey` (UX.md §21): the last scene's build and the
 /// last Canvas draw, in ms, and when that draw ended (`ProcessInfo.systemUptime`).
 enum MapTiming {
@@ -108,14 +136,18 @@ enum MapTiming {
     }
 }
 
-/// How the selected round's box moves to another round (BRIEF §8.3, plan §1.7): a 0.28 s ease-out slide, or a jump
+/// How the selected round's box moves to another round (BRIEF §8.3, plan §1.7): a 0.18 s ease-out slide, or a jump
 /// with Reduce Motion on. `reduceMotion`: the debug item's override (`reducemotion on|off`) for the rest of the process, or
 /// until `reducemotion system`; nil, the system's. It takes effect at the box's next move.
 enum MapMotion {
-    nonisolated(unsafe) static var reduceMotion: Bool?
+    /// `Motion.override`, the one source (design/review-page/BRIEF.md E11).
+    static var reduceMotion: Bool? {
+        get { Motion.override }
+        set { Motion.override = newValue }
+    }
 
     static func animation(reduceMotion: Bool) -> Animation? {
-        reduceMotion ? nil : .timingCurve(0.3, 0.7, 0.2, 1, duration: 0.28)
+        reduceMotion ? nil : .timingCurve(0.3, 0.7, 0.2, 1, duration: 0.18)
     }
 }
 
@@ -159,7 +191,7 @@ struct MapCanvas: View, Equatable {
         c.draw(r, in: rect)
     }
 
-    private static func polygon(_ pts: [CGPoint]) -> Path {
+    static func polygon(_ pts: [CGPoint]) -> Path {
         var p = Path()
         p.addLines(pts)
         p.closeSubpath()
@@ -207,13 +239,7 @@ struct MapCanvas: View, Equatable {
     // swiftlint:disable:next function_body_length cyclomatic_complexity
     static func draw(_ s: MapScene, in ctx: inout GraphicsContext, ink: MapInk) {
         let g = s.geometry, cellH = MapGeometry.cell
-        // the lens: hairlines and the wedges of folded parts; Sage only for what is followed
-        for w in s.wedges { ctx.fill(polygon(w), with: .color(ink.color(.wedge))) }
-        for f in s.fans {
-            var p = Path(); p.addLines(f)
-            ctx.stroke(p, with: .color(ink.color(.fan)), lineWidth: 0.75)
-        }
-        if let sel = s.lensSelected { ctx.fill(polygon(sel), with: .color(ink.color(.accentTint))) }
+        // the lens is `LensCanvas`'s, under this one
         for t in s.captions { text(t, in: &ctx, ink: ink) }
         if let t = s.sageCaption {
             ctx.fill(Path(roundedRect: CGRect(x: g.readoutX, y: t.baseline - 6, width: 6, height: 6), cornerRadius: 1.5),
@@ -306,8 +332,8 @@ struct MapCanvas: View, Equatable {
                     cc.stroke(Path(roundedRect: c.rect.insetBy(dx: 0.75, dy: 0.75), cornerRadius: 4.25), with: .color(ink.color(.attention)),
                               lineWidth: 1.5)
                 }
-                if c.selected {
-                    rc.stroke(Path(roundedRect: c.rect.insetBy(dx: -2.5, dy: -2.5), cornerRadius: 7), with: .color(ink.color(.accent)),
+                if c.selected {  // partly over its neighbours, 2 pt away: in `path`, which Dark Mode's green steps keep (§40.10)
+                    rc.stroke(Path(roundedRect: c.rect.insetBy(dx: -2.5, dy: -2.5), cornerRadius: 7), with: .color(ink.color(.path)),
                               lineWidth: 2)
                 }
             }
@@ -343,7 +369,7 @@ struct MapCanvas: View, Equatable {
         if let pb = s.pageBand {
             let p = Path(roundedRect: pb, cornerRadius: 5)
             ctx.fill(p, with: .color(ink.color(.accentTint).opacity(0.5)))
-            ctx.stroke(p, with: .color(ink.color(.accent)), lineWidth: 1.5)
+            ctx.stroke(p, with: .color(ink.color(.path)), lineWidth: 1.5)
         }
         // the paths of what is followed
         for path in s.paths {
@@ -608,7 +634,7 @@ enum MapHelp {
                                : "Sections unavailable for this round: its paragraphs could not be read.")
                 }
             }
-            out.append("Click to show this round’s pages and comments")
+            out.append("Click to keep this round’s pages and show its comments")
             return out
         case .unplaced(let n):
             let ids = d.comments.filter { $0.step(in: n)?.state == "unplaced" }.map(\.id)
@@ -699,12 +725,12 @@ struct PaperMapView: View {
     let data: PaperOverview
     let student: String
     @State private var last: (target: MapTarget?, time: TimeInterval)?
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         ZStack(alignment: .topLeading) {
             selectedBox
+            LensCanvas(scene: scene, scroll: overview.stripScroll)
             // a new Canvas for a new scene: in one background run of six the old one kept its last frame though it
             // had drawn the new scene (visual review 2026-10-19)
             MapCanvas(scene: scene).equatable().id(scene.stamp)
@@ -723,8 +749,10 @@ struct PaperMapView: View {
         .onTapGesture(count: 1, coordinateSpace: .local) { p in click(at: p) }
         .onContinuousHover(coordinateSpace: .local) { phase in
             switch phase {
-            case .active(let p): Self.hover(at: p, scene: scene, data: data, student: student, hover: hover)
-            case .ended: hover.leave()
+            case .active(let p): Self.hover(at: p, scene: scene, data: data, student: student, hover: hover, overview: overview)
+            case .ended:
+                hover.leave()
+                overview.pointOffMap()
             }
         }
         .onAppear {
@@ -739,9 +767,10 @@ struct PaperMapView: View {
         }
     }
 
-    /// The selected round's box behind its label (the strip's round; BRIEF §8.3): one shape under the Canvas, which a
-    /// new scene replaces, so it slides from round to round (`MapMotion`); the accent's tint and a Sage outline while
-    /// that round is followed; none while its row is folded away: it fades out where it was, and back in at its round.
+    /// The selected round's box behind its label (the strip's round, or the one previewed under the pointer; BRIEF
+    /// §8.3): one shape under the Canvas, which a new scene replaces, so it slides from round to round (`MapMotion`);
+    /// the accent's tint and a Sage outline while that round is followed (a preview: the fill alone); none while its
+    /// row is folded away: it fades out where it was, and back in at its round.
     private var selectedBox: some View {
         let ink = MapInk(dark: scheme == .dark)
         return ZStack(alignment: .topLeading) {
@@ -754,15 +783,21 @@ struct PaperMapView: View {
                     .transition(.opacity)
             }
         }
-        .animation(MapMotion.animation(reduceMotion: MapMotion.reduceMotion ?? reduceMotion), value: scene.box?.minY)
+        .animation(MapMotion.animation(reduceMotion: Motion.reduced), value: scene.box?.minY)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
 
-    /// The pointer at `p` on the map: what it is over and that thing's help tag (`MapHelp`); no comment to preview (a
-    /// path dot is only drawn for a comment whose path is drawn already). `force`: the debug script's `ovhover`, at
-    /// once, whether the app is active or not.
-    static func hover(at p: CGPoint, scene: MapScene, data: PaperOverview, student: String, hover: OverviewHover, force: Bool = false) {
+    /// The pointer at `p` on the map: what it is over and that thing's help tag (`MapHelp`), the round of the row it is
+    /// over to preview, or the lens on the way to the strip (`OverviewModel.point(round:lens:at:)`); no comment to
+    /// preview (a path dot is only drawn for a comment whose path is drawn already). `force`: the debug script's
+    /// `ovhover`, at once, whether the app is active or not.
+    static func hover(at p: CGPoint, scene: MapScene, data: PaperOverview, student: String, hover: OverviewHover,
+                      overview: OverviewModel? = nil, force: Bool = false) {
+        if force || NSApp.isActive {
+            let n = scene.round(atY: p.y)
+            overview?.point(round: n, lens: n == nil && scene.overLens(p.y), at: p)
+        }
         let t = scene.target(at: p)
         let at = CGPoint(x: p.x + hover.mapOrigin.x, y: p.y + hover.mapOrigin.y)
         hover.point(at: at, key: t.map { "map:" + String(describing: $0) }, target: t, comment: nil, force: force) {

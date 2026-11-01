@@ -211,9 +211,9 @@ struct FoldSample: View {
             let w = CGFloat(pages) * k
             let r = CGRect(x: x + 1, y: 0, width: max(1, w - 2), height: size.height)
             ctx.fill(Path(roundedRect: r, cornerRadius: 3), with: .color(ink.color(.mini(level < 0 ? 1 : level))))
-            if level < 0 {
-                MapCanvas.chevron(at: CGPoint(x: r.minX + 7, y: r.midY), down: false, in: &ctx, color: ink.color(.secondary))
-                ctx.draw(Text("A–E").font(.system(size: 11, weight: .medium)).foregroundColor(ink.color(.secondary)),
+            if level < 0 {  // in label2, as a name on s1 (7.10:1, 6.31:1 dark; the secondary colour was under 4.5:1)
+                MapCanvas.chevron(at: CGPoint(x: r.minX + 7, y: r.midY), down: false, in: &ctx, color: ink.color(.label2))
+                ctx.draw(Text("A–E").font(.system(size: 11, weight: .medium)).foregroundColor(ink.color(.label2)),
                          at: CGPoint(x: r.minX + 14, y: r.midY), anchor: .leading)
             }
             x += w

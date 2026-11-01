@@ -36,10 +36,12 @@ enum DataFiles {
         }
     }
 
-    /// A folder or file name from a paper's title: no "/" or ":", no dot first, white space collapsed, at most 80
-    /// characters; "Paper" for a title with none of those.
+    /// A folder or file name from a paper's title: no "/" or ":", no $, `, " or \ (latexmk's command lines would read
+    /// them in a review folder's path, so the engine refuses one: engine/CONTRACT.md amendment "Shell escape per
+    /// paper"), no dot first, white space collapsed, at most 80 characters; "Paper" for a title with none of those.
     nonisolated static func name(_ title: String) -> String {
         let s = title.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ":", with: "-")
+            .filter { !"$`\"\\".contains($0) }
             .split(whereSeparator: \.isWhitespace).joined(separator: " ")
         var out = String(s.drop { $0 == "." || $0 == "-" || $0 == " " }.prefix(80)).trimmingCharacters(in: .whitespaces)
         if out.isEmpty { out = "Paper" }
@@ -755,6 +757,7 @@ final class DataModel: ObservableObject {
                 case .add:
                     if p.inPlace {
                         if p.status == "different_paper" { _ = try await engine("fork", ["paper": p.folder]) }
+                        try await distrust(p.folder)
                     } else {
                         ref.path = try await unpack(plan, p, into: try destination(plan), fork: p.status == "different_paper")
                     }
@@ -776,6 +779,8 @@ final class DataModel: ObservableObject {
                             ref.path = try await unpack(plan, p, into: try destination(plan), fork: false)
                             back = false
                         }
+                    } else {
+                        try await distrust(p.folder)
                     }
                     app.list([ref], replacing: p.listed)
                     // a folder moved in Finder and imported where it is: listed at its new place, not put back
@@ -791,6 +796,7 @@ final class DataModel: ObservableObject {
                     if p.inPlace {  // listed where it is, with an id of its own (listed even if its title stays)
                         _ = try await engine("fork", ["paper": p.folder])
                         if (try? await engine("edit_paper", ["paper": p.folder, "title": ref.title])) == nil { ref.title = p.title ?? "" }
+                        try await distrust(p.folder)
                     } else {
                         ref.path = try await unpack(plan, p, into: try destination(plan), fork: false, copy: true)
                     }
@@ -894,6 +900,16 @@ final class DataModel: ObservableObject {
 
     private struct UnpackReply: Decodable {
         var path: String
+    }
+
+    /// Trust does not travel (UX.md §41): a review folder listed where it is, new to the list, comes in with shell
+    /// escape off, as a paper unpacked from a file does (the engine's `archive._distrusted`); its ledger may have been
+    /// written on another Mac. Thrown when it cannot be turned off, so the folder is not listed. A folder whose state
+    /// cannot be read is listed as before (nothing builds from a ledger that does not read; Put Back leaves it off).
+    private func distrust(_ folder: String) async throws {
+        guard let data = try? await engine("state", ["paper": folder]),
+              (try? makeDecoder().decode(Reply.self, from: data))?.state.paper.shellEscape == true else { return }
+        _ = try await engine("edit_paper", ["paper": folder, "shell_escape": false])
     }
 
     private struct SwapReply: Decodable {

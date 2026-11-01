@@ -153,18 +153,4 @@ final class ReaderNextTests: XCTestCase {
         XCTAssertNil(ScrollerMarks.fraction(page: 3, top: 0, heights: h))
         XCTAssertNil(ScrollerMarks.fraction(page: 0, top: 0, heights: []))
     }
-
-    func testCloseTicksOfAKindMerge() {
-        func m(_ k: ScrollerMark.Kind, _ f: Double, _ id: String, page: Int) -> ScrollerMark {
-            ScrollerMark(kind: k, fraction: f, target: .comment(id), page: page, label: id + " · to check")
-        }
-        let items = [m(.toCheck, 0.5, "C2", page: 4), m(.toCheck, 0.1, "C1", page: 0), m(.toCheck, 0.505, "C3", page: 5),
-                     m(.edit, 0.5, "c01", page: 4), m(.toCheck, 0.52, "C4", page: 5)]
-        let t = ScrollerMarks.ticks(items, height: 200)
-        XCTAssertEqual(t.map(\.kind), [.edit, .toCheck, .toCheck, .toCheck], "edits under the comments")
-        XCTAssertEqual(t.map { $0.y.rounded() }, [100, 20, 100, 104])
-        XCTAssertEqual(t[1].help, "C1 · to check · p.1")
-        XCTAssertEqual(t[2].help, "2 comments to check · p.5–6", "C2 and C3 merge; C4 is 4 pt from C2")
-        XCTAssertEqual(t[2].target, .comment("C2"), "the run goes to its first")
-    }
 }

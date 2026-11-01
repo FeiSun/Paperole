@@ -4,7 +4,8 @@ import SwiftUI
 /// The page strip of one round (OVERVIEW-v2 §3.3; UI v4, UX.md §40.4): its pages as thumbnails at their slots with the
 /// comments' marks of the round (neutral, the followed comment in its colour) and their numbers (with a ring and the
 /// count where a page has something to check), and under it the section ruler. A click on a page follows it, a
-/// double click opens Review there; a click on a section name follows the section.
+/// double click opens Review there; a click on a section name follows the section. It shows the round previewed under
+/// the pointer while there is one (`AppModel.shownStripRound`), at one height for every round of the paper.
 struct PageStripView: View {
     let model: AppModel
     @ObservedObject var overview: OverviewModel
@@ -17,34 +18,96 @@ struct PageStripView: View {
 
     var body: some View {
         let d = overview.data
-        let n = model.stripRound
+        let n = model.shownStripRound
         let r = n.flatMap { d?.round($0) }
         let pages = r?.build?.pages ?? (n == model.round?.n ? model.round?.build.pages : nil) ?? 0
         let toCheck = Self.pagesToCheck(r, d)
+        let row = Self.rowHeight(d, thumb: { thumbs.thumbSize(pdf: $0) })
         VStack(alignment: .leading, spacing: 0) {
-            // the strip's round, named only when it is not the latest; its line always there, so nothing moves when a
-            // click shows another round's pages (UI v4)
-            Text(Self.roundLabel(n, latest: d?.latest?.n) ?? " ")
+            // the strip's round, the latest's too, on a line of its own; every row under it as high in every round, so
+            // nothing moves when a click or the pointer shows another round's pages (the advisor's review of 2026-10-31)
+            Text(Self.roundLabel(n) ?? " ")
                 .font(.system(size: 12, weight: .semibold)).foregroundStyle(Ink.secondary)
                 .frame(height: 16, alignment: .topLeading)
                 .padding(.bottom, 6)
             if let n, let r, pages > 0, !r.failed {
-                strip(n, r, pages: pages, toCheck: toCheck)
-                SectionRuler(model: model, overview: overview, hover: hover, round: r, pages: pages, width: width, names: names)
-                    .padding(.top, 1)
+                let geo = StripGeometry(width: width, pages: pages, thumb: thumbs.thumbSize(pdf: r.pdf), row: row)
+                // the strip and its ruler scroll sideways together when the round's pages are wider than the overview
+                ScrollView(.horizontal) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        strip(n, r, geo: geo, toCheck: toCheck)
+                        SectionRuler(model: model, overview: overview, hover: hover, round: r, geo: geo, names: names)
+                            .padding(.top, 1)
+                    }
+                    .background(StripScrollProbe(scroll: overview.stripScroll))
+                }
+                .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+                .frame(width: width, height: row + 20 + 21, alignment: .topLeading)
+                .background(GeometryReader { g in
+                    let o = g.frame(in: .named(OverviewLayout.viewport)).origin
+                    Color.clear
+                        .onAppear { origins(o, row: row) }
+                        .onChange(of: o) { _, v in origins(v, row: row) }
+                })
+                .onAppear { overview.stripScroll.shown(round: n, geo: geo) }
+                .onChange(of: StripShown(round: n, geo: geo)) { _, v in overview.stripScroll.shown(round: v.round, geo: v.geo) }
             } else {
                 Text(Self.noPages(r, loading: overview.status == .loading))
                     .font(.system(size: 12)).foregroundStyle(Ink.secondary)
-                    .frame(height: StripGeometry.height + 20 + 21, alignment: .center)
+                    .frame(height: row + 20 + 21, alignment: .center)
             }
         }
         .frame(width: width, alignment: .leading)
+        // the pointer here keeps the round shown, so a round previewed from the map can be clicked (§40.9); nothing
+        // while the app is not active, as on the map
+        .contentShape(Rectangle())
+        .onContinuousHover { phase in
+            if case .active = phase { if NSApp.isActive { overview.point(strip: true) } } else { overview.point(strip: false) }
+        }
+        .onAppear { prefetch() }
+        .onChange(of: d?.rounds.map(\.pdf)) { _, _ in prefetch() }
     }
 
-    /// "Round 1" beside the strip while it shows a round other than the latest; nil for the latest.
-    static func roundLabel(_ n: Int?, latest: Int?) -> String? {
-        guard let n, let latest, n != latest else { return nil }
-        return "Round \(n)"
+    private struct StripShown: Equatable {
+        var round: Int
+        var geo: StripGeometry
+    }
+
+    /// The strip's and the ruler's top left in the overview's visible frame (the strip's, unscrolled: its tags add the
+    /// scroll), for their tags and the debug script.
+    private func origins(_ o: CGPoint, row: CGFloat) {
+        hover.stripOrigin = o
+        hover.rulerOrigin = CGPoint(x: o.x, y: o.y + row + 20 + 1)
+    }
+
+    /// "Round 1" over the strip, for every round it shows (the latest too: the advisor's review of 2026-10-31).
+    static func roundLabel(_ n: Int?) -> String? {
+        n.map { "Round \($0)" }
+    }
+
+    /// The thumbnails' row for this paper, the same for every round it shows (so nothing under it moves): 72 pt (a
+    /// Letter page's thumbnail), or as high as its tallest pages' thumbnails (an A4 paper's 76.5); a page lower than
+    /// the row sits on the numbers' line (`StripGeometry.top`). The thumbnails are never smaller for a longer round
+    /// (the advisor's decision of 2026-11-01: one size for every paper; a round wider than the overview scrolls).
+    static func rowHeight(_ d: PaperOverview?, thumb: (String?) -> CGSize) -> CGFloat {
+        let heights = (d?.rounds ?? []).compactMap { r -> CGFloat? in
+            guard !r.failed, let pages = r.build?.pages, pages > 0 else { return nil }
+            return thumb(r.pdf).height
+        }
+        return max(StripGeometry.height, heights.max() ?? 0)
+    }
+
+    /// Every built round's pages asked for once the overview is in (read from the folder, or drawn off the main
+    /// thread), so a round previewed or clicked shows its pages at once; not past half the store's capacity, nor past
+    /// the room it has left: full, it lets every image go, the pages shown with them.
+    private func prefetch() {
+        guard let d = overview.data, let paper = model.selectedPath else { return }
+        let built = d.rounds.filter { !$0.failed }
+        let pages = built.reduce(0) { $0 + ($1.build?.pages ?? 0) }
+        guard pages <= thumbs.capacity / 2, thumbs.count + pages <= thumbs.capacity else { return }
+        for r in built {
+            for p in 0..<(r.build?.pages ?? 0) { _ = thumbs.image(paper: paper, pdf: r.pdf, page: p, height: StripGeometry.height) }
+        }
     }
 
     /// Why the strip shows no pages: the overview is being read, the round's build failed, or none to show (the
@@ -146,8 +209,8 @@ struct PageStripView: View {
         return out
     }
 
-    private func strip(_ n: Int, _ r: PaperOverview.Round, pages: Int, toCheck: [Int: Int]) -> some View {
-        let geo = StripGeometry(width: width, pages: pages, aspect: thumbs.aspect(pdf: r.pdf))
+    private func strip(_ n: Int, _ r: PaperOverview.Round, geo: StripGeometry, toCheck: [Int: Int]) -> some View {
+        let pages = geo.pages
         let framing = Self.framing(overview.selection, r, overview.data, pages: pages)
         let labels = StripLabels(slot: geo.slot, pages: pages, most: toCheck.values.max() ?? 0)
         let followed = Self.followed(overview.selection, overview.data)
@@ -157,49 +220,59 @@ struct PageStripView: View {
             ForEach(0..<pages, id: \.self) { p in
                 pageCell(n, r, page: p, geo: geo, framing: framing, labels: labels, followed: followed, pageSize: pageSize,
                          key: key, toCheck: toCheck)
-                .offset(x: geo.thumbX(p))
+                .offset(x: geo.thumbX(p), y: geo.top)
             }
         }
-        .frame(width: width, height: geo.thumbHeight + 20, alignment: .topLeading)
+        .frame(width: geo.contentWidth, height: geo.row + 20, alignment: .topLeading)
         .contentShape(Rectangle())
         // a click on a comment's mark follows the comment, elsewhere on a page the page (§5.1); a second on the same
         // thing within the double-click interval opens Review there
+        // in the strip's own (scrolled) points: what is under them is the content's; the tag goes where the pointer is
+        // in the overview's visible frame, the scroll taken off
         .onTapGesture(count: 1, coordinateSpace: .local) { p in
             let t = geo.target(at: p, marks: r.marks ?? [], pageSize: pageSize)
             let now = ProcessInfo.processInfo.systemUptime
             let double = last.map { $0.target == t && now - $0.time <= NSEvent.doubleClickInterval } ?? false
             last = double ? nil : (t, now)
             hover.dismissTip()
-            switch t {
-            case .comment(let id, _)?: model.overviewClicked(.comment(id), double: double)
-            case .page(let q)?: model.overviewClicked(.page(round: n, page: q), double: double)
-            case nil: break
-            }
+            Self.act(t, round: n, model: model, double: double)
         }
         .onContinuousHover(coordinateSpace: .local) { phase in
             switch phase {
             case .active(let p):
-                let t = geo.target(at: p, marks: r.marks ?? [], pageSize: pageSize)
-                let at = CGPoint(x: p.x + hover.stripOrigin.x, y: p.y + hover.stripOrigin.y)
-                switch t {
-                case .comment(let id, _)?:
-                    hover.point(at: at, key: "strip:c:" + id, comment: followed.contains(id) ? nil : id) {
-                        overview.data.map { MapHelp.lines(.comment(id, round: n), $0, student: OverviewText.firstName(model.state?.paper.student ?? "")) } ?? []
-                    }
-                case .page(let q)?:
-                    hover.point(at: at, key: "strip:p:\(q)") { Self.pageHelp(r, overview.data, page: q) }
-                case nil:
-                    hover.point(at: at, key: nil) { [] }
-                }
+                Self.hover(at: p, round: r, geo: geo, model: model, hover: hover, offset: overview.stripScroll.offset)
             case .ended: hover.leave()
             }
         }
-        .background(GeometryReader { g in
-            let o = g.frame(in: .named(OverviewLayout.viewport)).origin
-            Color.clear
-                .onAppear { hover.stripOrigin = o }
-                .onChange(of: o) { _, v in hover.stripOrigin = v }
-        })
+    }
+
+    /// A click on the strip's `t`: a comment's mark follows the comment, elsewhere on a page the page (§5.1).
+    static func act(_ t: StripTarget?, round n: Int, model: AppModel, double: Bool) {
+        switch t {
+        case .comment(let id, _)?: model.overviewClicked(.comment(id), double: double)
+        case .page(let q)?: model.overviewClicked(.page(round: n, page: q), double: double)
+        case nil: break
+        }
+    }
+
+    /// The pointer at `p` in the strip's content (scrolled by `offset`): what it is over and its help tag, at its place
+    /// in the overview's visible frame. `force`: the debug script's, at once.
+    static func hover(at p: CGPoint, round r: PaperOverview.Round, geo: StripGeometry, model: AppModel, hover: OverviewHover,
+                      offset: CGFloat, force: Bool = false) {
+        let d = model.overview.data
+        let t = geo.target(at: p, marks: r.marks ?? [], pageSize: { model.thumbnails.pageSize(pdf: r.pdf, page: $0) })
+        let at = CGPoint(x: p.x - offset + hover.stripOrigin.x, y: p.y + hover.stripOrigin.y)
+        switch t {
+        case .comment(let id, _)?:
+            let followed = Self.followed(model.overview.selection, d)
+            hover.point(at: at, key: "strip:c:" + id, comment: followed.contains(id) ? nil : id, force: force) {
+                d.map { MapHelp.lines(.comment(id, round: r.n), $0, student: OverviewText.firstName(model.state?.paper.student ?? "")) } ?? []
+            }
+        case .page(let q)?:
+            hover.point(at: at, key: "strip:p:\(q)", force: force) { Self.pageHelp(r, d, page: q) }
+        case nil:
+            hover.point(at: at, key: nil, force: force) { [] }
+        }
     }
 
     /// The pages framed (a section's, the page followed, the pages of the comments followed) and those that step back.
@@ -240,7 +313,7 @@ struct PageStripView: View {
         let et = r.isClosed ? 0 : edits.filter(\.toCheck).count
         return ["Page \(p + 1)" + (r.build?.pages.map { " of \($0)" } ?? "") + " · Round \(r.n)",
                 count(steps.count, "comment") + (tc > 0 ? " (○ \(tc) to check)" : "") + " · \(count(edits.count, "edit"))"
-                    + (unasked > 0 ? ", \(unasked) nobody asked for" : "") + (et > 0 ? " (○ \(et) to check)" : ""),
+                    + (unasked > 0 ? ", \(unasked) unasked" : "") + (et > 0 ? " (○ \(et) to check)" : ""),
                 "Click to follow these comments · a mark follows its comment · double-click opens the page"]
     }
 }
@@ -253,14 +326,21 @@ enum StripTarget: Equatable {
 }
 
 extension StripGeometry {
+    /// What a point in the strip's visible frame is over, the strip scrolled by `offset`.
+    func target(seen p: CGPoint, offset: CGFloat, marks: [PaperOverview.Mark], pageSize: (Int) -> CGSize?) -> StripTarget? {
+        guard p.x >= 0, p.x < width else { return nil }
+        return target(at: CGPoint(x: p.x + offset, y: p.y), marks: marks, pageSize: pageSize)
+    }
+
+    /// What a point in the strip's content is over.
     func target(at p: CGPoint, marks: [PaperOverview.Mark], pageSize: (Int) -> CGSize?) -> StripTarget? {
         guard let page = page(at: p.x) else { return nil }
         let x0 = thumbX(page)
-        guard p.y >= 0, p.y <= thumbHeight, p.x >= x0 - 2, p.x <= x0 + thumbWidth + 2, let ps = pageSize(page), ps.height > 0 else {
+        guard p.y >= top, p.y <= top + thumbHeight, p.x >= x0 - 2, p.x <= x0 + thumbWidth + 2, let ps = pageSize(page), ps.height > 0 else {
             return .page(page)
         }
         let k = thumbHeight / ps.height, slop = 2.5 / k
-        let q = CGPoint(x: (p.x - x0) / k, y: p.y / k)
+        let q = CGPoint(x: (p.x - x0) / k, y: (p.y - top) / k)
         let hits = marks.filter { $0.page == page && $0.kind == "comment" && $0.id != nil
             && $0.rect.insetBy(dx: -slop, dy: -slop).contains(q) }
         if let m = hits.min(by: { $0.rect.width * $0.rect.height < $1.rect.width * $1.rect.height }), let id = m.id {
@@ -293,14 +373,12 @@ struct StripLabels: Equatable {
     }
 }
 
-/// One page: its thumbnail (the page ground until it is drawn) and where its comments sit (UI v4, mac/UX.md §40.4):
-/// the comments' marks in a neutral ink, which keeps their clicks, the followed comment in its colour with a Sage
-/// outline; the edits and the to-check rings are the map's and the numbers' under the page (plan §5 R9).
+/// One page: its thumbnail (the white page ground until it is drawn) and where its comments sit (UI v4, mac/UX.md
+/// §40.4): the comments' marks in a neutral ink, which keeps their clicks, the followed comment in its colour with a
+/// Sage outline; the edits and the to-check rings are the map's and the numbers' under the page (plan §5 R9). White
+/// paper in either appearance, as in Review (the advisor's review of 2026-10-31: the Dark Mode dimming read as a veil);
+/// the keyline and the shadow set it off the dark panel.
 struct PageThumb: View {
-    /// In Dark Mode a page thumbnail is dimmed to the `thumb` ground (#BDBDB9), not pure white: a row of white pages
-    /// on the dark panel was the most glaring thing on the screen (the UI audit). The full-size page in Review stays
-    /// white, as the marks' colours are tuned for it.
-    static var darkDim: Double { 1 - Double((MapInk(dark: true).rgba(.thumb).hex >> 16) & 0xFF) / 255 }
     /// The comments' marks while not followed: black at 0.16.
     static let markInk = 0.16
     let image: NSImage?
@@ -318,7 +396,6 @@ struct PageThumb: View {
         ZStack(alignment: .topLeading) {
             Rectangle().fill(Color.white)
             if let image { Image(nsImage: image).resizable().interpolation(.high) }
-            if scheme == .dark { Color.black.opacity(Self.darkDim) }  // paper, but not glaring on the dark page
             if let ps = pageSize, ps.height > 0 {
                 Canvas { ctx, _ in
                     Self.drawMarks(ctx, round: round, data: data, page: page, k: size.height / ps.height,
@@ -365,8 +442,8 @@ struct SectionRuler: View {
     @ObservedObject var overview: OverviewModel
     let hover: OverviewHover
     let round: PaperOverview.Round
-    let pages: Int
-    let width: CGFloat
+    /// The strip's geometry: the ruler names the sections under their pages, and scrolls with them.
+    let geo: StripGeometry
     /// The map's names (`MapScene.names`): the ruler names a section with the same stem as its cells.
     var names: [String: MapScene.SectionName] = [:]
     @Environment(\.colorScheme) private var scheme
@@ -409,7 +486,7 @@ struct SectionRuler: View {
 
     var body: some View {
         let ink = MapInk(dark: scheme == .dark)
-        let slot = width / CGFloat(max(pages, 1))
+        let slot = geo.slot
         ZStack(alignment: .topLeading) {
             if round.hasSections {
                 ForEach(Array((round.spans ?? []).enumerated()), id: \.offset) { _, sp in
@@ -443,8 +520,191 @@ struct SectionRuler: View {
                 Text(round.prose == "unavailable" ? "Sections unavailable for this round" : "Finding sections…")
                     .font(.system(size: 11, weight: .medium)).foregroundStyle(Ink.secondary).offset(x: 4, y: 3)
             }
-            Rectangle().fill(ink.color(.rule)).frame(width: 1, height: 15).offset(x: width - 1, y: 2)
+            Rectangle().fill(ink.color(.rule)).frame(width: 1, height: 15).offset(x: geo.contentWidth - 1, y: 2)
         }
-        .frame(width: width, height: 20, alignment: .topLeading)
+        .frame(width: geo.contentWidth, height: 20, alignment: .topLeading)
+    }
+}
+
+/// The strip's sideways scroll (mac/UX.md §40.9): one scroll view for the strip and its ruler, whose offset the lens
+/// draws from. It keeps the page at the strip's left edge (`anchor`, page units) while the strip shows another round
+/// (previewed or picked) and when the overview comes back, so the same page stays in view where that round has it
+/// (else the start); a page, section or comment followed scrolls its page into view (at once with Reduce Motion).
+@MainActor
+final class StripScroll: ObservableObject {
+    /// The offset in view, for the lens.
+    @Published private(set) var offset: CGFloat = 0
+    private(set) weak var scrollView: NSScrollView?
+    /// The geometry and round the strip shows (`shown`), and the paper's overview, for what a follow scrolls to.
+    private(set) var geo: StripGeometry?
+    private(set) var round: Int?
+    private var data: PaperOverview?
+    /// The page at the strip's left edge, in page units: where the viewer or a follow left it.
+    private(set) var anchor: Double = 0
+    /// What was followed, to scroll into view once the strip shows `round`.
+    private var pending: (item: OverviewItem, round: Int)?
+    /// A round or width shown and not yet scrolled to its place: the clip view's own moves (its document narrower) do
+    /// not move the anchor.
+    private var switching = false
+    private var setting = false
+    private var observers: [NSObjectProtocol] = []
+
+    /// Another paper: its strip from the start.
+    func reset() {
+        anchor = 0
+        pending = nil
+        round = nil
+        geo = nil
+        if scrollView != nil, offset != 0 { set(0, animated: false) }
+    }
+
+    /// The scroll view of the strip (`StripScrollProbe`): overlay scrollers, its offset followed.
+    func attach(_ sv: NSScrollView) {
+        if sv.scrollerStyle != .overlay { sv.scrollerStyle = .overlay }
+        sv.hasVerticalScroller = false
+        sv.verticalScrollElasticity = .none
+        guard sv !== scrollView else { return }
+        for o in observers { NotificationCenter.default.removeObserver(o) }
+        scrollView = sv
+        sv.contentView.postsBoundsChangedNotifications = true
+        observers = [
+            NotificationCenter.default.addObserver(forName: NSView.boundsDidChangeNotification, object: sv.contentView, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.scrolled() }
+            },
+            // the system's setting changed (a mouse plugged in): overlay scrollers still, so no row grows under the strip
+            NotificationCenter.default.addObserver(forName: NSScroller.preferredScrollerStyleDidChangeNotification, object: nil, queue: .main) { [weak sv] _ in
+                DispatchQueue.main.async { MainActor.assumeIsolated { sv?.scrollerStyle = .overlay } }
+            },
+        ]
+        apply()
+    }
+
+    /// The strip shows round `n` at `g` (its appearance, another round, another width): scrolled to its place once laid out.
+    func shown(round n: Int, geo g: StripGeometry) {
+        guard n != round || g != geo else { return }
+        round = n
+        geo = g
+        switching = true
+        DispatchQueue.main.async { [weak self] in self?.apply() }
+    }
+
+    /// `item` followed, the strip showing round `n` for it: its page scrolled into view.
+    func follow(_ item: OverviewItem?, round n: Int?, data d: PaperOverview?) {
+        guard let item, let n else { return }
+        if case .round = item { return }
+        if case .tag = item { return }
+        data = d
+        pending = (item, n)
+        DispatchQueue.main.async { [weak self] in self?.apply() }
+    }
+
+    /// The pages (page units) of `item` in round `n`'s strip: a page, a section's span, a comment's page there.
+    static func pages(_ item: OverviewItem, data d: PaperOverview?, round n: Int) -> (Double, Double)? {
+        switch item {
+        case .page(let r, let p): return r == n ? (Double(p), Double(p + 1)) : nil
+        case .section(let key, let r):
+            guard r == n, let sp = d?.round(n)?.spans?.first(where: { $0.section == key }) else { return nil }
+            return (sp.start, max(sp.end, sp.start + 0.01))
+        case .comment(let id):
+            return d?.comment(id)?.step(in: n)?.page.map { (Double($0), Double($0 + 1)) }
+        case .round, .tag: return nil
+        }
+    }
+
+    /// The offset for the round shown: its anchor's page at the left edge where the round has it (else the start), as
+    /// far as it scrolls; then what was followed in view.
+    private func apply(try t: Int = 0) {
+        guard let sv = scrollView, sv.window != nil, let g = geo, let n = round else { return }
+        // the document laid out at the round's width first, else the clip view cuts the offset short
+        if let doc = sv.documentView, abs(doc.frame.width - g.contentWidth) > 0.5 {
+            if t < 10 { DispatchQueue.main.asyncAfter(deadline: .now() + 0.03) { [weak self] in self?.apply(try: t + 1) } }
+            return
+        }
+        var x = anchor < Double(g.pages) ? min(g.x(anchor), g.maxOffset) : 0
+        var animated = false
+        if let p = pending, p.round == n {
+            pending = nil
+            if let (lo, hi) = Self.pages(p.item, data: data, round: n), let to = g.reveal(lo, hi, from: switching ? x : current(sv)) {
+                animated = !switching && !Motion.reduced
+                x = to
+                anchor = Double(to / g.slot)
+            } else if !switching {
+                return
+            }
+        }
+        set(x, animated: animated)
+        switching = false
+    }
+
+    private func current(_ sv: NSScrollView) -> CGFloat { sv.contentView.bounds.minX }
+
+    private func set(_ x: CGFloat, animated: Bool) {
+        guard let sv = scrollView else { return }
+        let clip = sv.contentView, origin = NSPoint(x: x, y: clip.bounds.minY)
+        if abs(clip.bounds.minX - x) < 0.25 { return scrolled() }
+        if animated {
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.2
+                ctx.allowsImplicitAnimation = true
+                clip.animator().setBoundsOrigin(origin)
+            } completionHandler: { [weak sv] in
+                MainActor.assumeIsolated { if let sv { sv.reflectScrolledClipView(sv.contentView) } }
+            }
+        } else {
+            setting = true
+            clip.scroll(to: origin)
+            sv.reflectScrolledClipView(clip)
+            setting = false
+            scrolled()
+        }
+    }
+
+    /// The clip view moved: the offset for the lens, and, moved by the viewer (or a follow), the anchor.
+    private func scrolled() {
+        guard let sv = scrollView else { return }
+        let x = current(sv)
+        if abs(offset - x) > 0.01 { offset = x }
+        guard !setting, !switching, let g = geo, let doc = sv.documentView, abs(doc.frame.width - g.contentWidth) <= 0.5 else { return }
+        anchor = Double(x / g.slot)
+    }
+
+    /// The debug items' scroll: to `x` (content points), at once.
+    func scroll(to x: CGFloat) {
+        guard let g = geo else { return }
+        let to = min(max(0, x), g.maxOffset)
+        anchor = Double(to / g.slot)
+        set(to, animated: false)
+    }
+}
+
+/// Finds the strip's scroll view from inside its content (`StripScroll.attach`).
+struct StripScrollProbe: NSViewRepresentable {
+    let scroll: StripScroll
+
+    final class Probe: NSView {
+        weak var scroll: StripScroll?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            attach()
+        }
+
+        func attach() {
+            MainActor.assumeIsolated {
+                guard window != nil, let sv = enclosingScrollView else { return }
+                scroll?.attach(sv)
+            }
+        }
+    }
+
+    func makeNSView(context: Context) -> Probe {
+        let p = Probe()
+        p.scroll = scroll
+        return p
+    }
+
+    func updateNSView(_ p: Probe, context: Context) {
+        p.scroll = scroll
+        DispatchQueue.main.async { p.attach() }
     }
 }

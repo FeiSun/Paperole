@@ -202,7 +202,10 @@ struct OutlineRow: Equatable, Identifiable {
     var range: Range<Int>
     var read: Int
     var count: Int
-    var open: Int  // new, to check, not found or follow-up comments in it
+    var open: Int  // new, to check, not found or follow-up comments in it, its subsections included (help tag, VoiceOver)
+    /// The open comments in its own text, from its heading to its first subheading: the number the row shows, so the
+    /// column adds up to the paper's count (design/review-page/BRIEF.md E8, decision D4 (a)).
+    var own = 0
     var changed: Bool  // it has bars: changed paragraphs still unread
     var tracked: Bool  // round 2 on: progress is shown
 
@@ -223,9 +226,11 @@ enum Outline {
             let ps = r.paragraphs.filter { range.contains($0.block) }
             let done = ps.filter { read.contains($0.block) }.count
             let name = number.map { String(title.dropFirst($0.count)).trimmingCharacters(in: .whitespaces) } ?? title
+            // its own text: up to the next heading, which is its first subheading when it has one
+            let own = range.lowerBound..<min(range.upperBound, headings.first { $0.block > block }?.block ?? range.upperBound)
             return OutlineRow(block: block, title: title, number: number, name: name, level: level, range: range,
                               read: done, count: ps.count, open: comments.filter(range.contains).count,
-                              changed: tracked && done < ps.count, tracked: tracked)
+                              own: comments.filter(own.contains).count, changed: tracked && done < ps.count, tracked: tracked)
         }
         let first = headings.first?.block ?? Int.max
         var rows: [OutlineRow] = []

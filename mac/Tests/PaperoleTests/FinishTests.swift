@@ -33,7 +33,7 @@ final class FinishTests: XCTestCase {
         let s = FinishSummary(round: 2, comments: try comments(), drafts: [:], unrequested: 2, unread: 12)
         func lines(_ l: [FinishSummary.Line]) -> [String] { l.map { "\($0.item.rawValue) \($0.title) | \($0.sub) | \($0.count)" } }
         XCTAssertEqual(lines(s.left), ["comments Comments still to check | They go out as “still open”. | 2",
-                                       "edits Other edits not checked | No comment asked for them. | 2",
+                                       "edits Unasked edits not checked |  | 2",
                                        "paragraphs Changed paragraphs not read | Finishing marks them read. | 12"])
         XCTAssertEqual(lines(s.goes), ["followUps Follow-ups |  | 2", "new New comments |  | 1",
                                        "closed Closed |  | 2"])  // R1-02's follow-up has no note
@@ -41,7 +41,7 @@ final class FinishTests: XCTestCase {
                                                      try makeComment(["id": "R1-01", "verdict": "reopened", "verdict_note": "Why?"])],
                                 drafts: [:], unrequested: 1, unread: 1)
         XCTAssertEqual(lines(one.left), ["comments Comment still to check | It goes out as “still open”. | 1",
-                                         "edits Other edit not checked | No comment asked for it. | 1",
+                                         "edits Unasked edit not checked |  | 1",
                                          "paragraphs Changed paragraph not read | Finishing marks it read. | 1"])
         // each group only when it has some (visual review 2026-10-18: New comments 0 was listed, Follow-ups 0 not)
         XCTAssertEqual(lines(one.goes), ["followUps Follow-ups · with your notes |  | 1"])
@@ -80,37 +80,18 @@ final class FinishTests: XCTestCase {
                        ["sent", "unsent", "unsent", "discarded"])
     }
 
+    /// The Changes tab says each thing once (design/review-page/BRIEF.md E2): no sentence on top; "Unasked edits" over
+    /// the edits nobody asked for; the folded group's count in its capsule.
+    @MainActor
     func testTheChangesTabSaysItsCountOnce() throws {
-        func state(_ changes: [[String: Any]], closed: Bool = false, round: Int = 3) throws -> EngineState {
-            let base: [String: Any] = [
-                "schema": 1, "paper": ["path": "/p", "title": "T", "student": "S"], "rounds": [], "comments": [],
-                "round": ["n": round, "closed": closed, "build": ["status": "ok", "warnings": [], "errors": []]],
-                "changes": try changes.map { try JSONSerialization.jsonObject(with: JSONSerialization.data(withJSONObject: $0)) }]
-            return try EngineState.decode(JSONSerialization.data(withJSONObject: base))
-        }
-        func change(_ id: String, attached: [String] = []) -> [String: Any] {
-            ["id": id, "kind": "replace", "old_text": "a", "new_text": "b", "page": 0, "rects": [],
-             "attached_to": attached, "unrequested": attached.isEmpty]
-        }
-        let mixed = try state([change("c01"), change("c02"), change("c03", attached: ["R1-02"]),
-                               change("c04", attached: ["R1-09"]), change("c05", attached: ["R2-01"])])
-        // the number is the tab's (POLISH §3 row 10, §4.4): the sentence says only that some are left
-        XCTAssertEqual(ChangesHeader.text(mixed, left: 2).map { String($0.characters) },
-                       "Other edits to check. No comment asked for them. 3 more edits answer your comments.")
-        XCTAssertEqual(ChangesHeader.text(mixed, left: 1).map { String($0.characters) },
-                       "An edit to check. No comment asked for it. 3 more edits answer your comments.")
-        XCTAssertEqual(ChangesHeader.text(mixed, left: 0).map { String($0.characters) },
-                       "All checked. The 2 edits no comment asked for are checked, commented on or read. 3 more edits answer your comments.")
-        XCTAssertEqual(ChangesHeader.text(try state([change("c03", attached: ["R1-02"])]), left: 0).map { String($0.characters) },
-                       "Nothing to check. Every edit since R2 answers one of your comments.")
-        XCTAssertEqual(ChangesHeader.text(try state([change("c01"), change("c03", attached: ["R1-02"])], closed: true), left: 0)
-                        .map { String($0.characters) },
-                       "Edits made since R2: 1 no comment asked for, 1 answering your comments.")
-        XCTAssertNil(ChangesHeader.text(try state([], round: 3), left: 0))  // the list says the source did not change
-        XCTAssertNil(ChangesHeader.text(try state([change("c01")], round: 1), left: 1))
-        // its first words in the label colour, Semibold (POLISH §3 row 10: vermilion only where the count is, on the tab)
-        let lead = try XCTUnwrap(ChangesHeader.text(mixed, left: 2))
-        XCTAssertEqual(lead.runs.first?.foregroundColor, Ink.label)
-        XCTAssertEqual(lead.runs.first.map { String(lead[$0.range].characters) }, "Other edits to check.")
+        _ = NSApplication.shared
+        let panel = ChangePanel()
+        panel.roundOpen = true
+        panel.unrequested = [model(try makeChange(["id": "c01"])), model(try makeChange(["id": "c02"]))]
+        panel.linked = try ["c03", "c04", "c05"].map { model(try makeChange(["id": $0, "unrequested": false, "attached_to": ["R1-02"]])) }
+        let list = ChangeListController(panel: panel, actions: CardActions(), edit: EditState())
+        XCTAssertEqual(list.rows().first, .header("Unasked edits", glyph: .toCheck(open: true)))
+        XCTAssertTrue(list.rows().contains(.fold("Answering your comments", "Show", group: .linked, count: 3, glyph: .answering)))
+        withExtendedLifetime(list) {}
     }
 }

@@ -547,6 +547,9 @@ struct CardModel: Equatable, Identifiable {
     var tags: [CardTag] = []
     /// Listed by tag under this tag's header (UX.md §27): its row leaves out that tag's sign, which the header shows.
     var listedUnder: String?
+    /// Listed by status under the To check header: its row leaves out the ○ the header shows (design/review-page
+    /// BRIEF.md E7).
+    var underToCheck = false
     var suggestion: CardSuggestion?
     /// A comment closed in the shown earlier round that can be reopened into the open round N (TAGS.md §9.2), and one
     /// reopened into the shown round from round k (its row's word, Undo Reopen).

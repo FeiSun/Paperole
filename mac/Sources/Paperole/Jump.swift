@@ -102,7 +102,7 @@ enum Jump {
         return n - 1
     }
 
-    /// The groups for a query, in this order: the page it names, Comments (as the list orders them), Other edits,
+    /// The groups for a query, in this order: the page it names, Comments (as the list orders them), Unasked edits,
     /// Sections, Rounds, Commands, and with any query "In the paper", the PDF's find. With no query: the rounds and the
     /// commands.
     static func search(_ query: String, in s: Sources) -> [Group] {
@@ -135,7 +135,7 @@ enum Jump {
                     detail: e.kind.word.capitalized + (e.excerpt.isEmpty ? "" : ": “" + snippet(e.excerpt, around: ws) + "”"),
                     trailing: e.page.map { "p.\($0 + 1)" } ?? "", words: ws)
             }
-            if !edits.isEmpty { groups.append(Group(title: "Other edits", rows: Array(edits))) }
+            if !edits.isEmpty { groups.append(Group(title: "Unasked edits", rows: Array(edits))) }  // the one noun (BRIEF §8)
             let sections = s.sections.filter { matches(ws, [$0.number ?? "", $0.name.isEmpty ? $0.title : $0.name]) }
                 .prefix(limits.sections).map { r in
                     Row(target: .section(r.block), icon: "list.bullet.indent", lead: r.number ?? "",

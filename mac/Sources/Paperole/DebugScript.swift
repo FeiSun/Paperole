@@ -58,6 +58,19 @@ import SwiftUI
 ///                               notes: [[comment id, the student's note]]}
 ///   notewarnings [show|hide]    the Comments tab's line of the student's notes not used, and its Details… popover
 ///                               shown or hidden: {line, shown, warnings: [[kind, file:line, text, message]]}
+///   builddetails [show|hide]    the status line's Details… popover shown or hidden (UX.md §41): {details, about,
+///                               status, errors, warnings, needs, built, paper, offer, turnOff, again, retry, asking,
+///                               message, busy, round, alert, sheet: [[title, on, key]]} (`needs`, `built`: the round's
+///                               build asks for shell escape, was made with it; `paper`: the paper has it on; `offer`
+///                               the Details' button; `sheet`: the AppKit buttons of the sheet or alert over the
+///                               window, in order: SwiftUI's have no title, the checkbox's `on` is the toggle's)
+///   shellescape offer|turnoff|yes|cancel  the Details' offer, Turn Off Shell Escape, the confirmation's Turn On or
+///                               Cancel, each as its click: the builddetails result once the engine has answered
+///   retrysheet [open|default|cancel|<title>]  `open`: the sheet Build Round N Again as Retry… and Build Round N Again…
+///                               open it (its toggle as the paper has it); else the sheet's or alert's (Turn On Shell
+///                               Escape…'s) default button (Return: Build, Turn On), its Esc button or its button of
+///                               that title, clicked as the mouse sends it: the builddetails result plus {clicked} once
+///                               the engine has answered (at most 90 s)
 ///   changecomment <id>          "Comment on this change": {editor, quote, editorQuote, box, selected} (`editorQuote`:
 ///                               the selected words the editor shows on top)
 ///   tab <comments|changes>      the panel's tab, as its control: {tab, selected, changeOutline}
@@ -72,6 +85,16 @@ import SwiftUI
 ///                               `headers`: [[name, count, sub, sign, Show|Hide]])
 ///   busy on|off                 the engine held busy without a request, as while it works (O27): {busy}
 ///   motion <factor>             the tab switch's motion that many times slower, for screenshots in flight: {motion}
+///   changemarks on|off          the toolbar's Change marks, as its toggle: the strip result
+///   strip                       the column beside the scroller (design/review-page/BRIEF.md §3): {items: [[kind, share,
+///                               label, waits, tick]], glyphs: [[shape, y, [ids]]], groups: [{zone, ids, rows}], halo,
+///                               current, rail, value, frame} (y down the column, from its top; `rows`: the window's)
+///   striphover <n>|at:<y>|off [force] [row <i>] [press]  the pointer on group n (from 1), at column y, or away; `force`:
+///                               in a background run, the window at once; `row`: then on that row of the window;
+///                               `press`: the button down: the strip result plus {window: {frame (y down), gap, line1,
+///                               glyph, rows, hot, more}, grown, shown, pressed}
+///   stripclick <n> [row <i>]    a click on group n's mark, or on row i of its window: {tab, selected, chip, find, halo,
+///                               shown, grown}
 ///   doneclick                   a click on the done card's Finish Round…, as the mouse sends it: the finishsheet result
 ///                               plus {clicked}
 ///   nopaper [all]               no paper open (the page that says what to do); `all`, in a --fixture run only, also
@@ -210,7 +233,8 @@ import SwiftUI
 ///   findkey return|shift-return|esc  the field's Return, ⇧Return or Esc: the find result
 ///   findclick next|previous     the counter's › or ‹, as its action: the find result
 ///   nav                         the navigation (UX.md §21): {level, paper, showsOverview, back, forward, canBack,
-///                               canForward, overview: {status, paper, selection, strip, scroll, saved, rounds, sentence},
+///                               canForward, overview: {status, paper, selection, strip, previewRound, scroll, saved, rounds,
+///                               sentence},
 ///                               review: {round, selected, tab, pdf, page}, title, subtitle, reviewHidden, sidebarShown,
 ///                               contents, firstResponder, pending, steps, forwardSteps, place, chip, flash, backHelp,
 ///                               forwardHelp} (`steps`: each Back place's PDF step, "p.4 · 2.1 Data", or null; `place`:
@@ -234,6 +258,9 @@ import SwiftUI
 ///   ovclick / ovopen <item>     a click / a double click on an overview item: section:<id>@<n>, round:<n>,
 ///                               page:<p>@<n> (p from 1), comment:<id>, none: the nav result
 ///   ovscroll <y>                the overview scrolled to y from its top: the nav result
+///   ovstrip [start|end|<x>|at:<x>,<y> [click]]  the page strip (mac/UX.md §40.9): scrolled to its start, its end or x
+///                               (content points), at once; or the pointer at x,y in its visible frame, its tag at once
+///                               (`click`: a click there): the nav result with `strip` ({target} after at:)
 ///   ovwait                      waits (at most 10 s) until the overview's data is in: the nav result
 ///   tagfilter <tag>|untagged|off / groupby status|tag|section / list  the comment list's tag filter, its
 ///                               arrangement, and what it shows (UX.md §27): {filter, grouping, shown, options: [[id,
@@ -479,21 +506,61 @@ final class DebugScript {
                 ["hit": hit, "firstResponder": nul(self?.keyTarget?.firstResponder.map { String(describing: type(of: $0)) }),
                  "windows": NSApp.windows.filter(\.isVisible).map { $0.className }]
             }
-        case "strip":  // the markers beside the scroller (P1.6): kind, share of the height, label; the strip's inset
-            next(0.3) { [weak self] in
-                guard let c = self?.controller else { return nil }
-                return ["inset": Double(c.strip.inset),
-                        "items": c.strip.items.map { [String(describing: $0.kind), ($0.fraction * 1000).rounded() / 1000, $0.label] as [Any] },
-                        "ticks": ScrollerMarks.ticks(c.strip.items, height: 600).map { [String(describing: $0.kind), Double($0.y), $0.help] as [Any] }]
+        case "changemarks":  // `changemarks on|off`: the toolbar's Change marks (never saved): the strip result
+            model?.showChanges = rest != "off"
+            next(0.5) { [weak self] in self?.stripResult() }
+        case "strip":  // the column beside the scroller (design/review-page/BRIEF.md §3): items, glyphs, groups and rows
+            next(0.3) { [weak self] in self?.stripResult() }
+        case "striphover":  // `striphover <n>|at:<y>|off [force] [row <i>] [press]`: the pointer on group n (from 1, as
+            // BRIEF's G1…), or at column y; `force` acts in a background run and opens the window at once
+            let words = rest.split(separator: " ").map(String.init)
+            if let c = controller {
+                if words.contains("force") { c.laneForced = true }
+                let g: Int? = words.first.flatMap { w in
+                    w.hasPrefix("at:") ? Double(w.dropFirst(3)).flatMap { c.strip.layout.group(at: CGFloat($0)) } : Int(w).map { $0 - 1 }
+                }
+                if words.first == "off" {
+                    c.laneHover.leaveWindow()
+                    c.lanePointer(nil, at: nil)
+                } else if let g, g >= 0, g < c.strip.layout.groups.count {
+                    let y = words.first?.hasPrefix("at:") == true ? CGFloat(Double(words[0].dropFirst(3)) ?? 0) : c.strip.layout.groups[g].first
+                    c.lanePointer(g, at: CGPoint(x: StripLayout.axis, y: y))
+                    if words.contains("force"), c.laneHover.shown != g, c.laneCanOpen {
+                        let d = LaneHover.dwell
+                        LaneHover.dwell = 0
+                        c.lanePointer(g, at: CGPoint(x: StripLayout.axis + 4, y: y))
+                        LaneHover.dwell = d
+                    }
+                    if words.contains("press") { c.lanePress(true) }
+                }
+                if let k = words.firstIndex(of: "row"), k + 1 < words.count, let i = Int(words[k + 1]) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        c.laneHover.enterWindow()
+                        c.laneWindow.point(row: i)
+                    }
+                }
             }
-        case "stripclick":  // `stripclick <i>`: a click on the i-th tick of a 600 pt strip (`strip`'s order)
-            if let c = controller, let i = Int(rest) {
-                let ticks = ScrollerMarks.ticks(c.strip.items, height: 600)
-                if i >= 0, i < ticks.count { c.goMark(ticks[i].target) }
+            next(0.5) { [weak self] in self?.stripResult(window: true) }
+        case "stripclick":  // `stripclick <n> [row <i>]`: a click on group n's mark (from 1), or on row i of its window
+            let words = rest.split(separator: " ").map(String.init)
+            if let c = controller, let n = words.first.flatMap(Int.init), n >= 1, n <= c.strip.layout.groups.count {
+                if let k = words.firstIndex(of: "row"), k + 1 < words.count, let i = Int(words[k + 1]) {
+                    c.laneForced = true
+                    if c.laneHover.shown != n - 1 {
+                        let d = LaneHover.dwell
+                        LaneHover.dwell = 0
+                        c.lanePointer(n - 1, at: CGPoint(x: StripLayout.axis, y: c.strip.layout.groups[n - 1].first))
+                        LaneHover.dwell = d
+                    }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { c.laneRowClicked(i) }
+                } else {
+                    c.laneClick(n - 1, at: CGPoint(x: StripLayout.axis, y: c.strip.layout.groups[n - 1].first))
+                }
             }
             next(0.8) { [weak self] in
                 ["tab": self?.model?.tab.rawValue ?? "", "selected": nul(self?.selectedID), "chip": nul(self?.controller?.backChip.label),
-                 "find": nul(self?.controller?.find.index)]
+                 "find": nul(self?.controller?.find.index), "halo": nul(self?.controller?.lane?.halo), "shown": nul(self?.controller?.laneHover.shown),
+                 "grown": nul(self?.controller?.laneHover.grown)]
             }
         case "jump":
             if model?.jump.shown != true { model?.openJump() }
@@ -967,6 +1034,37 @@ final class DebugScript {
                 return ["line": m.noteWarningsLine, "shown": m.showNoteWarnings,
                         "warnings": m.noteWarnings.map { [$0.kind, nul($0.place), nul($0.text), $0.message] as [Any] }]
             }
+        // shell escape per paper (UX.md §41)
+        case "builddetails":
+            if rest == "show" || rest == "hide" { model?.showBuildDetails = rest == "show" }
+            next(0.6) { [weak self] in self?.shellEscapeResult() }
+        case "shellescape":
+            if let m = model {
+                switch rest {
+                case "offer": if let o = m.shellEscapeOffer, !m.busy { m.takeShellEscapeOffer(o) }
+                case "turnoff": if m.state?.paper.shellEscape == true { m.setShellEscape(false) }
+                case "yes": if let a = m.confirmShellEscape { m.setShellEscape(true, paper: a.paper) }
+                case "cancel": m.confirmShellEscape = nil
+                default: break
+                }
+            }
+            waitForEngine(0) { [weak self] in next(0.8) { self?.shellEscapeResult() } }
+        case "retrysheet":
+            var clicked: Any = NSNull()
+            if rest == "open" {
+                model?.openRetry()
+            } else if !rest.isEmpty, let win = window?.attachedSheet, let b = Self.button(rest, in: win) {
+                let p = b.convert(CGPoint(x: b.bounds.midX, y: b.bounds.midY), to: nil)
+                clicked = [Double(p.x), Double(p.y), b.className] as [Any]
+                click(at: p, in: win)  // an AppKit button tracks the queued mouse-up
+            }
+            waitForEngine(0) { [weak self] in
+                next(0.8) {
+                    var r = self?.shellEscapeResult() ?? [:]
+                    r["clicked"] = clicked
+                    return r
+                }
+            }
         case "tab":
             // `ms`: from the switch to the next turn of the run loop, the switch's own turn (SwiftUI's update, the
             // layout and the drawing) done
@@ -1061,11 +1159,18 @@ final class DebugScript {
         case "ovscroll":  // the overview scrolled to that offset from its top
             if let sv = model?.overview.scrollView { OverviewModel.scroll(sv, to: Double(rest) ?? 0) }
             next(0.3) { [weak self] in self?.navResult() }
+        case "ovstrip":  // `ovstrip [start|end|<x>|at:<x>,<y> [click]]`: the strip scrolled, or the pointer on it
+            let target = stripPointer(rest)
+            next(0.4) { [weak self] in
+                var r = self?.navResult() ?? [:]
+                if let t = target { r["target"] = t }
+                return r
+            }
         case "ovwait":  // until the overview's data is in (at most 10 s)
             waitForOverview(started: ProcessInfo.processInfo.systemUptime) { next(0) { [weak self] in self?.navResult() } }
         case "ovhover":  // the pointer on the map, as its hover handler gets it (a background run's window never gets
             // one): cell:<id>@<n>, round:<n> (its rail), edit:<id>@<n>, dot:<comment>@<n> (a path's point), at:<x>,<y> (the
-            // map's own points); comment:<id> (a panel's line: its path previewed); off
+            // map's own points); comment:<id> (a panel's line: its path previewed); strip (the strip's own); off
             overviewHover(rest)
             next(0.4) { [weak self] in self?.navResult() }
         case "ovkey":  // a key while the map has the keys (`key` routes it as typed): left, right, up, down, return
@@ -1087,8 +1192,9 @@ final class DebugScript {
             let (what, kind) = Self.split(rest)
             if let k = FoldKind(rawValue: kind) { if what == "fold" { model?.foldPart(k) } else { model?.showPart(k) } }
             next(0.5) { [weak self] in self?.navResult() }
-        case "reducemotion":  // `reducemotion on|off|system`: Reduce Motion for the map's selected-round box, for the process
-            MapMotion.reduceMotion = rest == "system" ? nil : rest == "on"
+        case "reducemotion":  // `reducemotion on|off|system`: Reduce Motion for the process (`Motion`, BRIEF E11): the map's
+            // selected-round box, the column and its window, the find bar, the tabs, the flash, the reveal, the panel
+            Motion.override = rest == "system" ? nil : rest == "on"
             next(0.05) { [weak self] in self?.navResult() }
         case "ovtable":  // the paper map as a table (on) or as the map (off), as the toolbar's Map | Table control
             if let m = model { OverviewToolbarTrail.mapOrTable(m).wrappedValue = rest == "on" }
@@ -1445,14 +1551,17 @@ final class DebugScript {
                         "hover": nul(o.hover.target.map { String(describing: $0) }), "preview": nul(o.hover.comment),
                         "tip": nul(o.hover.tip?.lines), "tipAt": nul(o.hover.tip.map { [$0.at.x, $0.at.y] }),
                         "mapOrigin": [o.hover.mapOrigin.x, o.hover.mapOrigin.y],
+                        "stripOrigin": [o.hover.stripOrigin.x, o.hover.stripOrigin.y],
+                        "rulerOrigin": [o.hover.rulerOrigin.x, o.hover.rulerOrigin.y],
+                        "strip": Self.stripState(o.stripScroll),
                         "box": nul(o.hover.scene.flatMap { sc in sc.box.map { b in
                             ["round": nul(sc.rows.first { abs($0.y - 6 - b.minY) < 0.5 }?.n), "y": b.minY, "followed": sc.boxFollowed] as [String: Any]
                         } }),
-                        "reduceMotion": nul(MapMotion.reduceMotion),
+                        "reduceMotion": nul(Motion.override),
                         "panel": nul(o.selection.flatMap { s in o.data.flatMap { OverviewPanel.make(s, data: $0, strip: m.stripRound, student: "") } }
                             .map { ["title": $0.title, "meta": $0.meta, "buttons": $0.buttons.map(\.title)] })] as [String: Any],
                 "overview": ["status": status, "paper": nul(o.paper), "selection": item(o.selection), "strip": nul(m.stripRound),
-                             "scroll": nul(o.liveScroll.map { ($0 * 10).rounded() / 10 }), "saved": o.savedScroll,
+                             "previewRound": nul(o.preview), "scroll": nul(o.liveScroll.map { ($0 * 10).rounded() / 10 }), "saved": o.savedScroll,
                              "mapTop": o.mapTop, "visible": nul(o.scrollView.map { OverviewModel.visibleHeight($0) }),
                              "rounds": o.data?.rounds.map(\.n) ?? [],
                              // Follow anything, under the map (UI v4 step 8)
@@ -1467,7 +1576,7 @@ final class DebugScript {
                 "steps": m.navHistory.back.map { nul($0.step ? $0.review.pdf?.label : nil) },
                 "forwardSteps": m.navHistory.forward.map { nul($0.step ? $0.review.pdf?.label : nil) },
                 "place": nul(m.pdf.currentPlace().map { ["label": $0.label, "page": $0.page, "y": ($0.y * 10).rounded() / 10] as [String: Any] }),
-                "chip": nul(m.pdf.backChip.label.map { ["label": $0, "faded": m.pdf.backChip.faded] as [String: Any] }),
+                "chip": nul(m.pdf.backChip.label.map { ["label": $0] as [String: Any] }),
                 "flash": m.pdf.flashing, "backHelp": nul(m.backLabel), "forwardHelp": nul(m.forwardLabel),
                 "toolbar": ["items": nul(window?.toolbar?.items.count), "visible": nul(window?.toolbar?.visibleItems?.count),
                             "nudges": m.toolbarNudges] as [String: Any],
@@ -1504,9 +1613,9 @@ final class DebugScript {
                          "response": nul(h?.response?.words), "closed": nul(h?.closed), "closedHelp": nul(h?.closedHelp),
                          "answered": nul(h?.answered),
                          "help": OverviewText.headerHelp(sentence, facts)] as [String: Any]
-        let strip = m.stripRound
+        let strip = m.shownStripRound
         let pages: [[Int]] = PageStripView.pagesToCheck(strip.flatMap(d.round), d).sorted { $0.key < $1.key }.map { [$0.key + 1, $0.value] }
-        out["strip"] = ["round": nul(strip), "label": nul(PageStripView.roundLabel(strip, latest: d.latest?.n)), "counts": pages]
+        out["strip"] = ["round": nul(strip), "label": nul(PageStripView.roundLabel(strip)), "counts": pages]
             as [String: Any]
         out["key"] = MapKeyRow.rows(m.overview.asTable ? nil : m.overview.hover.scene, d).map(\.noun)
         if let tags = d.tags, tags.tagged > 0 {
@@ -1546,12 +1655,64 @@ final class DebugScript {
         return out
     }
 
+    /// The strip's geometry and scroll (`nav`'s `map.strip`): its round, thumbnails' size, row, slot, width, content
+    /// width, whether it scrolls, its offset, the page at its left edge kept across rounds, and the pages in view (from 1).
+    static func stripState(_ s: StripScroll) -> Any {
+        guard let g = s.geo else { return NSNull() }
+        func r1(_ v: CGFloat) -> Double { (Double(v) * 10).rounded() / 10 }
+        let seen = g.visible(offset: s.offset)
+        let last = max(Int(seen.lowerBound) + 1, Int((seen.upperBound - 0.001).rounded(.down)) + 1)
+        return ["round": s.round.map { $0 as Any } ?? NSNull(), "thumb": [r1(g.thumbWidth), r1(g.thumbHeight)], "row": r1(g.row),
+                "slot": r1(g.slot), "width": r1(g.width), "content": r1(g.contentWidth), "scrolls": g.scrolls,
+                "offset": r1(s.offset), "anchor": (s.anchor * 100).rounded() / 100,
+                "visible": [Int(seen.lowerBound) + 1, min(g.pages, last)]] as [String: Any]
+    }
+
+    /// `ovstrip`: the strip scrolled (start, end, x), or the pointer at a point of its visible frame through the strip's
+    /// own hover (its tag at once), and with `click` a click there; the target there for `at:`.
+    private func stripPointer(_ arg: String) -> String? {
+        guard let m = model else { return nil }
+        let s = m.overview.stripScroll
+        let words = arg.split(separator: " ").map(String.init)
+        guard let w = words.first, w.hasPrefix("at:") else {
+            switch words.first {
+            case "end"?: s.scroll(to: .greatestFiniteMagnitude)
+            case let x?: s.scroll(to: CGFloat(Double(x) ?? 0))
+            default: s.scroll(to: 0)
+            }
+            return nil
+        }
+        let xy = w.dropFirst(3).split(separator: ",").compactMap { Double($0) }
+        guard xy.count == 2, let g = s.geo, let n = s.round, let r = m.overview.data?.round(n) else { return "none" }
+        let p = CGPoint(x: xy[0], y: xy[1])
+        let size = { (q: Int) in m.thumbnails.pageSize(pdf: r.pdf, page: q) }
+        let t = g.target(seen: p, offset: s.offset, marks: r.marks ?? [], pageSize: size)
+        m.overview.point(strip: true)
+        PageStripView.hover(at: CGPoint(x: p.x + s.offset, y: p.y), round: r, geo: g, model: m, hover: m.overview.hover,
+                            offset: s.offset, force: true)
+        if words.contains("click") { PageStripView.act(t, round: n, model: m, double: false) }
+        switch t {
+        case .page(let q)?: return "page:\(q + 1)"
+        case .comment(let id, let q)?: return "comment:\(id)@p\(q + 1)"
+        case nil: return "none"
+        }
+    }
+
     /// `ovhover`'s pointer: at the middle of the thing named, through the map's own hover handler (`PaperMapView.hover`),
     /// its tag at once.
     private func overviewHover(_ arg: String) {
         guard let m = model else { return }
         let h = m.overview.hover
-        if arg == "off" || arg.isEmpty { return h.leave() }
+        if arg == "off" || arg.isEmpty {
+            m.overview.pointOffMap()
+            m.overview.point(strip: false)
+            return h.leave()
+        }
+        if arg == "strip" {  // off the map onto the strip, which keeps the round shown
+            h.leave()
+            m.overview.pointOffMap()
+            return m.overview.point(strip: true)
+        }
         guard let scene = h.scene, let d = m.overview.data else { return }
         let student = OverviewText.firstName(m.state?.paper.student ?? "")
         let (kind, value) = Self.split(arg.replacingOccurrences(of: ":", with: " "))
@@ -1579,7 +1740,7 @@ final class DebugScript {
             return h.point(at: .zero, key: "line:" + value, comment: value, force: true) { [] }
         default: break
         }
-        if let p { PaperMapView.hover(at: p, scene: scene, data: d, student: student, hover: h, force: true) }
+        if let p { PaperMapView.hover(at: p, scene: scene, data: d, student: student, hover: h, overview: m.overview, force: true) }
     }
 
     private func waitForOverview(started: TimeInterval, _ done: @escaping () -> Void) {
@@ -1657,6 +1818,48 @@ final class DebugScript {
                 "resumable": nul(r?.resumable),
                 "finishes": (r?.finishes ?? []).map { ["at": nul($0.at), "final": nul($0.final), "email": nul($0.email)] },
                 "level": m.level.rawValue, "tab": m.tab.rawValue, "toast": nul(m.reading.toast), "alert": nul(m.alertMessage)]
+    }
+
+    /// The shown round's build and the paper's shell escape (UX.md §41): what the Details show and offer, the sheet over
+    /// the window and the confirmation.
+    private func shellEscapeResult() -> [String: Any] {
+        guard let m = model else { return [:] }
+        let b = m.round?.build
+        return ["details": m.showBuildDetails, "about": b.map { BuildDetails.about(m.state?.paper, build: $0, source: m.lastSource) } ?? [],
+                "status": nul(b?.status), "errors": b?.errors.map(errorLine) ?? [], "warnings": b?.warnings.count ?? 0,
+                "needs": nul(b?.needsShellEscape), "built": nul(b?.shellEscape), "paper": nul(m.state?.paper.shellEscape),
+                "offer": nul(m.shellEscapeOffer?.title), "turnOff": m.state?.paper.shellEscape == true, "again": m.canBuildAgain,
+                "retry": m.showRetry, "asking": nul(m.confirmShellEscape?.title), "message": nul(m.confirmShellEscape?.message),
+                "busy": m.busy, "round": nul(m.round?.n), "alert": nul(m.alertMessage),
+                "sheet": window?.attachedSheet.map { Self.buttons(in: $0).map { [$0.title, $0.state == .on, $0.keyEquivalent] as [Any] } } ?? []]
+    }
+
+    /// A window's AppKit buttons (a sheet's: SwiftUI's buttons, checkboxes and pop-up menus), in their views' order.
+    private static func buttons(in w: NSWindow) -> [NSButton] {
+        var out: [NSButton] = []
+        func walk(_ v: NSView) { if let b = v as? NSButton { out.append(b) }; v.subviews.forEach(walk) }
+        if let root = w.contentView { walk(root) }
+        return out
+    }
+
+    /// `retrysheet`'s button: `default` (Return: Build, Turn On Shell Escape…'s Cancel), `cancel` (Esc), else the one
+    /// of that title (an alert's; SwiftUI's own buttons have none, nor an accessibility label of their own).
+    private static func button(_ name: String, in w: NSWindow) -> NSButton? {
+        let all = buttons(in: w)
+        switch name {
+        case "default": return all.first { $0.keyEquivalent == "\r" }
+        case "cancel": return all.first { $0.keyEquivalent == "\u{1b}" }
+        default: return all.first { $0.title == name }
+        }
+    }
+
+    /// Waits (at most 90 s) until the engine has answered what was sent, a turn at least.
+    private func waitForEngine(_ n: Int, then: @escaping () -> Void) {
+        if n < 2 || (model?.busy == true && n < 450) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in self?.waitForEngine(n + 1, then: then) }
+        } else {
+            then()
+        }
     }
 
     private func foldResult() -> Any {
@@ -2490,3 +2693,38 @@ final class DebugScript {
 
 /// A JSON value for an optional: null when nil.
 private func nul(_ v: Any?) -> Any { v ?? NSNull() }
+
+extension DebugScript {
+    /// `strip` and `striphover`'s result.
+    func stripResult(window: Bool = false) -> [String: Any]? {
+        guard let c = controller else { return nil }
+        let s = c.strip, l = s.layout
+        func r1(_ v: CGFloat) -> Double { (Double(v) * 10).rounded() / 10 }
+        func ids(_ idx: [Int]) -> [String] { idx.map { StripLayout.key(s.items[$0].target) } }
+        var out: [String: Any] = [
+            "items": s.items.map { [String(describing: $0.kind), ($0.fraction * 1000).rounded() / 1000, $0.label, $0.waits, $0.tick] as [Any] },
+            "glyphs": l.glyphs.map { [$0.shape.rawValue, r1($0.y), ids($0.members)] as [Any] },
+            "groups": l.groups.indices.map { k -> [String: Any] in
+                ["zone": [r1(l.groups[k].zone.lowerBound), r1(l.groups[k].zone.upperBound)], "ids": ids(l.groups[k].members),
+                 "rows": c.laneRows(k).words]
+            },
+            "height": r1(s.height), "halo": nul(c.lane?.halo), "current": nul(c.lane?.current.map(r1)), "rail": c.lane?.rail ?? false,
+            "value": nul(c.lane?.accessibilityValue() as? String),
+            "frame": c.lane.map { [r1($0.frame.minX), r1($0.frame.minY), r1($0.frame.width), r1($0.frame.height)] } ?? []]
+        if window {
+            out["grown"] = nul(c.laneHover.grown)
+            out["shown"] = nul(c.laneHover.shown)
+            out["pressed"] = c.laneHover.pressed
+            if let host = c.laneWindowView, !host.isHidden, host.superview != nil, let v = c.view, let g = c.laneHover.shown {
+                let top = v.bounds.height - host.frame.maxY
+                out["window"] = ["frame": [r1(host.frame.minX), r1(top), r1(host.frame.width), r1(host.frame.height)],
+                                 "gap": r1(v.bounds.width - 50 - host.frame.maxX), "line1": r1(top + LaneRows.line1),
+                                 "glyph": r1(StripLayout.top + l.groups[g].first), "rows": c.laneWindow.rows.words,
+                                 "hot": nul(c.laneWindow.hot), "more": c.laneWindow.rows.more, "alpha": r1(host.alphaValue)]
+            } else {
+                out["window"] = NSNull()
+            }
+        }
+        return out
+    }
+}

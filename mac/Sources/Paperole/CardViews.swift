@@ -11,6 +11,9 @@ struct Chip: View {
     let status: Status
     var compact = false
     var open = true
+    /// A row under the To check header, arranged by status: the header states it, so no sign (design/review-page
+    /// BRIEF.md E7); Not found keeps its ⚠.
+    var sign = true
 
     var body: some View {
         let quiet = !open && status == .toCheck
@@ -18,8 +21,10 @@ struct Chip: View {
         if compact {  // no tooltips in rows (UX.md §10.7)
             let bad = status == .notFound
             HStack(spacing: 4) {
-                Image(systemName: status.icon).font(.system(size: 9.5, weight: .semibold))
-                    .foregroundStyle(bad ? colour : Color(nsColor: Palette.neutral))
+                if sign || bad {
+                    Image(systemName: status.icon).font(.system(size: 9.5, weight: .semibold))
+                        .foregroundStyle(bad ? colour : Color(nsColor: Palette.neutral))
+                }
                 Text(id).font(.system(size: 11, weight: .medium)).monospacedDigit()
                     .foregroundStyle(bad ? colour : Ink.label2)
             }
@@ -58,7 +63,7 @@ struct CompactRow: View, Equatable {
         let _ = { BodyCount.row += 1 }()
         VStack(alignment: .leading, spacing: 1) {
             HStack(spacing: 7) {
-                Chip(id: card.id, status: card.status, compact: true, open: card.open)
+                Chip(id: card.id, status: card.status, compact: true, open: card.open, sign: !(card.underToCheck && card.status == .toCheck))
                 if let w = card.stateWord { StateWord(text: w, tone: card.stateTone) }
                 if card.studentNote != nil { StudentNoteSign() }
                 if card.unsent { UnsentTag() }
@@ -471,9 +476,10 @@ struct ExpandedCard: View, Equatable {
                 .modifier(RevealAction(change: t.reveal, actions: actions))
                 if !t.elsewhere.isEmpty && !card.attachments.isEmpty { attachments(alone: t.section == nil).padding(.top, 8) }
                 if t.kind == .first && !card.carried && edit.roundOpen {
-                    Text("Goes out in the Round \(edit.round) final.pdf · click the note to edit")
+                    // how to edit it is in the help tag (design/review-page/BRIEF.md E9: no how-to words stay on screen)
+                    Text("Goes out in the Round \(edit.round) final.pdf")
                         .font(.system(size: 11)).foregroundStyle(Ink.secondary).padding(.top, 12)
-                        .help("Delete it with Delete… in the … menu (⌫)")
+                        .help("Click the note to edit it. Delete it with Delete… in the ⋯ menu (⌫)")
                 }
             }
         }
@@ -756,7 +762,6 @@ struct ExpandedCard: View, Equatable {
                 .fixedSize()
                 .help("Bring \(card.id) back into Round \(n) as To check, placed against this round’s text, to follow it up "
                       + "there. Undo Reopen is in its ⋯ menu until Round \(n) is finished.")
-            Text("Brings it back as To check").font(.system(size: 12)).foregroundStyle(Ink.secondary)
             Spacer(minLength: 0)
         }
     }
@@ -1289,6 +1294,14 @@ enum CardMenus {
     }
 
     /// Opens a menu at the mouse (the click that asked for it).
+    /// A change card's ⋯ (design/review-page/BRIEF.md E2): Source…, which opens the card's popover of where the edit is.
+    static func changeMore(source: @escaping () -> Void) -> NSMenu {
+        let m = NSMenu()
+        m.autoenablesItems = false
+        m.addItem(item("Source…", source))
+        return m
+    }
+
     static func popUp(_ menu: NSMenu) {
         guard let e = NSApp.currentEvent, let v = e.window?.contentView else { return }
         menu.popUp(positioning: nil, at: v.convert(e.locationInWindow, from: nil), in: v)

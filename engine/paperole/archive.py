@@ -10,7 +10,8 @@ write makes it under each paper's lock and reads it back before naming it; check
 a schema-1 backup, a review folder zipped or not, and a folder searched three levels down for review folders, which
 are listed where they are); unpack takes one paper out into a new folder; swap_in puts it in place of yours by two
 renames. Every entry of a file is checked before anything is read (_Zip). Nothing here writes into a review folder
-but unpack's fork of its own new folder and swap_in's renames."""
+but unpack's fork of its own new folder, swap_in's renames, and shell escape taken off a paper that comes in (both:
+trust does not travel, _distrusted)."""
 import contextlib
 import datetime
 import hashlib
@@ -25,7 +26,7 @@ import zipfile
 import zlib
 from pathlib import Path
 
-from . import EngineError, __version__, check as checks, disk, ledger
+from . import EngineError, __version__, check as checks, disk, ledger, project
 
 SCHEMA = 2
 FORMAT = "Paperole"  # backup.json's "app": the format's name, the same in Dev
@@ -90,9 +91,11 @@ def _engine():
 
 def safe_name(name, fallback):
     """A folder's name from a title, a student's name or a folder's name, as the app's DataFiles.name makes one: no
-    "/", ":" or control characters, white space collapsed, no dot, dash or space first, at most 80 characters;
+    "/", ":" or control characters, no $, `, " or \\ (latexmk's command lines would read them in a review folder's
+    path, so project.compile refuses one), white space collapsed, no dot, dash or space first, at most 80 characters;
     fallback when nothing is left."""
-    s = "".join("-" if c in "/:" else " " if unicodedata.category(c) == "Cc" else c for c in str(name or ""))
+    s = "".join("-" if c in "/:" else "" if c in project.SHELL_QUOTED else " " if unicodedata.category(c) == "Cc"
+                else c for c in str(name or ""))
     return " ".join(s.split()).lstrip(". -")[:80].strip() or fallback
 
 
@@ -931,7 +934,8 @@ def unpack(path, paper, dest, fork=False, copy=False, progress=None, cancelled=_
     folder was ("… 2" when taken), with the same refusals as check and the paper's files checked first: written into
     a hidden folder in dest, each file synced and read back from the disk, then renamed into place. fork: a new id
     (the file's kept in forked_from: a second copy of a listed paper); copy: Keep Both, also " (copy)" after the
-    title. A failure or cancel leaves nothing. Returns {"path", "id", "problems": check's on the new folder}."""
+    title. In every case it comes in without shell escape (_distrusted). A failure or cancel leaves nothing. Returns
+    {"path", "id", "problems": check's on the new folder}."""
     progress = progress or (lambda message: None)
     dest = Path(os.path.abspath(dest))
     if not dest.is_dir():
@@ -989,13 +993,15 @@ def unpack(path, paper, dest, fork=False, copy=False, progress=None, cancelled=_
                     raise EngineError("“{}” did not read back from the disk as it was written, so the paper was not "
                                       "imported. The disk may be failing.".format(n[len(prefix):]))
             pid = ledger.paper_id(staging, lg)
-            if fork or copy:
+            if fork or copy or "shell_escape" in lg["paper"]:
                 with ledger.edit(staging) as new:
                     p = new["paper"]
-                    p["forked_from"], p["id"] = p["id"], ledger.new_paper_id()
-                    if copy:
-                        p["title"] = "{} (copy)".format(p.get("title") or name)
-                    pid = p["id"]
+                    p.pop("shell_escape", None)  # trust does not travel (_distrusted)
+                    if fork or copy:
+                        p["forked_from"], p["id"] = p["id"], ledger.new_paper_id()
+                        if copy:
+                            p["title"] = "{} (copy)".format(p.get("title") or name)
+                        pid = p["id"]
             _stop(cancelled)
             disk._sync_folder(staging)
             final = _claim(dest, name)
@@ -1010,10 +1016,24 @@ def unpack(path, paper, dest, fork=False, copy=False, progress=None, cancelled=_
     return {"path": str(final), "id": pid, "problems": checks.paper(final)}
 
 
+def _distrusted(folder):
+    """Trust does not travel: a paper that comes in from a file is built without shell escape (project.compile) until
+    the advisor turns it on here, so paper.shell_escape is taken off its ledger (a new version) when it is there. A
+    ledger that cannot be read is left as it is: nothing is built from it."""
+    try:
+        lg = ledger.load(folder)
+    except (EngineError, OSError):
+        return
+    if isinstance(lg.get("paper"), dict) and "shell_escape" in lg["paper"]:
+        with ledger.edit(folder) as new:
+            new["paper"].pop("shell_escape", None)
+
+
 def swap_in(incoming, current):
     """Use This Copy (DATA.md §5.4): under the paper's lock, rename the current review folder to "Replaced by
     Import/<name> <YYYY-MM-DD>" beside it ("… 2" when taken), then the incoming folder into its place; both on one
-    disk, so each step is a rename. A failure undoes what was done. Returns {"path", "replaced"}."""
+    disk, so each step is a rename. A failure undoes what was done. The incoming copy comes in without shell escape
+    (_distrusted; unpack already took it off one it made). Returns {"path", "replaced"}."""
     incoming, current = Path(os.path.abspath(incoming)), Path(os.path.abspath(current))
     if not (incoming / "ledger.json").is_file():
         raise EngineError("{} is not a Paperole paper folder (no ledger.json).".format(incoming))
@@ -1025,6 +1045,7 @@ def swap_in(incoming, current):
     if os.stat(str(incoming)).st_dev != os.stat(str(current.parent)).st_dev:
         raise EngineError("The copy to use must be on the same disk as yours.")
     with ledger.locked(current):
+        _distrusted(incoming)
         aside_folder = current.parent / REPLACED
         made = not aside_folder.exists()
         aside_folder.mkdir(exist_ok=True)

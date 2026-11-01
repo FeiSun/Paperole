@@ -126,6 +126,25 @@ struct ScrollDecision: Equatable {
     }
 }
 
+extension ScrollDecision {
+    /// The most a centring scroll is rounded by (design/review-page/BRIEF.md E3).
+    static let rounding: CGFloat = 22
+
+    /// A centring scroll of `delta` rounded so the row above the card (`above`, from the viewport's top, where the
+    /// floating `header` covers it) ends either whole under the header or fully hidden by it, whichever moves less, by
+    /// at most 22 pt, the card (`card`, likewise) staying whole below the header in the `viewport` (its top, when it is
+    /// taller than the view).
+    static func whole(delta: CGFloat, above: CGRect, card: CGRect, header: CGFloat, viewport: CGFloat) -> CGFloat {
+        let top = above.minY - delta, bottom = above.maxY - delta
+        guard top < header - 0.5, bottom > header + 0.5 else { return delta }  // not cut by the header
+        // a card taller than the view keeps its top in view; another stays whole
+        let fits = card.height <= viewport - header
+        let options = [delta + (top - header), delta + (bottom - header)]  // whole under it, or hidden by it
+            .filter { abs($0 - delta) <= rounding && card.minY - $0 >= header - 0.5 && (!fits || card.maxY - $0 <= viewport + 0.5) }
+        return options.min { abs($0 - delta) < abs($1 - delta) } ?? delta
+    }
+}
+
 /// The keyboard map (UX.md §9), as a pure function of what is on screen.
 enum KeyAction: Equatable {
     case next, previous

@@ -33,11 +33,15 @@ final class PanelScroller {
             return
         }
         pending = nil
-        let reduce = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        let reduce = Motion.reduced
         let viewport = sv.contentView.bounds.height
         let minY = frame.minY - Self.header, maxY = frame.maxY - Self.header
-        let d = ScrollDecision.decide(minY: minY, maxY: maxY, viewport: viewport - Self.header, mode: p.mode,
+        var d = ScrollDecision.decide(minY: minY, maxY: maxY, viewport: viewport - Self.header, mode: p.mode,
                                       reduceMotion: reduce)
+        // a centred card lands whole: the row above it whole under the floating header or hidden by it (BRIEF E3)
+        if p.mode == .centre, let delta = d?.delta, let above = t.frame(above: p.id) {
+            d?.delta = ScrollDecision.whole(delta: delta, above: above, card: frame, header: Self.header, viewport: viewport)
+        }
         lastDecision = "\(p.mode) minY=\(Int(minY)) maxY=\(Int(maxY)) -> " +
             (d.map { "\(Int($0.delta)) \($0.animated ? "animated" : "instant")" } ?? "none")
         if let d { scroll(by: d.delta, animated: d.animated) }
@@ -369,6 +373,15 @@ final class PanelTable: NSObject, NSTableViewDataSource, NSTableViewDelegate {
     /// The rect of a card's row relative to the top of the visible area, or nil. With `header`, up over its group's
     /// header when it is the group's first, so a card placed under the floating header leaves its own header in view
     /// rather than half under the other (behaviour review 2026-10-19).
+    /// The item row just above a card (none when a header is), from the visible top as `frame(of:)`: E3's rounding.
+    func frame(above id: String) -> CGRect? {
+        guard let i = index[id], i > 0 else { return nil }
+        var k = i - 1
+        while k > 0, case .gap = rows[k] { k -= 1 }
+        guard case .item = rows[k] else { return nil }
+        return table.rect(ofRow: k).offsetBy(dx: 0, dy: -scrollView.contentView.bounds.minY)
+    }
+
     func frame(of id: String, header: Bool = false) -> CGRect? {
         guard let i = index[id] else { return nil }
         var r = table.rect(ofRow: i)

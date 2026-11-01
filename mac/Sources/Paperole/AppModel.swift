@@ -249,6 +249,9 @@ final class ToolbarModel: ObservableObject {
     @Published var hasBox = false
     @Published var reanchor: String?
     @Published var reanchorError: String?
+    /// At a find match the floating toolbar is the Comment button alone (design/review-page/BRIEF.md E5): the composer
+    /// it opens has the swatches and kinds.
+    @Published var matchOnly = false
 
     init() {
         color = MarkColor(name: Prefs.string("markColor") ?? "") ?? .yellow
@@ -518,6 +521,12 @@ final class AppModel: ObservableObject {
     /// The sheet that builds the latest round again (Retry…, Build Round N Again…), or starts Round 1 when the engine
     /// refused it (`startRefused`).
     @Published var showRetry = false
+    /// The sheet opened by Build Again with Shell Escape…: its Shell escape toggle starts on (`openRetry`; UX.md §41).
+    private(set) var retryWithShellEscape = false
+    /// The build's Details on the status line (`BuildStatusLine`), here so a debug script can open it (`builddetails`).
+    @Published var showBuildDetails = false
+    /// Turn On Shell Escape… asked, waiting for the confirmation's Turn On or Cancel (UX.md §41).
+    @Published var confirmShellEscape: ShellEscapeAsk?
     /// Start Round 1 refused by the engine (two top-level files with \documentclass, neither main.tex: "Choose one."):
     /// the folder chosen and the engine's words, for the sheet that asks for the main file (review 2026-10-24, E2E-04).
     @Published var startRefused: StartRefusal?
@@ -839,7 +848,17 @@ final class AppModel: ObservableObject {
         // no state (its folder missing, its ledger unreadable): the student as the list keeps it
         guard let st = state else { return papers.first { $0.path == selectedPath }.map { StudentName.shown($0.student) } ?? "" }
         let live = roundIsOpen && !viewingEarlierRound
-        let step = st.summary.map { withReading($0).subtitle(comments: live ? commentsToCheck : nil, edits: live ? toCheck : nil) }
+        var step = st.summary.map { withReading($0).subtitle(comments: live ? commentsToCheck : nil, edits: live ? toCheck : nil) }
+        // Review, while the round waits on you (design/review-page/BRIEF.md D1 (b)): the tabs carry the numbers, so the
+        // subtitle gives the day counter; Focus hides the tabs, so its subtitle keeps them, in v4's words
+        if level == .review, live, commentsToCheck + toCheck > 0 {
+            if focus {
+                step = [commentsToCheck > 0 ? count(commentsToCheck, "comment") : nil, toCheck > 0 ? count(toCheck, "edit") : nil]
+                    .compactMap { $0 }.joined(separator: " + ") + " to check"
+            } else if let came = Hierarchy.date(latestRound?.created) {
+                step = HubText.cameIn(came, today: Date())
+            }
+        }
         let round = level == .overview ? latestRound.map { "Round \($0.n)" } : nil
         return [st.paper.student, round ?? "", step ?? ""].filter { !$0.isEmpty }.joined(separator: " · ")
     }
@@ -1111,6 +1130,8 @@ final class AppModel: ObservableObject {
         state = nil
         stateError = nil
         startRefused = nil
+        showBuildDetails = false  // the last paper's build
+        confirmShellEscape = nil  // asked about the last paper (UX.md §41)
         selection = nil
         panel.expanded = nil
         panel.held = nil
@@ -1148,10 +1169,14 @@ final class AppModel: ObservableObject {
     /// Shows the selected paper's overview or Review (UX.md §21). Review is never rebuilt: its PDF and panel stay in
     /// the window, hidden behind the overview (`PDFController.setReviewHidden`), so coming back finds the page, the
     /// selection and the list as they were. Leaving Review ends Focus, saves an open editor as a click elsewhere
-    /// does, and takes the keys from the hidden PDF; leaving the overview keeps its scroll position.
+    /// does, and takes the keys from the hidden PDF; leaving the overview keeps its scroll position and ends the round
+    /// previewed under the pointer (mac/UX.md §40.9).
     func setLevel(_ l: Level) {
         guard l != level else { return }
-        if level == .overview { overview.saveScroll() }
+        if level == .overview {
+            overview.saveScroll()
+            overview.pointerLeft()
+        }
         if l == .overview {
             setFocus(false)
             if let t = edit.tagging { closeTagPicker(t) }
@@ -1281,13 +1306,20 @@ final class AppModel: ObservableObject {
     func addExistingPaper() { data.chooseImport(origin: .window) }
 
     /// Lists a review folder (its title and student from its ledger) and shows it. A folder listed already keeps its
-    /// place and what the app keeps for it (Map Headings, key page, finished): only its names are read again.
+    /// place and what the app keeps for it (Map Headings, key page, finished): only its names are read again. One new
+    /// to the list comes in with shell escape off, as a paper from a file does (UX.md §41): listed once it is off.
     func addReviewFolder(_ path: String) {
         call("state", ["paper": path], then: { reply in
             let title = reply.state.paper.title, student = reply.state.paper.student
             if let i = self.papers.firstIndex(where: { $0.path == path }) {
                 self.papers[i].title = title
                 self.papers[i].student = student
+            } else if reply.state.paper.shellEscape == true {
+                // trust does not travel: its ledger may have been written on another Mac, or by anyone who could
+                // write the folder
+                self.call("edit_paper", ["paper": path, "shell_escape": false],
+                          then: { _ in self.addReviewFolder(path) })
+                return
             } else {
                 // a folder's own ledger has its facts, if any: nothing to move in
                 self.papers.append(PaperRef(path: path, title: title, student: student, ledgerID: reply.state.paper.id,
@@ -1421,11 +1453,14 @@ final class AppModel: ObservableObject {
         ingest(source: source)
     }
 
-    func ingest(source: String, main: String? = nil, engine: String? = nil) {
+    /// `shellEscape`: the paper's choice, sent only when given (UX.md §41); without it the engine builds as the paper has
+    /// it.
+    func ingest(source: String, main: String? = nil, engine: String? = nil, shellEscape: Bool? = nil) {
         guard let paper = selectedPath else { return }
         var params: [String: Any] = ["paper": paper, "source": source]
         if let main, !main.isEmpty { params["main"] = main }
         if let engine, !engine.isEmpty { params["engine"] = engine }
+        if let shellEscape { params["shell_escape"] = shellEscape }
         // No round yet: a refusal (two top-level files with \documentclass, neither main.tex: "Choose one.") shows in
         // Start Round 1, with the folder chosen, where the main file is given (E2E-04: the only Main file field was
         // Retry…'s, after a failed build, so such a paper stayed at "No rounds yet")
@@ -1435,8 +1470,15 @@ final class AppModel: ObservableObject {
             guard let self else { return }
             guard self.selectedPath == paper, self.state?.rounds.isEmpty == true else { self.alertMessage = message; return }
             self.startRefused = StartRefusal(source: source, problem: message)
-            self.showRetry = true
+            self.openRetry()
         })
+    }
+
+    /// The sheet that builds the latest round again or starts Round 1 (`showRetry`); `shellEscape`: opened by Build Again
+    /// with Shell Escape…, its toggle on (UX.md §41).
+    func openRetry(shellEscape: Bool = false) {
+        retryWithShellEscape = shellEscape
+        showRetry = true
     }
 
     var lastSource: String? {
@@ -2655,6 +2697,10 @@ final class AppModel: ObservableObject {
         if pdf.previewShown, Self.keyName(event) == "esc" {  // a reference preview closes first (PLAN §4.1)
             pdf.closePreview()
             return true
+        }
+        if pdf.laneShown {  // the column's window closes at once on any key; Esc does nothing else (BRIEF §4.1)
+            pdf.closeLane()
+            if Self.keyName(event) == "esc" { return true }
         }
         guard state != nil, let key = Self.keyName(event), let action = KeyRoute.action(key, keyState) else { return false }
         perform(action)

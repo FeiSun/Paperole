@@ -176,6 +176,9 @@ struct PaperInfo: Decodable, Equatable {
     var engine: String?
     /// The paper's id (CONTRACT amendment "Data foundations"); nil from an older engine.
     var id: String?
+    /// The advisor's choice: the paper's next builds run with shell escape (CONTRACT amendment "Shell escape per paper";
+    /// UX.md §41). nil from an engine before it (the official app's frozen one), read as off.
+    var shellEscape: Bool? = nil
 }
 
 struct RoundSummary: Decodable, Equatable {
@@ -222,6 +225,11 @@ struct Build: Decodable, Equatable {
     var warnings: [String]
     var errors: [BuildError]
     var logTail: String?
+    /// Built with shell escape, and whether a package asks for it in a build made without it (minted's "You must invoke
+    /// LaTeX with the -shell-escape flag", epstopdf, svg…; CONTRACT amendment "Shell escape per paper"). nil from an
+    /// engine before them: nothing is offered.
+    var shellEscape: Bool? = nil
+    var needsShellEscape: Bool? = nil
 }
 
 struct BuildError: Decodable, Equatable, Hashable {

@@ -35,7 +35,8 @@ final class ReadingTests: XCTestCase {
         XCTAssertEqual(rows.map(\.level), [1, 1, 2, 1, 1])
         XCTAssertEqual(rows.map(\.count), [1, 3, 1, 1, 2])  // §1 counts its subsection
         XCTAssertEqual(rows.map(\.read), [1, 1, 0, 1, 0])
-        XCTAssertEqual(rows.map(\.open), [0, 3, 2, 0, 0])
+        XCTAssertEqual(rows.map(\.open), [0, 3, 2, 0, 0])  // the help tag's and VoiceOver's: the section's total
+        XCTAssertEqual(rows.map(\.own), [0, 1, 2, 0, 0], "the row's own text: the column adds up to the paper's 3 (D4)")
         XCTAssertEqual(rows.map(\.changed), [false, true, true, false, true])  // it has bars
         XCTAssertEqual(rows.map(\.done), [true, false, false, true, false])
         XCTAssertTrue(rows.allSatisfy(\.tracked))

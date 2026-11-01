@@ -197,10 +197,11 @@ final class ChangeTests: XCTestCase {
         XCTAssertTrue(model(try makeChange(["checked": true])).handled)
     }
 
-    /// Audit 2026-10-17: VoiceOver said "unrequested" while the tab says "no comment asked for".
-    func testVoiceOverSaysNoCommentAskedFor() throws {
+    /// Audit 2026-10-17: VoiceOver said "unrequested" while the tab says otherwise; the one noun since the Review page's
+    /// polish is "unasked edit" (design/review-page/BRIEF.md §8).
+    func testVoiceOverSaysUnaskedEdit() throws {
         let m = model(try makeChange([:]))
-        XCTAssertTrue(m.accessibility.hasPrefix("c08, edited, no comment asked for, "), m.accessibility)
+        XCTAssertTrue(m.accessibility.hasPrefix("c08, edited, unasked edit, "), m.accessibility)
         XCTAssertFalse(m.accessibility.contains("unrequested"))
     }
 

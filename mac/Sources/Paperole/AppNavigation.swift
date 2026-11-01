@@ -286,6 +286,10 @@ extension AppModel {
     /// nil (a click on the empty map, Esc, the token's ×) follows nothing.
     func overviewClicked(_ item: OverviewItem?, double: Bool = false) {
         if !double { overview.takeKeys() }  // a click in the overview gives the map the keys, as in any window's content
+        // a click picks the round previewed under the pointer (a comment's point in its row keeps that round), and one
+        // on its way goes
+        if let p = overview.preview, overview.strip != p { overview.strip = p }
+        overview.endPreview()
         guard let item else {
             if overview.selection != nil { overview.selection = nil }
             return
@@ -299,6 +303,7 @@ extension AppModel {
         }
         if overview.selection != item { overview.selection = item }
         if let n = stripRound(for: item), overview.strip != n { overview.strip = n }
+        overview.stripScroll.follow(item, round: stripRound, data: overview.data)  // its page in view on the strip
         if let n = Self.round(of: item, overview.data), overview.folded.contains(n), !overview.unfold {
             overview.unfold = true
             overview.revealRow(n)
@@ -316,6 +321,7 @@ extension AppModel {
     /// A key on the map (`MapKeys`): what it follows moves, and VoiceOver says where it is.
     @discardableResult
     func overviewMove(_ key: MapKeys.Key) -> Bool {
+        overview.endPreview()  // a key picks from the strip's round, never the one previewed
         guard let d = overview.data, let mv = MapKeys.move(key, from: overview.selection, data: d, strip: stripRound) else { return false }
         overviewClicked(mv.item)
         if let s = mv.strip, overview.strip != s { overview.strip = s }
@@ -351,6 +357,9 @@ extension AppModel {
 
     /// The round the thumbnail strip shows: the one picked, else the latest that built (a failed round has no pages).
     var stripRound: Int? { overview.strip ?? MapRules.defaultStrip(overview.data) ?? latestRound?.n }
+
+    /// The round the strip shows and the map's box marks: the one previewed under the pointer, else `stripRound`.
+    var shownStripRound: Int? { overview.preview ?? stripRound }
 
     /// The strip follows a cell's round (OVERVIEW-v2 §8 decision 6), a round's, a page's; a comment keeps the strip's
     /// round when it is there, else goes to the last round it has a page in (placed, or its passage deleted there).

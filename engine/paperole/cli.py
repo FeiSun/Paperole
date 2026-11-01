@@ -60,6 +60,8 @@ def _parser():
     p.add_argument("source", help="the student's source folder or .zip")
     p.add_argument("--main")
     p.add_argument("--engine", choices=sorted(project.ENGINES))
+    p.add_argument("--shell-escape", action=argparse.BooleanOptionalAction,
+                   help="build with shell escape (minted …) or without, and remember it for the paper")
     p = sub.add_parser("comment", help="write a comment on a PDF selection")
     p.add_argument("paper")
     p.add_argument("--page", type=int, required=True, help="0-based")
@@ -153,7 +155,8 @@ def _parser():
     p.add_argument("--tag-order", type=_ids, help="the advisor's visible tags in order, comma-separated")
     p = sub.add_parser("export", help="print every comment of papers, round by round (for CSV or JSON)")
     p.add_argument("papers", nargs="+")
-    p = sub.add_parser("edit-paper", help="set a paper's title, student, or its finished day, Map Headings or key page")
+    p = sub.add_parser("edit-paper", help="set a paper's title, student, or its finished day, Map Headings, key page "
+                                          "or shell escape")
     p.add_argument("paper")
     p.add_argument("--title")
     p.add_argument("--student")
@@ -163,6 +166,8 @@ def _parser():
                    help="Map Headings as JSON (none: no answers)")
     p.add_argument("--key-page", type=_cleared(_key_page), default=argparse.SUPPRESS,
                    help="ROUND:PAGE, the page 0-based (none: no choice)")
+    p.add_argument("--shell-escape", action=argparse.BooleanOptionalAction,
+                   help="build the paper's next rounds with shell escape or without")
     sub.add_parser("fork", help="give the paper a new id (a copy kept beside the original)").add_argument("paper")
     sub.add_parser("history", help="list the saved versions of the paper's ledger").add_argument("paper")
     p = sub.add_parser("put-back", help="put back a saved version of the ledger, as a new version")
@@ -240,10 +245,12 @@ def main(argv=None):
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
     paper = os.path.abspath(args.paper)
+    # --shell-escape or --no-shell-escape, sent only when given (the paper's choice stays as it is otherwise)
+    escape = {} if getattr(args, "shell_escape", None) is None else {"shell_escape": args.shell_escape}
     method, params = {
         "new": lambda: ("new", {"title": args.title, "student": args.student}),
-        "ingest": lambda: ("ingest", {"source": os.path.abspath(args.source), "main": args.main,
-                                      "engine": args.engine}),
+        "ingest": lambda: ("ingest", dict({"source": os.path.abspath(args.source), "main": args.main,
+                                           "engine": args.engine}, **escape)),
         "comment": lambda: ("comment", {"page": args.page, "rects": args.rects, "text": args.text,
                                         "note": args.note, "kind": args.kind, "color": args.color, "tags": args.tags,
                                         "accepted": args.accepted, "names": dict(args.name) or None}),
@@ -271,7 +278,7 @@ def main(argv=None):
         "email-preview": lambda: ("email_preview", {}),
         "edit-paper": lambda: ("edit_paper", dict({"title": args.title, "student": args.student},
                                                   **{k: getattr(args, k) for k in ("finished", "buckets", "key_page")
-                                                     if hasattr(args, k)})),
+                                                     if hasattr(args, k)}, **escape)),
         "fork": lambda: ("fork", {}),
         "history": lambda: ("history", {}),
         "put-back": lambda: ("put_back_ledger", {"version": args.version}),

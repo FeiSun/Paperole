@@ -441,10 +441,19 @@ final class MapLayoutTests: XCTestCase {
             }
             let numbers = s.axis.dropFirst()
             for (a, b) in zip(numbers, numbers.dropFirst()) { XCTAssertGreaterThan(b.rect.minX, a.rect.maxX + 2.9, "\(a.text), \(b.text) apart") }
-            // the lens: a hairline's map end at a section's start in the strip's round (the top row), or an end
+            // the lens: a hairline's map end at a section's start in the strip's round (the top row), or an end; the
+            // strip's own ends (of its part in view, when it scrolls) at its edges, at its start and its end
             let top = try XCTUnwrap(s.rows.first)
             let edges = top.cells.map(\.rect.minX).map { $0 - 1 } + [top.cells.last!.rect.maxX + 1]
-            for f in s.fans { XCTAssertTrue(edges.contains { abs($0 - f[1].x) < 0.01 }, "a hairline at \(f[1].x) at \(w)") }
+            let strip = try XCTUnwrap(s.lensInput?.strip)
+            for o in [0, strip.maxOffset] {
+                let fans = s.lens(offset: o).fans
+                XCTAssertEqual(fans.first?[0].x, 0)
+                XCTAssertEqual(fans.last?[0].x ?? 0, w, accuracy: 0.5)
+                for f in fans where f[0].x > 0.5 && f[0].x < w - 0.5 || o == 0 && f[0].x <= 0.5 || o == strip.maxOffset && f[0].x >= w - 0.5 {
+                    XCTAssertTrue(edges.contains { abs($0 - f[1].x) < 0.01 }, "a hairline at \(f[1].x) at \(w), offset \(o)")
+                }
+            }
         }
     }
 
@@ -479,13 +488,33 @@ final class MapLayoutTests: XCTestCase {
     }
 
     func testTheStrip() {
-        let g = StripGeometry(width: 1156, pages: 12, aspect: 8.5 / 11)
-        XCTAssertEqual(g.thumbHeight, 72, accuracy: 0.01, "72 pt high when the slot is wide enough")
+        let g = StripGeometry(width: 1156, pages: 12)
+        XCTAssertEqual(g.thumbHeight, 72, accuracy: 0.01, "a Letter page 72 pt high")
+        XCTAssertEqual(g.thumbWidth, 612 * 72 / 792, accuracy: 0.01)
         XCTAssertEqual(g.page(at: g.thumbX(5) + 2), 5)
-        let crowded = StripGeometry(width: 676, pages: 22, aspect: 8.5 / 11)
-        XCTAssertLessThanOrEqual(crowded.thumbWidth, crowded.slot - 8)
-        XCTAssertLessThanOrEqual(crowded.thumbX(21) + crowded.thumbWidth, 676)
-        XCTAssertNil(crowded.page(at: 700))
+        XCTAssertFalse(g.scrolls)
+        XCTAssertEqual(g.slot, 1156 / 12, accuracy: 0.01, "the slots spread over the width")
+        XCTAssertEqual(g.thumbX(0), (g.slot - g.thumbWidth) / 2, accuracy: 0.01, "each thumbnail in the middle of its slot")
+        let crowded = StripGeometry(width: 676, pages: 22)
+        XCTAssertEqual(crowded.thumbHeight, 72, accuracy: 0.01, "as large on a crowded strip")
+        XCTAssertTrue(crowded.scrolls)
+        XCTAssertEqual(crowded.slot, crowded.thumbWidth + 8, accuracy: 0.01)
+        XCTAssertEqual(crowded.thumbX(0), 4, accuracy: 0.01, "from the left")
+        XCTAssertEqual(crowded.contentWidth, 22 * crowded.slot, accuracy: 0.01)
+        XCTAssertEqual(crowded.thumbX(21) + crowded.thumbWidth + 4, crowded.contentWidth, accuracy: 0.01)
+        XCTAssertEqual(crowded.page(at: 700), Int(700 / crowded.slot))
+        XCTAssertNil(crowded.page(at: crowded.contentWidth + 1))
+        // just fitting: 8 pt between the pages, no scroll
+        let just = StripGeometry(width: 10 * (StripGeometry.letterThumb.width + 8), pages: 10)
+        XCTAssertFalse(just.scrolls)
+        XCTAssertTrue(StripGeometry(width: just.width - 1, pages: 10).scrolls)
+        // the page's own size: A4 and a landscape page in proportion
+        let a4 = StripGeometry.thumbSize(page: CGSize(width: 595, height: 842))
+        XCTAssertEqual(a4.height, 842 * 72 / 792, accuracy: 0.01)
+        XCTAssertEqual(a4.width, 595 * 72 / 792, accuracy: 0.01)
+        let landscape = StripGeometry.thumbSize(page: CGSize(width: 792, height: 612))
+        XCTAssertEqual(landscape.width, 72, accuracy: 0.01)
+        XCTAssertEqual(StripGeometry.thumbSize(page: nil), StripGeometry.letterThumb, "a Letter page's until the PDF is read")
         // the numbers: the ○ beside them while there is room, else on the page; then every other number
         XCTAssertTrue(StripLabels(slot: g.slot, pages: 12).ringBeside)
         XCTAssertEqual(StripLabels(slot: g.slot, pages: 12).every, 1)
@@ -506,10 +535,16 @@ final class MapLayoutTests: XCTestCase {
         XCTAssertEqual(wide.every, 1)
         XCTAssertFalse(wide.ringBeside, "a 3-digit page with a 2-digit count")
         XCTAssertFalse(StripLabels(slot: 676 / 60, pages: 60, most: 1).ringBeside)
-        // the strip names its round only when it is not the latest
-        XCTAssertEqual(PageStripView.roundLabel(1, latest: 2), "Round 1")
-        XCTAssertNil(PageStripView.roundLabel(2, latest: 2))
-        XCTAssertNil(PageStripView.roundLabel(nil, latest: 2))
+        // the strip names its round, the latest too (the advisor's review of 2026-10-31)
+        XCTAssertEqual(PageStripView.roundLabel(1), "Round 1")
+        XCTAssertEqual(PageStripView.roundLabel(2), "Round 2")
+        XCTAssertNil(PageStripView.roundLabel(nil))
+        // the paper's row: 72 pt, or its tallest pages' thumbnails, whatever the width and the rounds' lengths (§40.9)
+        let d = try? OverviewDataTests.overviewFixture()
+        XCTAssertEqual(PageStripView.rowHeight(d, thumb: { _ in StripGeometry.letterThumb }), 72, accuracy: 0.01)
+        XCTAssertEqual(PageStripView.rowHeight(d, thumb: { _ in landscape }), 72, accuracy: 0.01, "a landscape paper's on the line")
+        XCTAssertEqual(PageStripView.rowHeight(d, thumb: { _ in a4 }), a4.height, accuracy: 0.01)
+        XCTAssertEqual(PageStripView.rowHeight(nil, thumb: { _ in a4 }), StripGeometry.height)
     }
 
     /// A page's help tag gives the round's page count and adds up to its count to check (comments and edits), which
@@ -908,7 +943,7 @@ final class MapLayoutTests: XCTestCase {
             }
         }
         XCTAssertNil(MapMotion.animation(reduceMotion: true), "Reduce Motion: it jumps")
-        XCTAssertEqual(MapMotion.animation(reduceMotion: false), .timingCurve(0.3, 0.7, 0.2, 1, duration: 0.28))
+        XCTAssertEqual(MapMotion.animation(reduceMotion: false), .timingCurve(0.3, 0.7, 0.2, 1, duration: 0.18))
     }
 
     func testHelpTags() throws {

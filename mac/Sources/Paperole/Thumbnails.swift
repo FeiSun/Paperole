@@ -18,11 +18,13 @@ final class ThumbnailStore: ObservableObject {
     private var images: [String: NSImage] = [:]
     private var asked: Set<String> = []
     private var stamps: [String: String] = [:]
-    private var aspects: [String: CGFloat] = [:]
+    private var firsts: [String: CGSize] = [:]
     private var sizes: [String: [Int: CGSize]] = [:]
     private let queue = DispatchQueue(label: "Paperole.thumbnails", qos: .utility)
     /// The images kept in memory: past it they all go, and are read from the folder again when shown.
     let capacity: Int
+    /// The images in memory now.
+    var count: Int { images.count }
 
     init(root: URL, capacity: Int = 600) {
         self.root = root
@@ -53,22 +55,31 @@ final class ThumbnailStore: ObservableObject {
     /// New data for the overview: the PDFs are looked at again (a round may have been built again).
     func refresh() {
         stamps = [:]
-        aspects = [:]
+        firsts = [:]
         sizes = [:]
     }
 
     /// A page's width over its height (its crop box, turned as it is shown); 8.5 × 11 when it cannot be read.
     func aspect(pdf: String?) -> CGFloat {
-        guard let pdf else { return 8.5 / 11 }
-        if let a = aspects[pdf] { return a }
-        var a: CGFloat = 8.5 / 11
+        let s = firstPage(pdf: pdf)
+        return s.width / s.height
+    }
+
+    /// The first page's size in points (its crop box, turned as it is shown); US Letter when it cannot be read.
+    func firstPage(pdf: String?) -> CGSize {
+        guard let pdf else { return StripGeometry.letter }
+        if let s = firsts[pdf] { return s }
+        var s = StripGeometry.letter
         if let doc = CGPDFDocument(URL(fileURLWithPath: pdf) as CFURL), let page = doc.page(at: 1) {
             let b = page.getBoxRect(.cropBox), turned = page.rotationAngle % 180 != 0
-            if b.width > 0, b.height > 0 { a = turned ? b.height / b.width : b.width / b.height }
+            if b.width > 0, b.height > 0 { s = turned ? CGSize(width: b.height, height: b.width) : b.size }
         }
-        aspects[pdf] = a
-        return a
+        firsts[pdf] = s
+        return s
     }
+
+    /// The strip's thumbnail size for the round's PDF (`StripGeometry.thumbSize` of its first page).
+    func thumbSize(pdf: String?) -> CGSize { StripGeometry.thumbSize(page: firstPage(pdf: pdf)) }
 
     /// A page's crop box size in points (the marks' space), as the thumbnail shows it.
     func pageSize(pdf: String?, page: Int) -> CGSize? {

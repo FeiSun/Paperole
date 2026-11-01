@@ -38,7 +38,7 @@ final class JumpSearchTests: XCTestCase {
     /// the PDF's find last.
     func testGroupsInOrderWithTheFindRowLast() throws {
         let g = Jump.search("boat", in: sources())
-        XCTAssertEqual(g.map(\.title), ["Comments", "Other edits", "In the paper"])
+        XCTAssertEqual(g.map(\.title), ["Comments", "Unasked edits", "In the paper"])
         XCTAssertEqual(g[0].rows.map(\.lead), ["R2-05", "R3-01"])
         XCTAssertEqual(g[0].rows[0].title, "Which tide state? Give the times of the recordings.")
         XCTAssertTrue(g[0].rows[0].detail.hasPrefix("on “"), "found in the words it is on")
@@ -60,7 +60,7 @@ final class JumpSearchTests: XCTestCase {
         XCTAssertEqual(said.lead, "R1-02")
         XCTAssertTrue(said.detail.hasPrefix("you wrote “"))
         XCTAssertEqual(Jump.search("boat night", in: sources())[0].rows.map(\.lead), ["R2-05"])
-        XCTAssertEqual(Jump.search("BOAT dawn", in: sources()).map(\.title), ["Other edits", "In the paper"], "any case")
+        XCTAssertEqual(Jump.search("BOAT dawn", in: sources()).map(\.title), ["Unasked edits", "In the paper"], "any case")
         XCTAssertEqual(Jump.search("zzqx", in: sources()).map(\.title), ["In the paper"])
     }
 

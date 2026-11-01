@@ -87,7 +87,7 @@ final class ScreensTests: XCTestCase {
     }
 
     /// POLISH §3 row 15: an open round without comments shows what to do first, and nothing else; with comments but no
-    /// new one, For the student ends with the hint, both in mouse words (POLISH §6).
+    /// new one, For the student has no hint (design/review-page/BRIEF.md E9: Help › Getting Started says how).
     func testTheEmptyStateAndTheHintTeachTheNextStep() throws {
         let m = makeModel()
         let list = CommentListController(panel: m.panel, actions: m.actions, edit: m.edit)
@@ -96,7 +96,7 @@ final class ScreensTests: XCTestCase {
         m.apply(try state { $0["comments"] = ($0["comments"] as? [[String: Any]] ?? []).filter { $0["carried"] as? Bool == true } })
         XCTAssertFalse(list.table.listed.contains { $0.hasPrefix("hint") }, "folded: its hint is hidden too")
         m.toggleFold(.student)
-        XCTAssertEqual(list.table.listed.last(where: { $0.hasPrefix("hint") }), "hint: To comment, select text in the PDF and click Comment.")
+        XCTAssertFalse(list.table.listed.contains { $0.hasPrefix("hint") }, "no how-to words on screen")
         withExtendedLifetime(list) {}
     }
 

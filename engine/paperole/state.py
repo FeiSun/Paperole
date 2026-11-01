@@ -334,7 +334,8 @@ def build(paper, n=None):
     p = lg["paper"]
     state = {"schema": 1,
              "paper": {"path": str(paper), "title": p["title"], "student": p["student"],
-                       "main": p["main"], "engine": p["engine"], "id": ledger.paper_id(paper, lg)},
+                       "main": p["main"], "engine": p["engine"], "id": ledger.paper_id(paper, lg),
+                       "shell_escape": p.get("shell_escape") is True},
              "rounds": [{"n": r["n"], "created": r["created"], "source": r["source"], "closed": r["closed"],
                          "closed_at": r["closed_at"], "status": r["build"]["status"],
                          "pdf": str(paper / r["build"]["pdf"]) if r["build"]["pdf"] else None} for r in lg["rounds"]],
@@ -355,7 +356,10 @@ def build(paper, n=None):
                   "text_x": _build_layout(paper, b, "text_x"), "columns": _build_layout(paper, b, "columns"),
                   "rulers": _build_layout(paper, b, "rulers"),
                   "warnings": b["warnings"], "errors": b["errors"],
-                  "log_tail": project.log_tail(paper / b["log"]) if b["log"] else ""},
+                  "log_tail": project.log_tail(paper / b["log"]) if b["log"] else "",
+                  # how it was built (false for a round built before builds recorded it), and whether a package
+                  # asks for shell escape there: derived, so an older round asks too
+                  "shell_escape": b.get("shell_escape") is True, "needs_shell_escape": project.needs_shell_escape(b)},
         "final_pdf": str(final) if rnd["closed"] and final.exists() else None,
         "email": email.read_text(encoding="utf-8") if rnd["closed"] and email.exists() else None,
         "resumable": rnd is ledger.latest_round(lg) and bool(rnd["closed"]), "finishes": finishes(paper, rnd)}

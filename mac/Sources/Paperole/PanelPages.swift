@@ -19,10 +19,14 @@ enum TabMotion {
     /// enough to say which way the other tab is.
     static func shift(width: CGFloat) -> CGFloat { min(width * 0.125, 56) }
 
-    /// Reduce Motion (System Settings › Accessibility › Display): no slide, no fade, the segment at once.
-    @MainActor static var reduced: Bool { reduceOverride ?? NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
-    /// Tests: Reduce Motion on or off whatever the system's setting.
-    @MainActor static var reduceOverride: Bool?
+    /// Reduce Motion (System Settings › Accessibility › Display; `Motion`, read once): no slide, no fade, the segment at
+    /// once.
+    @MainActor static var reduced: Bool { Motion.reduced }
+    /// Tests: Reduce Motion on or off whatever the system's setting (`Motion.override`).
+    @MainActor static var reduceOverride: Bool? {
+        get { Motion.override }
+        set { Motion.override = newValue }
+    }
 
     /// The segment's animation, nil with Reduce Motion.
     @MainActor static var animation: Animation? {
@@ -122,22 +126,13 @@ struct CommentsPage: View {
     }
 }
 
-/// The Changes tab's page: its one sentence (UX.md §16) and the change list.
+/// The Changes tab's page: the change list (UX.md §16; its sentence on top went, design/review-page/BRIEF.md E2: the
+/// header and the fold's count say each thing once).
 struct ChangesPage: View {
     @EnvironmentObject var model: AppModel
 
     var body: some View {
         VStack(spacing: 0) {
-            if !model.focus, let header = ChangesHeader.text(model.state, left: model.toCheck) {
-                Text(header)
-                    .font(.system(size: 12.5))
-                    .foregroundStyle(Ink.secondary)
-                    .lineSpacing(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 8)
-            }
             if !model.focus { Divider() }
             ChangeList(panel: model.changes, actions: model.actions, edit: model.edit)
         }

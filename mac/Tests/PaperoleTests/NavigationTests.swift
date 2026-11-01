@@ -257,7 +257,13 @@ final class NavigationModelTests: XCTestCase {
         XCTAssertEqual(m.continueButton?.title, "Continue Round 2")
         XCTAssertEqual(m.continueButton?.prominent, true)
         m.openReview()
-        XCTAssertEqual(m.windowSubtitle, "Lin Zhou · 6 comments and 1 edit to check", "Review's own, as before: the round menu names it")
+        // Review's own (design/review-page/BRIEF.md D1 (b)): the tabs carry the numbers, the subtitle the day counter;
+        // Focus, which has no tabs, keeps them
+        let came = try XCTUnwrap(Hierarchy.date(m.latestRound?.created))
+        XCTAssertEqual(m.windowSubtitle, "Lin Zhou · " + HubText.cameIn(came, today: Date()))
+        m.setFocus(true)
+        XCTAssertEqual(m.windowSubtitle, "Lin Zhou · 6 comments + 1 edit to check")
+        m.setFocus(false)
     }
 
     func testWithoutAnOverviewTheScreenStillShows() throws {

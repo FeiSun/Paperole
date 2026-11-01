@@ -1,0 +1,11 @@
+\documentclass{article}
+% SYNTHETIC test fixture (CONTRACT §"Shell escape per paper", Security). The index name is chosen by this document and
+% reaches latexmk's makeindex command line only after TeX has run, so the engine cannot screen it beforehand. Were the
+% name run through /bin/sh (as latexmk does by default, in "…", where a backquote still runs), the backquote would
+% leave a file MARK in the build. The engine runs makeindex as an argv list instead, so no MARK appears, off or on.
+\usepackage{imakeidx}
+\makeindex[name=x`date>MARK`x]
+\begin{document}
+Kelp\index[x`date>MARK`x]{kelp} drifts, and this sentence sits on the page.
+\printindex[x`date>MARK`x]
+\end{document}

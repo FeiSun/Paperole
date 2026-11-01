@@ -1,0 +1,12 @@
+\documentclass{article}
+% SYNTHETIC test fixture (CONTRACT §"Shell escape per paper", Security). multibib's \newcites names an auxiliary .aux
+% file that reaches latexmk's bibtex command line only after TeX has run. Were the name run through /bin/sh, the
+% backquote would run `date>MARK` and leave a file MARK in the build. The engine runs bibtex as an argv list, so none
+% appears. The \csname … \endcsname forms spell multibib's generated \citex…x, \bibliographystylex…x and \bibliographyx…x.
+\usepackage{multibib}
+\newcites{x`date>MARK`x}{More References}
+\begin{document}
+Kelp drifts \csname citex`date>MARK`x\endcsname{kelp} across the page here.
+\csname bibliographystylex`date>MARK`x\endcsname{plain}
+\csname bibliographyx`date>MARK`x\endcsname{refs}
+\end{document}

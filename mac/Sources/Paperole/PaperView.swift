@@ -18,13 +18,6 @@ struct PaperView: View {
                             PDFPane(model: model)
                                 .overlay(alignment: .top) { ReanchorBar(toolbar: model.toolbar) }
                                 .overlay(alignment: .bottom) { ReadingToast(reading: model.reading) }
-                                .overlay(alignment: .bottomLeading) {
-                                    BackChipView(chip: model.pdf.backChip, reading: model.reading) { model.goBack() }
-                                }
-                                // the markers beside the scroller (design/pdf-reader/PLAN.md P1.6)
-                                .overlay(alignment: .trailing) {
-                                    ScrollerMarksView(marks: model.pdf.strip) { model.pdf.goMark($0) }
-                                }
                                 // the find over the page it searches, clear of the scroller (Find.swift)
                                 .overlay(alignment: .topTrailing) {
                                     FindBar(find: model.pdf.find).padding(.top, 10).padding(.trailing, 20)
@@ -86,6 +79,17 @@ struct PaperView: View {
         } message: {
             Text("Its note will be lost. The ID will not be reused.")
         }
+        // Turn On Shell Escape…'s confirmation (UX.md §41), on a view of its own as Resume's. Return is Cancel's, as
+        // Turn On lets the student's LaTeX run commands (an alert's first button takes Return when no button has it)
+        .background(Color.clear.alert(model.confirmShellEscape?.title ?? "",
+                                      isPresented: Binding(get: { model.confirmShellEscape != nil },
+                                                           set: { if !$0 { model.confirmShellEscape = nil } }),
+                                      presenting: model.confirmShellEscape) { a in
+            Button("Turn On") { model.setShellEscape(true, paper: a.paper) }
+            Button("Cancel", role: .cancel) {}.keyboardShortcut(.defaultAction)
+        } message: { a in
+            Text(a.message)
+        })
     }
 
     /// Room for the round menu and Change marks, Focus and Finish Round… (in a closed round final.pdf with its menu, as
@@ -274,7 +278,6 @@ struct BuildStatusLine: View {
     let round: RoundInfo
     @ObservedObject var position: PDFPosition
     @EnvironmentObject var model: AppModel
-    @State private var showDetails = false
     @State private var showGoTo = false
 
     private var build: Build { round.build }
@@ -287,16 +290,22 @@ struct BuildStatusLine: View {
                 .foregroundStyle(tone)
             (Text(headline).foregroundColor(tone) + Text(details + " ·"))
                 .lineLimit(1)
-            Button("Details…") { showDetails = true }
+            Button("Details…") { model.showBuildDetails = true }
                 .buttonStyle(LinkStyle())
-                .popover(isPresented: $showDetails, arrowEdge: .top) {
-                    BuildDetails(build: build, about: about, again: model.canBuildAgain && !model.busy ? buildAgain : nil)
+                .popover(isPresented: $model.showBuildDetails, arrowEdge: .top) {
+                    BuildDetails(build: build, about: BuildDetails.about(model.state?.paper, build: build, source: model.lastSource),
+                                 again: model.canBuildAgain && !model.busy ? buildAgain : nil,
+                                 turnOff: model.state?.paper.shellEscape == true ? { model.setShellEscape(false) } : nil,
+                                 offer: model.shellEscapeOffer.map { o in (o.title, !model.busy, { model.takeShellEscapeOffer(o) }) })
                 }
                 .fixedSize()
             Spacer(minLength: 8)
             if build.pdf != nil {
                 ReadingStatusView(status: model.reading.status, model: model)
                     .layoutPriority(1)
+                // where Back goes, beside where you are (BRIEF E4)
+                BackLink(chip: model.pdf.backChip) { model.goBack() }
+                    .padding(.leading, 6)
                 if let p = position.page, position.count > 0 {
                     // Go to Page (design/pdf-reader/PLAN.md P1.4): a click, the number, Return
                     Button { showGoTo = true } label: { Text("p.\(p + 1) of \(position.count)").monospacedDigit() }
@@ -345,31 +354,21 @@ struct BuildStatusLine: View {
         }
     }
 
-    /// " · 9 pages · 3 warnings"
-    private var details: String {
-        var parts: [String] = []
-        if let pages = build.pages, build.pdf != nil { parts.append(count(pages, "page")) }
-        parts.append(build.warnings.isEmpty ? "no warnings" : count(build.warnings.count, "warning"))
-        return parts.map { " · " + $0 }.joined()
+    /// " · 3 warnings", or nothing: the page count is in "p.1 of 8", and a figure that is zero is not shown
+    /// (design/review-page/BRIEF.md E6).
+    private var details: String { Self.details(build) }
+
+    static func details(_ build: Build) -> String {
+        build.warnings.isEmpty ? "" : " · " + count(build.warnings.count, "warning")
     }
 
     /// Build Round N Again… (E2E-05): a round that built, with errors or not, before any comment or verdict in it,
     /// built again with a corrected source, main file or engine (the engine replaces it; CONTRACT §6).
     private var buildAgain: (title: String, run: () -> Void) {
         ("Build Round \(round.n) Again…", {
-            showDetails = false
-            model.showRetry = true
+            model.showBuildDetails = false
+            model.openRetry()
         })
-    }
-
-    /// The engine and main file, and the source the round came from, at the top of Details.
-    private var about: [String] {
-        var out: [String] = []
-        if let st = model.state, let engine = st.paper.engine {
-            out.append([engine, st.paper.main].compactMap { $0 }.joined(separator: " · "))
-        }
-        if let src = model.lastSource { out.append("Source: " + (src as NSString).lastPathComponent) }
-        return out
     }
 }
 
@@ -380,6 +379,22 @@ struct BuildDetails: View {
     var about: [String] = []
     /// Build Round N Again…, under the engine and the source, while the round can be built again.
     var again: (title: String, run: () -> Void)?
+    /// Turn Off Shell Escape, under them while the paper has it on: from its next build, without asking (UX.md §41).
+    var turnOff: (() -> Void)?
+    /// Build Again with Shell Escape… or Turn On Shell Escape… (`AppModel.shellEscapeOffer`), under the errors (a build
+    /// without errors never asks for it); disabled while the engine works.
+    var offer: (title: String, enabled: Bool, run: () -> Void)?
+
+    /// The engine and main file, "· shell escape" for a round built with it (UX.md §41), and the source the round came
+    /// from, at the top of Details.
+    static func about(_ paper: PaperInfo?, build: Build, source: String?) -> [String] {
+        var out: [String] = []
+        if let paper, let engine = paper.engine {
+            out.append([engine, paper.main, build.shellEscape == true ? "shell escape" : nil].compactMap { $0 }.joined(separator: " · "))
+        }
+        if let source { out.append("Source: " + (source as NSString).lastPathComponent) }
+        return out
+    }
 
     var body: some View {
         ScrollView {
@@ -389,11 +404,15 @@ struct BuildDetails: View {
                     Button(again.title, action: again.run).buttonStyle(LinkStyle()).font(.callout)
                         .help("Build this round again with a corrected source folder, another main file or engine")
                 }
+                if let turnOff {
+                    Button("Turn Off Shell Escape", action: turnOff).buttonStyle(LinkStyle()).font(.callout)
+                }
                 if !build.errors.isEmpty {
                     Text("Errors").font(.headline)
                     ForEach(build.errors, id: \.self) { e in
                         Text(errorLine(e)).font(.system(.callout, design: .monospaced)).textSelection(.enabled)
                     }
+                    offerButton
                 }
                 if !build.warnings.isEmpty {
                     Text("Warnings").font(.headline)
@@ -410,6 +429,15 @@ struct BuildDetails: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(width: 560, height: 360)
+    }
+
+    @ViewBuilder private var offerButton: some View {
+        if let offer {
+            Button(offer.title, action: offer.run)
+                .buttonStyle(.bordered)
+                .controlSize(.small)
+                .disabled(!offer.enabled)
+        }
     }
 }
 
@@ -451,9 +479,15 @@ struct FailedBuildView: View {
             }
             .background(RoundedRectangle(cornerRadius: 6).fill(Color(nsColor: .textBackgroundColor)))
             HStack {
-                Button("Retry…") { model.showRetry = true }
+                Button("Retry…") { model.openRetry() }
                     .controlSize(.large)
                     .disabled(round.closed || model.busy)
+                // a package asks for shell escape (UX.md §41): the same sheet, its toggle on
+                if round.build.needsShellEscape == true {
+                    Button(ShellEscapeOffer.buildAgain.title) { model.takeShellEscapeOffer(.buildAgain) }
+                        .controlSize(.large)
+                        .disabled(round.closed || model.busy)
+                }
                 Spacer()
             }
         }
@@ -462,13 +496,16 @@ struct FailedBuildView: View {
     }
 }
 
-/// The file a failed build could not find (``File `X' not found``, or LaTeX's ``File `X.tex' not found``), if any.
+/// The file a failed build could not find (``File `X' not found``, or LaTeX's ``File `X.tex' not found``), if any. Not
+/// minted's own output (`_minted-main/…`), which only a build with shell escape writes (UX.md §41): no student sends it.
 func missingFile(_ b: Build) -> String? {
     let texts = b.errors.map(\.message) + [b.logTail ?? ""]
     for t in texts {
-        if let r = t.range(of: #"File `([^']+)' not found"#, options: .regularExpression) {
-            let m = String(t[r])
-            return String(m.dropFirst("File `".count).prefix { $0 != "'" })
+        var rest = t[...]
+        while let r = rest.range(of: #"File `([^']+)' not found"#, options: .regularExpression) {
+            let file = String(rest[r].dropFirst("File `".count).prefix { $0 != "'" })
+            if !file.hasPrefix("_minted") { return file }
+            rest = rest[r.upperBound...]
         }
     }
     return nil
@@ -553,34 +590,36 @@ struct GoToPageField: View {
     }
 }
 
-/// "‹ Back to p.4 · 2.1 Data" at the bottom left of the PDF after a jump that recorded a step (design/pdf-reader/PLAN.md
-/// §5.3), 8 pt above the status line, above a reading toast while one shows. A light overlay that observes only the
-/// chip and the toast (UX.md §10). After 4 s it goes quiet, still a button: its words secondary and no edge, on its
-/// ground still, as plain words in Dark Mode's light ink would not show on the white page. The ground is solid, as the
-/// find bar's: over the white page a material goes a muddy grey in Dark Mode.
-struct BackChipView: View {
+/// "‹ Back to p.4 · 2.1 Data" in the status line, before the page, after a jump that recorded a step
+/// (design/pdf-reader/PLAN.md §5.3; design/review-page/BRIEF.md E4, decision D3 (a)): a link, so nothing stays parked
+/// on the paper. It goes after Back or Forward, a scroll of more than two views or the next jump. Narrow, the section's
+/// name gives way first ("‹ Back to p.4"). It observes only the chip.
+struct BackLink: View {
     @ObservedObject var chip: BackChip
-    @ObservedObject var reading: ReadingModel
     let back: () -> Void
 
     var body: some View {
         if let label = chip.label {
-            Button(action: back) {
-                Label("Back to " + label, systemImage: "chevron.left")
-                    .font(.callout)
-                    .lineLimit(1)
-                    .foregroundStyle(chip.faded ? Ink.secondary : Ink.label)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color(nsColor: .windowBackgroundColor), in: Capsule())
-                    .overlay(Capsule().strokeBorder(Color(nsColor: .separatorColor), lineWidth: chip.faded ? 0 : 0.5))
-                    .contentShape(Capsule())
+            let page = label.components(separatedBy: " · ").first ?? label
+            ViewThatFits(in: .horizontal) {
+                link(label)
+                link(page)
             }
-            .buttonStyle(.plain)
-            .help("Back (⌘[)")
-            .frame(maxWidth: 420, alignment: .leading)
-            .padding(.leading, 12)
-            .padding(.bottom, reading.toast == nil ? 8 : 52)
+            .layoutPriority(-1)
+            .accessibilityLabel("Back to " + Self.spoken(label))
         }
+    }
+
+    private func link(_ words: String) -> some View {
+        Button(action: back) { Text("‹ Back to " + words).lineLimit(1) }
+            .buttonStyle(LinkStyle())
+            .help("Back (⌘[)")
+            .fixedSize()
+    }
+
+    /// "page 1, Title and abstract" for "p.1 · Title and abstract".
+    static func spoken(_ label: String) -> String {
+        label.replacingOccurrences(of: #"^p\.(\d+)"#, with: "page $1", options: .regularExpression)
+            .replacingOccurrences(of: " · ", with: ", ")
     }
 }

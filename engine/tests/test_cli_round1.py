@@ -36,7 +36,7 @@ def test_round1_cli(tmp_path):
     pid = state["paper"]["id"]  # random at new (design/data/DATA.md §2.3)
     assert re.fullmatch(r"p-[0-9a-f]{16}", pid)
     assert state == {"schema": 1, "paper": {"path": str(paper), "title": TITLE, "student": "Lin Zhou",
-                                            "main": None, "engine": None, "id": pid},
+                                            "main": None, "engine": None, "id": pid, "shell_escape": False},
                      "rounds": [], "round": None, "comments": [], "changes": [], "note_warnings": [],
                      "summary": {"round": None, "closed": False, "status": None, "to_judge": 0, "to_check": 0,
                                  "answered": 0, "handled": 0, "closed_at": None, "resumable": False},

@@ -108,7 +108,7 @@ struct ChangeCard: View, Equatable {
         let _ = { BodyCount.expanded += 1 }()
         VStack(alignment: .leading, spacing: 0) {
             header
-            why.padding(.top, 8)
+            why
             ForEach(change.nearClosed, id: \.id) { near in NearClosedLine(near: near, actions: actions, open: edit.roundOpen).padding(.top, 6) }
             if let n = change.ignored { IgnoredNoteLine(note: n).padding(.top, 4) }
             if change.about != nil {  // what it is in words: an \input line, or formatting (the row's line)
@@ -152,9 +152,12 @@ struct ChangeCard: View, Equatable {
                         .buttonStyle(.plain)
                         .help("Show the change in the PDF")
                 }
-                Button { showInfo.toggle() } label: { Image(systemName: "info.circle") }
+                // ⋯ as on the comment's card (BRIEF E2; ⓘ is not a Mac control): Source… opens the popover here
+                Button { CardMenus.popUp(CardMenus.changeMore { showInfo = true }) } label: {
+                    Image(systemName: "ellipsis.circle").font(.system(size: 16))
+                }
                     .buttonStyle(.plain)
-                    .help("Where it is in the source")
+                    .help("Source…")
                     .popover(isPresented: $showInfo, arrowEdge: .bottom) {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(change.footer.isEmpty ? "Not in the source" : change.footer)
@@ -166,7 +169,6 @@ struct ChangeCard: View, Equatable {
                     }
             }
             .font(.system(size: 11))
-            .imageScale(.large)
             .foregroundStyle(Ink.secondary)
             .fixedSize()
         }
@@ -200,7 +202,8 @@ struct ChangeCard: View, Equatable {
             .help("Show \(link.id)")
     }
 
-    /// Why it is listed: no comment asked for it (and whether that is settled), or the comments it answers. The words
+    /// Why it is listed, in facts only (BRIEF E2): the comments it answers; for an unasked edit (its kind's chip and the
+    /// list's header say so) the comments of this round that ask about it, or what settled it, or nothing. The words
     /// and chips wrap (`FlowRow`): in one row an edit that answers four or five comments cut its chips to "R…". Each
     /// line of words is at a chip's height, so its words stay level with the chips beside it.
     @ViewBuilder private var why: some View {
@@ -209,20 +212,28 @@ struct ChangeCard: View, Equatable {
                 Text("Answers").font(.system(size: 12.5)).foregroundStyle(Ink.secondary).frame(minHeight: 20)
                 ForEach(change.links, id: \.id) { link in chip(link) }
             }
+            .padding(.top, 8)
         } else if !change.asked.isEmpty {
             FlowRow {
-                Text("No comment asked for this edit; you asked about it in").font(.system(size: 12.5)).foregroundStyle(Ink.secondary)
+                Text("You asked about it in").font(.system(size: 12.5)).foregroundStyle(Ink.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(minHeight: 20)
                 ForEach(change.asked, id: \.id) { link in chip(link) }
             }
-        } else {
-            let settled = change.checked ? " You marked it checked." : change.read ? " Its paragraphs are marked read." : ""
-            Text("No comment asked for this edit." + settled)
+            .padding(.top, 8)
+        } else if let settled = Self.settled(change) {
+            Text(settled)
                 .font(.system(size: 12.5))
-                .foregroundStyle(settled.isEmpty && edit.roundOpen ? Color(nsColor: Palette.unrequested) : Ink.secondary)
+                .foregroundStyle(Ink.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 8)
         }
+    }
+
+    /// What settled an unasked edit nobody asked about: "You marked it checked.", "Its paragraphs are marked read.", or
+    /// nil (the card then has no such line).
+    static func settled(_ c: ChangeModel) -> String? {
+        c.checked ? "You marked it checked." : c.read ? "Its paragraphs are marked read." : nil
     }
 
     /// Mark checked (V; again clears it) and Comment on it (Return), as the comment cards' answer buttons, the keys

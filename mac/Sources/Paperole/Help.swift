@@ -53,6 +53,9 @@ struct HelpSection: Identifiable {
 enum HelpPicture {
     case bySection, closing, turnaround, topics, wellDone, nextDraft, firstDrafts, response
     case mapKey(MapKeyRow), strip, miniMap, timeline, lanes, earlier
+    /// The column beside the scroller, drawn from its own glyphs on a piece of white page (design/review-page/BRIEF.md
+    /// E9): rings with ticks beside them and a capsule; a find's ticks and a run with its current match.
+    case lane
     case glyph(StatusGlyph), notFound
     case keys([String])
 }
@@ -116,7 +119,7 @@ enum HelpContent {
         let items = MapKey.items.enumerated().filter { !MapKey.following.contains($0.offset) }
             .map { HelpSection(title: $0.element.0, text: $0.element.1, picture: pictures[$0.offset]) }
         return [items[0],
-                HelpSection(title: "The pages", text: "Over the map, the pages of the round shown, each with its number and its comments to check. A page’s help tag gives its comments and edits; a click follows it. The key page has a bookmark.",
+                HelpSection(title: "The pages", text: "Over the map, the pages of the round shown, each with its number and its comments to check. A page’s help tag gives its comments and edits; a click follows it. The key page has a bookmark. Rest the pointer on a round’s row of the map to see its pages; a click keeps them.",
                             picture: .strip)]
             + items.dropFirst()
     }
@@ -126,9 +129,11 @@ enum HelpContent {
             + MapKey.following.map { HelpSection(title: MapKey.items[$0].0, text: MapKey.items[$0].1) }
             + [
                 HelpSection(title: "Review", text: "Continue Round N in the toolbar, or a double click on the map, opens the round’s PDF with its comments beside it. Back returns to the map."),
+                HelpSection(title: "Marks beside the scroller", text: "A ring marks a comment or an unasked edit still to check, a capsule several close together, and a short tick an edit; while you find, ticks and bars mark the matches. Rest the pointer on a mark to see what is there; click it, or a row, to go there.",
+                            picture: .lane),
                 HelpSection(title: "Answering", text: AnswerTip.text + " Follow up asks again in the round’s final.pdf; Resolve and Keep as is close the comment.",
                             picture: .glyph(.ring(0.4))),
-                HelpSection(title: "Edits nobody asked for", text: "The Changes tab lists the student’s edits that no comment asked for. Mark each one checked once you have looked at it, or comment on it.",
+                HelpSection(title: "Unasked edits", text: "The Changes tab lists the student’s edits that no comment asked for. Mark each one checked once you have looked at it, or comment on it.",
                             picture: .mapKey(.unasked)),
                 HelpSection(title: "Finishing a round", text: "When nothing is left to check, Finish Round N… writes the round’s final.pdf for the student, with your follow-ups and new comments. Nothing is sent.",
                             picture: .glyph(.ready)),
@@ -517,6 +522,39 @@ struct HelpPictureView: View {
                     }
                 }
             }
+        case .lane:
+            Canvas { ctx, _ in
+                func glyph(_ g: StripLayout.Glyph, at x: CGFloat, grown: Bool = false) {
+                    let (r0, stroke) = StripLayout.box(g, grown: grown)
+                    let r = r0.offsetBy(dx: x - StripLayout.axis, dy: 0)
+                    let ink: NSColor = switch g.shape {
+                    case .ring, .capsule: LaneInk.ring
+                    case .tick, .unaskedTick: LaneInk.edit
+                    case .findTick, .run: LaneInk.find
+                    }
+                    if stroke > 0 {
+                        let p = r.insetBy(dx: stroke / 2, dy: stroke / 2)
+                        ctx.stroke(Path(roundedRect: p, cornerRadius: p.width / 2), with: .color(Color(nsColor: ink)), lineWidth: stroke)
+                    } else {
+                        ctx.fill(Path(roundedRect: r, cornerRadius: min(r.width, r.height) / 2), with: .color(Color(nsColor: ink)))
+                    }
+                }
+                func g(_ s: StripLayout.Shape, _ y: CGFloat, _ lo: CGFloat? = nil, _ hi: CGFloat? = nil) -> StripLayout.Glyph {
+                    StripLayout.Glyph(shape: s, y: y, lo: lo ?? y - 1, hi: hi ?? y + 1, members: [], id: "")
+                }
+                for y: CGFloat in [12, 48] { glyph(g(.ring, y, y - 3.5, y + 3.5), at: 50); glyph(g(.tick, y), at: 50) }
+                glyph(g(.capsule, 28, 22.5, 33.5), at: 50)
+                glyph(g(.unaskedTick, 26), at: 50)
+                glyph(g(.findTick, 12), at: 128)
+                glyph(g(.run, 22, 22, 36), at: 128)
+                let cur = StripLayout.currentBox(y: 30, grown: false).offsetBy(dx: 128 - StripLayout.axis, dy: 0)
+                ctx.fill(Path(roundedRect: cur, cornerRadius: 1.5), with: .color(Color(nsColor: LaneInk.selected)))
+                glyph(g(.findTick, 48), at: 128)
+            }
+            .frame(width: 168, height: 60)
+            // a piece of the page, white in both appearances, as the column always lies on it
+            .background(RoundedRectangle(cornerRadius: 4).fill(Color.white))
+            .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color(nsColor: Palette.rule), lineWidth: 0.5))
         case .miniMap:
             MiniMapView(map: HelpPictureView.miniMap, width: 112, cell: 8, gap: 4)
         case .timeline:

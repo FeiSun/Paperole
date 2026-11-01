@@ -51,8 +51,8 @@ final class CommentListFixTests: XCTestCase {
         XCTAssertEqual(try hintHeight(table), own, accuracy: 0.5)
     }
 
-    /// UI-02: once every edit no comment asked for is handled, the group is not the advisor's move: its header says
-    /// "No comment asked for" with the grey sign (as in a closed round), under "All checked.", not the vermilion To check.
+    /// UI-02: once every unasked edit is handled, the group is not the advisor's move: its header "Unasked edits" has the
+    /// quiet ring (as in a closed round), not the vermilion one (design/review-page/BRIEF.md E2).
     func testTheChangesHeaderIsNotAmberOnceEveryEditIsHandled() throws {
         _ = NSApplication.shared
         let panel = ChangePanel()
@@ -60,12 +60,12 @@ final class CommentListFixTests: XCTestCase {
         let left = model(try makeChange(["id": "c01"])), checked = model(try makeChange(["id": "c02", "checked": true]))
         panel.unrequested = [left, checked]
         let list = ChangeListController(panel: panel, actions: CardActions(), edit: EditState())
-        XCTAssertEqual(list.rows().first, .header("To check", glyph: .toCheck(open: true)))
+        XCTAssertEqual(list.rows().first, .header("Unasked edits", glyph: .toCheck(open: true)))
         panel.unrequested = [model(try makeChange(["id": "c01", "checked": true])), checked]
-        XCTAssertEqual(list.rows().first, .header("No comment asked for", glyph: .toCheck(open: false)))
-        XCTAssertEqual(list.table.headers.first?.first as? String, "No comment asked for")
+        XCTAssertEqual(list.rows().first, .header("Unasked edits", glyph: .toCheck(open: false)))
+        XCTAssertEqual(list.table.headers.first?.first as? String, "Unasked edits")
         panel.roundOpen = false  // a closed round, as before
-        XCTAssertEqual(list.rows().first, .header("No comment asked for", glyph: .toCheck(open: false)))
+        XCTAssertEqual(list.rows().first, .header("Unasked edits", glyph: .toCheck(open: false)))
         withExtendedLifetime(list) {}
     }
 }

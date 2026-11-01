@@ -224,9 +224,9 @@ struct StartRefusal: Equatable {
     var problem: String
 }
 
-/// Run ingest again, optionally with another source, main file or engine: after a failed build (Retry…), for a round
-/// that built before anything was done in it (Build Round N Again…), or for Round 1 when the engine refused it
-/// (`AppModel.startRefused`). That one stays until the round is there, so a second refusal shows here too.
+/// Run ingest again, optionally with another source, main file, engine or shell escape: after a failed build (Retry…),
+/// for a round that built before anything was done in it (Build Round N Again…), or for Round 1 when the engine refused
+/// it (`AppModel.startRefused`). That one stays until the round is there, so a second refusal shows here too.
 struct RetrySheet: View {
     @EnvironmentObject var model: AppModel
     @Environment(\.dismiss) private var dismiss
@@ -234,12 +234,27 @@ struct RetrySheet: View {
     @State private var main = ""
     @State private var engine = ""
     @State private var first = false
+    @State private var shellEscape = false
+    @State private var askedShellEscape = false
     @FocusState private var mainFocused: Bool
 
     /// "Build Round 2 Again" for the open round it replaces; "Start Round 1" when there is none to replace.
     static func title(_ latest: RoundSummary?) -> String {
         guard let r = latest, !r.closed else { return "Start Round \((latest?.n ?? 0) + 1)" }
         return "Build Round \(r.n) Again"
+    }
+
+    /// The Shell escape toggle, only where it matters (UX.md §41): never before a round exists (Start Round 1); else
+    /// when Build Again with Shell Escape… opened the sheet, the paper has it on, or the latest round's build asks for
+    /// it. Build sends its value only while it is shown; otherwise the engine keeps the paper's choice.
+    static func showsShellEscape(hasRound: Bool, asked: Bool, paperOn: Bool, latestNeeds: Bool) -> Bool {
+        hasRound && (asked || paperOn || latestNeeds)
+    }
+
+    private var showsShellEscape: Bool {
+        let shown = model.round, latest = model.latestRound
+        return Self.showsShellEscape(hasRound: latest != nil, asked: askedShellEscape, paperOn: model.state?.paper.shellEscape == true,
+                                     latestNeeds: shown != nil && shown?.n == latest?.n && shown?.build.needsShellEscape == true)
     }
 
     var body: some View {
@@ -267,6 +282,16 @@ struct RetrySheet: View {
                     Text("xelatex").tag("xelatex")
                     Text("lualatex").tag("lualatex")
                 }
+                if showsShellEscape {
+                    Toggle("Shell escape", isOn: $shellEscape)
+                    if shellEscape {
+                        // the small size of a control's explanation, so it stays one line in the form's column
+                        Text("Lets this paper’s LaTeX run commands on your Mac. Use it only for a source you trust.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Ink.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
             }
             HStack {
                 if first && model.busy {
@@ -281,7 +306,7 @@ struct RetrySheet: View {
                 }
                 .keyboardShortcut(.cancelAction)
                 Button("Build") {
-                    model.ingest(source: source, main: main, engine: engine)
+                    model.ingest(source: source, main: main, engine: engine, shellEscape: showsShellEscape ? shellEscape : nil)
                     if !first { dismiss() }
                 }
                 .keyboardShortcut(.defaultAction)
@@ -295,6 +320,8 @@ struct RetrySheet: View {
             source = model.startRefused?.source ?? model.lastSource ?? ""
             main = model.state?.paper.main ?? ""
             engine = model.state?.paper.engine ?? ""
+            askedShellEscape = model.retryWithShellEscape
+            shellEscape = askedShellEscape || model.state?.paper.shellEscape == true
             if first { mainFocused = true }
         }
         // Round 1 is there: built, or not (a failed build has its own Retry…)
@@ -393,8 +420,9 @@ struct FinishSummary: Equatable {
                             sub: toCheck == 1 ? "It goes out as “still open”." : "They go out as “still open”.", count: toCheck))
         }
         if unrequested > 0 {
-            out.append(Line(item: .edits, title: unrequested == 1 ? "Other edit not checked" : "Other edits not checked",
-                            sub: unrequested == 1 ? "No comment asked for it." : "No comment asked for them.", count: unrequested))
+            // the one noun (design/review-page/BRIEF.md §8): its title says what they are
+            out.append(Line(item: .edits, title: unrequested == 1 ? "Unasked edit not checked" : "Unasked edits not checked",
+                            sub: "", count: unrequested))
         }
         if let u = unread, u > 0 {
             out.append(Line(item: .paragraphs, title: u == 1 ? "Changed paragraph not read" : "Changed paragraphs not read",

@@ -115,7 +115,7 @@ struct MapTable: Equatable {
         totals.append(Total(label: "Edits", values: d.rounds.map { r in
             guard r.n != first, !r.failed else { return "" }
             let e = r.edits ?? [], u = e.filter(\.unrequested).count
-            return "\(e.count)" + (u > 0 ? " · \(u) nobody asked for" : "")
+            return "\(e.count)" + (u > 0 ? " · \(u) unasked" : "")
         }))
         totals.append(Total(label: "Words", values: d.rounds.map { r in
             guard let w = r.words else { return "" }
@@ -276,7 +276,7 @@ struct MapTableView: View {
         .padding(.horizontal, 6)
         .frame(width: columnWidth - 4, height: 22)
         .background(RoundedRectangle(cornerRadius: 4).fill(c.absent == nil && c.count > 0 ? ink.color(.cell(c.level)) : .clear))
-        .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(c.holds ? ink.color(.accent) : .clear, lineWidth: 2).padding(-1))
+        .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(c.holds ? ink.color(.path) : .clear, lineWidth: 2).padding(-1))
         .padding(2)
         .background(followsRound(col.n) ? ink.color(.accentTint) : .clear)
         .clicks({ if c.absent == nil { model.overviewClicked(item) } },

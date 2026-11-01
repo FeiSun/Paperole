@@ -502,7 +502,6 @@ struct DoneCard: View {
         VStack(spacing: 0) {
             Image(systemName: "checkmark.circle").font(.system(size: 26, weight: .light)).foregroundStyle(Color(nsColor: Palette.neutral))
             Text("Nothing left to check in this round.").font(.system(size: 15, weight: .semibold)).padding(.top, 8)
-            Text("Finish when you are ready.").font(.system(size: 12.5)).foregroundStyle(Ink.secondary).padding(.top, 4)
             Button("Finish Round \(round)…", action: finish)
                 .help("Write final.pdf and close Round \(round)")
                 .onGeometryChange(for: CGRect.self, of: { $0.frame(in: .named("done")) }) { buttonFrame?($0) }
@@ -662,10 +661,15 @@ final class CommentListController {
         if !check.isEmpty {
             // the Comments tab carries the count (POLISH §4.4: each number once)
             r.append(.header(open ? "To check" : "Left open", glyph: .toCheck(open: open)))
-            r += check.map { .item(.card($0)) }
+            // a container states a property once (UI v4 principle 1): its rows have no ○, so the exceptions stand out
+            r += check.map { c in
+                var c = c
+                c.underToCheck = true
+                return .item(.card(c))
+            }
         }
-        // folded into one line with its count, as Closed this round (POLISH §6); with no card, its header and the hint
-        // (mouse first, POLISH §6)
+        // folded into one line with its count, as Closed this round (POLISH §6); with no card, its header (how to comment
+        // is in Help, design/review-page/BRIEF.md E9)
         if !student.isEmpty {
             r.append(.fold("For the student", showStudent ? "Hide" : "Show",
                            sub: open ? "goes in the Round \(round) final.pdf" : "in the Round \(round) final.pdf", group: .student,
@@ -675,9 +679,6 @@ final class CommentListController {
         }
         if showStudent || student.isEmpty {
             r += student.map { .item(.card($0)) }
-            if open && !filtered && !student.contains(where: { !$0.carried }) {
-                r.append(.hint("To comment, select text in the PDF and click Comment."))
-            }
         }
         if !closed.isEmpty {
             r.append(.fold("Closed this round", showClosed ? "Hide" : "Show", group: .closed, count: closed.count, glyph: .closed))
@@ -715,35 +716,6 @@ final class CommentListController {
 }
 
 // MARK: Changes
-
-/// The Changes tab's one sentence on top (UX.md §16; POLISH §3 row 10, §4.4): whether edits no comment asked for are
-/// left to check, without their number, which the tab says, then how many more answer comments. nil in round 1 and
-/// when the source did not change (the list says so).
-enum ChangesHeader {
-    static func text(_ state: EngineState?, left: Int) -> AttributedString? {
-        guard let st = state, let n = st.round?.n, n > 1, !st.changes.isEmpty else { return nil }
-        let u = st.changes.filter(\.unrequested).count, a = st.changes.count - u
-        guard st.round?.closed == false else {  // what there was, asking for nothing
-            return AttributedString("Edits made since R\(n - 1): \(u) no comment asked for, \(a) answering your comments.")
-        }
-        let more = a == 0 ? "" : " \(count(a, "more edit")) answer\(a == 1 ? "s" : "") your comments."
-        var lead: AttributedString, rest: String
-        if left > 0 {
-            // in the label colour, not vermilion (POLISH §6, 3); how many is the tab's to say (§4.4)
-            lead = AttributedString(left == 1 ? "An edit to check." : "Other edits to check.")
-            rest = (left == 1 ? " No comment asked for it." : " No comment asked for them.") + more
-        } else if u > 0 {
-            lead = AttributedString("All checked.")
-            rest = " The \(count(u, "edit")) no comment asked for \(u == 1 ? "is" : "are") checked, commented on or read." + more
-        } else {
-            lead = AttributedString("Nothing to check.")
-            rest = " Every edit since R\(n - 1) answers one of your comments."
-        }
-        lead.font = .system(size: 12.5, weight: .semibold)
-        lead.foregroundColor = Ink.label
-        return lead + AttributedString(rest)
-    }
-}
 
 /// The change list: a PanelTable that follows ChangePanel itself (UX.md §16).
 struct ChangeList: NSViewRepresentable {
@@ -811,15 +783,16 @@ final class ChangeListController {
     private func groupRows() -> [PanelTable.Row] {
         let (unrequested, linked, showLinked, hint, open, _, _) = lists
         var r: [PanelTable.Row] = hint.isEmpty ? [] : [.hint(hint)]
-        // the sentence on top says how many (ChangesHeader): the headers do not say it again (UX.md §16); with every
-        // edit handled ("All checked.") nothing is the advisor's move, as in a closed round
+        // one noun, "Unasked edits" (design/review-page/BRIEF.md E2): the vermilion ring while one waits, the quiet
+        // ring once none does, as in a closed round; the tab says how many wait, the fold how many answer comments
         if !unrequested.isEmpty {
             let left = open && unrequested.contains { !$0.handled }
-            r.append(.header(left ? "To check" : "No comment asked for", glyph: .toCheck(open: left)))
+            r.append(.header("Unasked edits", glyph: .toCheck(open: left)))
             r += unrequested.map { .item(.change($0)) }
         }
         if !linked.isEmpty {
-            r.append(.fold("Answering your comments", showLinked ? "Hide" : "Show", group: .linked, glyph: .answering))
+            r.append(.fold("Answering your comments", showLinked ? "Hide" : "Show", group: .linked, count: linked.count,
+                           glyph: .answering))
             if showLinked { r += linked.map { .item(.change($0)) } }
         }
         return PanelTable.spaced(r)

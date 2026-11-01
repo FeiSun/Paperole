@@ -172,13 +172,20 @@ final class MapFoldTests: XCTestCase {
         let numbers = s.axis.dropFirst().compactMap { Int($0.text) }
         XCTAssertEqual(numbers.max(), 16, "the pages before the appendix, then its pages under it")
         for t in s.axis { XCTAssertFalse(t.rect.intersects(part.text.rect) || t.rect.intersects(part.link.rect), "\(t.text) under the part's pages") }
-        XCTAssertEqual(s.wedges.count, 1, "a faint wedge over the folded part")
-        XCTAssertNil(s.lensSelected)
+        // the strip of 29 pages scrolls (mac/UX.md §40.9): the lens with its end in view
+        let end = s.lens(offset: .greatestFiniteMagnitude)
+        XCTAssertEqual(end.wedges.count, 1, "a faint wedge over the folded part")
+        XCTAssertNil(end.selected)
         // the hairlines: the strip's ends and the fold's edges always; none from inside the folded part
         let block = try XCTUnwrap(s.rows.first?.cells.last?.rect)
-        let inside = s.fans.filter { $0[1].x > block.minX + 2 && $0[1].x < block.maxX - 2 }
+        let inside = end.fans.filter { $0[1].x > block.minX + 2 && $0[1].x < block.maxX - 2 }
         XCTAssertTrue(inside.isEmpty)
-        XCTAssertLessThanOrEqual(s.fans.count, (d.round(4)?.spans?.count ?? 0) + 2)
+        XCTAssertLessThanOrEqual(end.fans.count, (d.round(4)?.spans?.count ?? 0) + 2)
+        // at its start, the folded part partly in view: its wedge over the part in view only, from the strip's right edge
+        let start = s.lens(offset: 0)
+        let wedge = try XCTUnwrap(start.wedges.first)
+        XCTAssertEqual(wedge[1].x, s.geometry.width, accuracy: 0.5)
+        XCTAssertLessThan(wedge[3].x, block.maxX - 2, "to where the strip's edge is in the part")
     }
 
     /// References fold only past four pages, decided once the appendix is.
@@ -415,16 +422,26 @@ final class MapFoldTests: XCTestCase {
 
     // MARK: The colours
 
-    /// UI v4's ramp (design/ui-v4/README.md §6): the panel, the track, the three steps and `ink` each at least ΔE00
-    /// 2.3 from the next, in one order of lightness; text on every step at 4.5:1 or more (on s3 only the label colour
-    /// does: numbers and names there are in label); an older round's ramp in the same order, lighter (darker in Dark
-    /// Mode) than the open one's; the dark steps nearly neutral; the steps far from Sage; the days with you and with
-    /// the student seen on the card and apart from each other; a small map's empty cell seen on a hub card (with its
-    /// keyline in Dark Mode); a band not merged with the track. Measured: label on s3 5.79:1 (4.51:1 dark), label2 on
-    /// s2 5.04:1 (4.79:1); you and stu ΔE 22.8 (24.8), stu on the card 3.30:1 (3.08:1).
+    /// UI v4's ramp in Sage green (the advisor's choice of 2026-10-31, mac/UX.md §40.10; design/ui-v4/README.md §6, the
+    /// mockup's `:root`): the panel, the track, the three steps and `ink` each at least ΔE00 2.3 from the next, in one
+    /// order of lightness; text on every step at 4.5:1 or more (on s3 only the label colour does: numbers and names
+    /// there are in label; an older round's counts and names, and a folded block's on its pad, are in label2); an older
+    /// round's ramp in the same order, lighter (darker in Dark Mode) than the open one's; what is followed drawn over
+    /// the cells (`path`: the cell's and the page's outlines, a comment's path) and vermilion's to-check marks far from
+    /// every step; the days with you and with the student seen on the card and apart from each other; a small map's
+    /// empty cell seen on a hub card (with its keyline in Dark Mode); a band not merged with the track. Measured: label
+    /// on s3 6.50:1 (4.75:1 dark), label2 on s2 5.59:1 (4.72:1) and on os3 5.55:1 (4.72:1); `path` from s3 ΔE00 24.3
+    /// (23.8), 2.42:1 (2.39:1), where Dark Mode's accent would be 5.9, 1.21:1; vermilion from s3 47.8 (47.1), 2.10:1
+    /// (1.69:1; from the grey's s3 31.0 and 27.6, 1.88:1 and 1.61:1); you and stu ΔE 22.8 (24.8), stu on the card
+    /// 3.30:1 (3.08:1).
     func testTheMapsColours() {
+        let ramp: [MapRole] = [.track, .s1, .s2, .s3, .ink, .otrack, .os1, .os2, .os3]
+        let sage = [false: [0xECEDE9, 0xD4E0D5, 0xB3CBB7, 0x8FB096, 0x5E7F65, 0xF0F1EE, 0xE1EAE2, 0xCCDBCE, 0xB3CAB7],
+                    true: [0x2C2F2C, 0x32453A, 0x3C5A44, 0x476F51, 0x8FB898, 0x282B28, 0x2E3B31, 0x344A3B, 0x3C5A44]]
         for dark in [false, true] {
             let ink = MapInk(dark: dark)
+            XCTAssertEqual(ramp.map { ink.rgba($0).hex }, sage[dark], "the mockup's Sage ramp, dark \(dark)")
+            XCTAssertTrue(ramp.allSatisfy { ink.rgba($0).alpha == 1 })
             let seq: [MapRole] = [.content, .track, .s1, .s2, .s3, .ink]
             let colours = seq.map { ink.over($0) }
             for (a, b) in zip(colours, colours.dropFirst()) {
@@ -447,27 +464,29 @@ final class MapFoldTests: XCTestCase {
             for step in [MapRole.track, .otrack] {
                 XCTAssertGreaterThanOrEqual(Self.contrast(ink.over(.secondary), ink.over(step)), 4.5, "secondary on \(step), dark \(dark)")
             }
-            if dark {
-                for step in [MapRole.s1, .s2, .s3] {
-                    let c = DesignPaletteTests.lab(ink.over(step))
-                    XCTAssertLessThanOrEqual(hypot(c.a, c.b), 6, "dark steps nearly neutral: \(step)")  // s3: 5.8
-                }
+            // the outlines and paths of what is followed, and the to-check outlines and rings, never taken for a step
+            for step in [MapRole.track, .s1, .s2, .s3, .otrack, .os1, .os2, .os3] {
+                XCTAssertGreaterThanOrEqual(DesignPaletteTests.deltaE(ink.over(.path), ink.over(step)), 15, "Sage over \(step), dark \(dark)")
+                XCTAssertGreaterThanOrEqual(DesignPaletteTests.deltaE(ink.over(.attention), ink.over(step)), 15, "vermilion on \(step), dark \(dark)")
             }
-            XCTAssertGreaterThanOrEqual(DesignPaletteTests.deltaE(ink.over(.s3), ink.over(.accent)), 15)
             XCTAssertGreaterThanOrEqual(Self.contrast(ink.over(.you, .card), ink.over(.card)), 3, "your days, a graphic")
             XCTAssertGreaterThanOrEqual(Self.contrast(ink.over(.stu, .card), ink.over(.card)), 3, "the student's days, a graphic")
             XCTAssertGreaterThanOrEqual(DesignPaletteTests.deltaE(ink.over(.you, .card), ink.over(.stu, .card)), 20, "the two series apart")
             XCTAssertLessThan(DesignPaletteTests.deltaE(ink.over(.fan), ink.over(.content)), DesignPaletteTests.deltaE(ink.over(.track), ink.over(.content)),
                               "the lens's hairlines quieter than any cell")
             // A small map's cell without comments on a hub card: the track, or in Dark Mode its keyline (the track
-            // alone is within ΔE 1 of the dark card, #2A2C2A). Measured: 4.59 light, keyline 6.16 dark.
+            // alone is within ΔE 1.4 of the dark card, #2A2C2A). Measured: 4.41 light, keyline 6.30 dark (the grey's:
+            // 4.59, 6.16).
             let card = ink.over(.card), edge = ink.over(.zeroline, .track)
             let seen = max(DesignPaletteTests.deltaE(ink.over(.track, .card), card), DesignPaletteTests.deltaE(edge, card))
             XCTAssertGreaterThanOrEqual(seen, 2.3, "an empty small-map cell on the card, dark \(dark)")
-            // A band is about the track's tone (the mockup's values: 0.86, 1.30 dark); its shape and label tell it from
-            // an empty cell (UX §40.1). This only keeps the two from merging.
+            // A band is about the track's tone (1.47, 2.44 dark; the grey's 0.86, 1.30); its shape and label tell it
+            // from an empty cell (UX §40.1). This only keeps the two from merging.
             XCTAssertGreaterThanOrEqual(DesignPaletteTests.deltaE(ink.over(.band), ink.over(.track)), 0.8, "a band apart from the track, dark \(dark)")
         }
+        // over the cells, what is followed is the accent in Light Mode, a lighter Sage in Dark Mode (the accent is
+        // within ΔE00 6 of the green s3 there)
+        XCTAssertEqual(MapInk(dark: false).rgba(.path).hex, MapInk(dark: false).rgba(.accent).hex)
     }
 
     /// The roles the app's palette owns are read from it, so the map's colours never drift from the panel's (UI v4).

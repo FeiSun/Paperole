@@ -64,14 +64,15 @@ final class GroupHeaderTests: XCTestCase {
         }
     }
 
-    /// The Changes tab's headers look the same, without numbers (the sentence on top says them, UX.md §16).
+    /// The Changes tab's headers look the same: "Unasked edits" without a number (the tab says it), the fold with its
+    /// count in the capsule every folded group has (design/review-page/BRIEF.md E2).
     func testTheChangesTabHasTheSameHeaders() throws {
         let m = makeModel()
         m.changes.showLinked = false
         let list = ChangeListController(panel: m.changes, actions: m.actions, edit: m.edit)
         let headers = list.table.headers.map { $0.map { "\($0)" } }
-        XCTAssertEqual(headers.first, ["To check", "<null>", "", "circle", "<null>"])
-        XCTAssertEqual(headers.last, ["Answering your comments", "<null>", "", "text.bubble", "Show"])
+        XCTAssertEqual(headers.first, ["Unasked edits", "<null>", "", "circle", "<null>"])
+        XCTAssertEqual(headers.last, ["Answering your comments", "\(m.changes.linked.count)", "", "text.bubble", "Show"])
         withExtendedLifetime(list) {}
     }
 

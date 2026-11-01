@@ -120,10 +120,11 @@ struct ContentsRow: View {
                 Circle().fill(Color(nsColor: Palette.reading)).frame(width: 6, height: 6)
             }
             Spacer(minLength: 4)
-            if row.open > 0 {
+            // its own text's comments only, so the column adds up; the section's total is in the help tag (BRIEF E8)
+            if row.own > 0 {
                 HStack(spacing: 3) {
                     Image(systemName: "text.bubble")
-                    Text("\(row.open)").monospacedDigit()
+                    Text("\(row.own)").monospacedDigit()
                 }
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.secondary)
@@ -292,8 +293,11 @@ struct ReadingToast: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
-            .background(.regularMaterial, in: Capsule())
-            .overlay(Capsule().strokeBorder(Color(nsColor: .separatorColor), lineWidth: 0.5))
+            // the floats' one look over the page (design/review-page/BRIEF.md E1): opaque, a hairline and the soft shadow;
+            // no material over the PDF (POLISH §2.4)
+            .background(Color(nsColor: Palette.float), in: Capsule())
+            .overlay(Capsule().strokeBorder(Color(nsColor: Palette.floatLine), lineWidth: 0.5))
+            .shadow(color: .black.opacity(0.14), radius: 10, y: 4)
             .padding(.bottom, 14)
             .allowsHitTesting(false)
             .transition(.opacity)

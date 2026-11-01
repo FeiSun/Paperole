@@ -320,6 +320,8 @@ final class ReviewPDFView: PDFView {
                 NSCursor.pointingHand.set()
                 return true
             }
+            // the column's zones: a pointing hand, whichever of the two views sets the cursor last
+            if let l = ctl.lane, l.group(at: l.convert(event.locationInWindow, from: nil)) != nil { NSCursor.pointingHand.set() }
             return false
         }
         let tip = bar ? "Mark read" : nil
@@ -342,12 +344,11 @@ final class PDFPosition: ObservableObject {
     @Published var zoom: CGFloat?
 }
 
-/// The chip under the page after a jump (design/pdf-reader/PLAN.md §5.3): where Back goes, "p.4 · 2.1 Data", and
-/// whether it has faded to plain text. Only the chip observes it.
+/// Where Back goes after a jump (design/pdf-reader/PLAN.md §5.3), "p.4 · 2.1 Data": a link in the status line before
+/// the page (design/review-page/BRIEF.md E4, decision D3 (a)). Only the link observes it.
 @MainActor
 final class BackChip: ObservableObject {
     @Published var label: String?
-    @Published var faded = false
 }
 
 @MainActor
@@ -390,10 +391,23 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     private var runningScript: DebugScript?  // the script holds its controller weakly; this keeps it alive
     /// --debug-marks off: no comment or change marks.
     var showMarks = true
-    /// The markers beside the scroller (design/pdf-reader/PLAN.md P1.6), and the shown PDF's page heights they are
-    /// placed by.
+    /// The column beside the scroller (design/review-page/BRIEF.md; mac/UX.md §42): its items and layout, and the shown
+    /// PDF's page heights they are placed by; its view in the PDF view; when its window opens (`LaneHover`), the
+    /// window's rows and its view; the click and key monitor while the window shows.
     let strip = ScrollerMarks()
     private var pageHeights: [Double] = []
+    private(set) var lane: MarkLane?
+    let laneHover = LaneHover()
+    let laneWindow = LaneWindowModel()
+    private(set) var laneWindowView: FloatView?
+    private var laneMonitor: Any?
+    /// When the PDF last scrolled: a window opens only once it has been still for the panel's 150 ms.
+    private var lastScroll: TimeInterval = 0
+    /// --debug-script striphover's `force`: the hover acts while the app is not active (a background run).
+    var laneForced = false
+    /// The find's Comment button hidden while the window covers it.
+    private var laneHidToolbar = false
+    private var selectedChangeID: String?
     /// The shown PDF's text, for Clean Copy's hyphens (`cleanText`), read once it is needed.
     private var docText: String?
     private var flash: (outlines: [OutlineView], timer: Timer, ticks: Int)?
@@ -402,7 +416,6 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     private var steps = PDFSteps()
     let backChip = BackChip()
     private var chipTarget: (page: PDFPage, rect: CGRect)?
-    private var chipTimer: Timer?
     private var pendingPlace: PDFPlace?
     /// The selected change's outline (UX.md §16), over the PDF in a view of its own like the flash.
     private var changeOutline: OutlineView?
@@ -470,6 +483,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         hideToolbar()
         hideMarkBar()
         closePreview()
+        laneHover.reset()
         closePinned()  // they would float over the overview, their Go to moving a PDF nobody sees
         if popover?.isShown == true { popover?.close() }  // a note being written never gets here (AppModel.waitsForNote)
         if let w = v.window, let r = w.firstResponder as? NSView, r === root || r.isDescendant(of: root) { w.makeFirstResponder(nil) }
@@ -489,6 +503,17 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         observers = []
         view = v
         v.controller = self
+        attachLane(v)
+        // the window or the app going to the back closes the column's window at once
+        for name in [NSWindow.didResignKeyNotification, NSApplication.didResignActiveNotification] {
+            observers.append(nc.addObserver(forName: name, object: nil, queue: .main) { [weak self] n in
+                let w = n.object as? NSWindow
+                MainActor.assumeIsolated {
+                    guard let self, w == nil || w === self.view?.window, !self.laneForced else { return }
+                    self.closeLane()
+                }
+            })
+        }
         observers.append(nc.addObserver(forName: .PDFViewSelectionChanged, object: v, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { self?.selectionChanged() }
         })
@@ -500,6 +525,8 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
                 self?.hideToolbar()
                 self?.hideMarkBar()
                 self?.closePreview()
+                self?.closeLane()  // a zoom closes the column's window at once
+                self?.updateLaneHalo()  // the rail, when the page grew wider than the view
                 self?.placeChangeOutline()
                 self?.placeSelectionOutline()
                 self?.find.placeRing()
@@ -519,6 +546,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
                 self?.hideMarkBar()
                 self?.closePreview()
                 self?.pageChanged()  // only the status line observes the page
+                self?.lastScroll = ProcessInfo.processInfo.systemUptime  // the column's window waits for it to settle
                 self?.model?.pdfScrolled()
                 self?.checkChip()
             }
@@ -584,6 +612,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             loadedKey = key
             closePreview()
             closePinned()
+            laneHover.reset()
             hovered = nil
             stopFlash()
             steps = PDFSteps()
@@ -685,6 +714,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             placeMarkBar()  // the comment's new style, or gone
             updateStrip()
         }
+        if k.showChanges != markKey?.showChanges { closeLane() }  // change marks turned on or off
         for (page, a) in marks { page.removeAnnotation(a) }
         marks = []
         commentMarks = [:]
@@ -816,6 +846,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         guard id != selectedID else { return }
         selectedID = id
         placeSelectionOutline()
+        updateLaneHalo()
     }
 
     /// Lays the selected comment's outline over its mark again (a new selection, new marks, a zoom). In re-anchor mode
@@ -836,6 +867,10 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     /// The selected change gets a lasting accent outline while it is selected (UX.md §16): a view over the PDF, so
     /// no page is redrawn. nil removes it.
     func setSelectedChange(_ id: String?) {
+        if selectedChangeID != id {
+            selectedChangeID = id
+            updateLaneHalo()
+        }
         guard id != selectedChange?.id else { return }
         selectedChange = nil
         if let id, let ch = model?.change(id), let doc = view?.document, let (page, _, rs) = pageRects(doc, ch.page, ch.rects) {
@@ -846,7 +881,8 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
 
     /// Lays the selected change's outline over its words again (a new selection, a zoom).
     private func placeChangeOutline() {
-        guard let s = selectedChange, showMarks, markKey?.showChanges != false else {
+        // an unasked edit that waits keeps its outline with change marks off, as it keeps its ring (D2)
+        guard let s = selectedChange, showMarks, markKey?.showChanges != false || waits(s.id) else {
             changeOutline?.removeFromSuperview()
             changeOutline = nil
             return
@@ -854,6 +890,12 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         let o = changeOutline ?? OutlineView(width: 2)
         if !o.place(s.rects.flatMap { SelectionOutline.ring($0) }, on: s.page, in: view) { o.removeFromSuperview() }
         changeOutline = o
+    }
+
+    /// An unasked edit of the open round not handled yet (`ChangeModel.handled`): it waits on you (BRIEF D2).
+    func waits(_ changeID: String) -> Bool {
+        guard let model, model.roundIsOpen else { return false }
+        return model.changes.unrequested.first { $0.id == changeID }.map { !$0.handled } ?? false
     }
 
     /// For --debug-script dump: the comments whose marks are drawn as selected, and the change outlined.
@@ -1000,6 +1042,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     /// Focus starts or ends: the place being read is noted, and the scale changes in the layout that gives the view
     /// its new width (no animated resize, POLISH §2.5).
     func focusChanged(_ on: Bool) {
+        closeLane()
         guard let v = view, v.document != nil else { return }
         focusFrom = (v.bounds.width, pointAtThird(), ProcessInfo.processInfo.systemUptime + 0.3, v.bounds.width)
         if on { focusFit = zoom == nil ? v.scaleFactor : v.scaleFactorForSizeToFit }
@@ -1097,7 +1140,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     /// place being read is put back a third of the way down the view at each new width.
     func viewLaidOut(force: Bool = false) {
         guard let v = view, v.document != nil, v.bounds.width > 0 else { return }
-        updateStripInset()  // the scroller's style may have changed (a mouse plugged in)
+        placeLane()  // a new size, or the scroller's style changed (a mouse plugged in)
         let width = v.bounds.width
         if let f = focusFrom, width == f.applied { if force { focusFrom = nil }; return }  // no new width
         if model?.focus == true, focusFit != nil {
@@ -1224,7 +1267,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         willJump(step, to: pg, rect: union)
         let inView = v.convert(union, from: pg)
         if !v.bounds.insetBy(dx: 0, dy: 30).contains(inView) {
-            let reduce = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+            let reduce = Motion.reduced
             let clip = v.documentView?.enclosingScrollView?.contentView
             // How far the visible area moves so the mark's top lands a third of the way down (clip coordinates).
             let delta = clip.map { clip -> CGFloat in
@@ -1317,9 +1360,6 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         model?.recordPDFStep(at)
         chipTarget = (page, rect)
         backChip.label = at.label
-        chipTimer = Timer.scheduledTimer(withTimeInterval: 4, repeats: false) { [weak self] _ in
-            MainActor.assumeIsolated { self?.backChip.faded = true }  // plain text, still a button
-        }
     }
 
     /// The view's area (its clip view's coordinates) with the place a third of the way down it.
@@ -1333,11 +1373,8 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     }
 
     private func hideChip() {
-        chipTimer?.invalidate()
-        chipTimer = nil
         chipTarget = nil
         if backChip.label != nil { backChip.label = nil }
-        if backChip.faded { backChip.faded = false }
     }
 
     /// On each scroll, only while the chip shows: it goes once its jump's target is more than two views from the
@@ -1376,53 +1413,66 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         v.go(to: PDFDestination(page: pg, at: CGPoint(x: cb.minX, y: min(y + v.bounds.height / max(v.scaleFactor, 0.01) / 3, cb.maxY))))
     }
 
-    /// Lays the markers beside the scroller again (PLAN P1.6): after the marks are drawn again, Find's matches change or
-    /// the scroller's style does; never on a scroll. Find's matches while it has a query, else the open round's comments
-    /// to check and, with change marks shown, the edits.
+    /// Lays the column beside the scroller again (BRIEF §3): after the marks are drawn again, Find's matches change or
+    /// the view resizes; never on a scroll. Find's matches while it has a query, else the open round's comments to
+    /// check and unasked edits that wait (rings, with change marks off too: D2) and, with change marks shown, the edits.
     func updateStrip() {
         var items: [ScrollerMark] = []
+        let findMode = find.open && FindRules.searchable(find.query)
         if let v = view, let doc = v.document, let model, showMarks {
             if pageHeights.count != doc.pageCount {
                 pageHeights = (0..<doc.pageCount).map { Double(doc.page(at: $0)?.bounds(for: .cropBox).height ?? 0) }
             }
-            func add(_ kind: ScrollerMark.Kind, _ page: Int?, _ top: Double?, _ target: ScrollerMark.Target, _ label: String) {
-                guard let page, let top, let f = ScrollerMarks.fraction(page: page, top: top, heights: pageHeights) else { return }
-                items.append(ScrollerMark(kind: kind, fraction: f, target: target, page: page, label: label))
+            func add(_ m: ScrollerMark, _ top: Double?) {
+                guard let top, let f = ScrollerMarks.fraction(page: m.page, top: top, heights: pageHeights) else { return }
+                var m = m
+                m.fraction = f
+                items.append(m)
             }
-            let hits = find.hitPlaces
-            if find.open && FindRules.searchable(find.query) {
+            func top(_ rects: [[Double]]) -> Double? { rects.compactMap { $0.count == 4 ? $0[1] : nil }.min() }
+            if findMode {
+                let hits = find.hitPlaces
                 for (i, h) in hits.enumerated() {
                     let cb = doc.page(at: h.page)?.bounds(for: .cropBox) ?? .zero
-                    add(.find, h.page, Double(cb.maxY - h.bounds.maxY), .find(i), "Match \(i + 1) of \(hits.count)")
+                    add(ScrollerMark(kind: .find, fraction: 0, target: .find(i), page: h.page, label: "Match \(i + 1) of \(hits.count)"),
+                        Double(cb.maxY - h.bounds.maxY))
                 }
             } else {
-                if markKey?.showChanges == true {
-                    for ch in model.state?.changes ?? [] {
-                        let place = ch.float ?? ch.section.map { "§ " + $0 } ?? ""  // as the Changes tab names it
-                        add(ch.unrequested ? .unrequested : .edit, ch.page, ch.rects.map { $0.count == 4 ? $0[1] : .infinity }.min(),
-                            .change(ch.id), (ch.unrequested ? "An edit no comment asked for" : "An edit") + (place.isEmpty ? "" : " · " + place))
-                    }
+                let shown = markKey?.showChanges == true
+                let models = Dictionary((model.changes.unrequested + model.changes.linked).map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+                for ch in model.state?.changes ?? [] {
+                    guard let page = ch.page else { continue }
+                    let waits = ch.unrequested && model.roundIsOpen && !(models[ch.id]?.handled ?? true)
+                    guard shown || waits else { continue }
+                    let label = models[ch.id]?.accessibility ?? ch.id
+                    add(ScrollerMark(kind: ch.unrequested ? .unasked : .edit, fraction: 0, target: .change(ch.id), page: page,
+                                     label: label, waits: waits, tick: shown, answers: ch.attachedTo.first), top(ch.rects))
                 }
+                let cards = Dictionary(model.panel.cards.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
                 for c in model.state?.comments ?? [] where model.roundIsOpen && Status(c) == .toCheck {  // vermilion: your move
-                    add(.toCheck, c.page, c.rects.map { $0.count == 4 ? $0[1] : .infinity }.min(), .comment(c.id), "\(c.id) · to check")
+                    guard let page = c.page else { continue }
+                    add(ScrollerMark(kind: .toCheck, fraction: 0, target: .comment(c.id), page: page,
+                                     label: cards[c.id]?.accessibility ?? c.id), top(c.rects))
                 }
             }
         }
-        if strip.items != items { strip.items = items }
-        updateStripInset()
+        let wasFind = strip.find, old = laneHover.shown.map { shownTargets($0) }
+        if strip.set(items, height: laneHeight, find: findMode) {
+            lane?.set(strip.items, layout: strip.layout, find: findMode)
+            if wasFind != findMode || findMode {
+                closeLane()  // Find opened or closed, or its query changed
+            } else if let old {  // the group changed under the pointer: its rows in place, or the window closes
+                let now = strip.layout.groups.firstIndex { g in g.members.contains { old.contains(strip.items[$0].target) } }
+                laneHover.remap(shown: now)
+                if laneHover.shown != nil { showLaneRows() }
+            }
+        }
+        placeLane()
+        updateLaneHalo()
     }
 
-    /// The strip sits left of the scroller: a mouse's, which takes room, or where an overlay scroller shows, so a drag
-    /// on its knob never lands on a tick.
-    func updateStripInset() {
-        guard let sv = view?.documentView?.enclosingScrollView else { return }
-        let w = sv.scrollerStyle == .legacy
-            ? (sv.hasVerticalScroller ? sv.verticalScroller?.frame.width ?? 0 : 0)
-            : NSScroller.scrollerWidth(for: .regular, scrollerStyle: .overlay)
-        if strip.inset != w { strip.inset = w }
-    }
-
-    /// A click on a marker: the comment or edit selected as Jump selects it, or Find's match shown; a step of Back.
+    /// A click on a marker, a row of its window or a VoiceOver element: the comment or edit selected as Jump selects
+    /// it, or Find's match shown; a step of Back.
     func goMark(_ t: ScrollerMark.Target) {
         guard let model else { return }
         switch t {
@@ -1991,7 +2041,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         if abs(delta) >= 0.5 {
             var target = b
             target.origin.y += f ? delta : -delta
-            let reduce = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+            let reduce = Motion.reduced
             ScrollAnimator.scroll(sv, to: clip.constrainBoundsRect(target).origin,
                                   duration: !reduce && abs(delta) <= 1.5 * b.height ? 0.25 : 0)
         }
@@ -2027,7 +2077,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
                            in: view) ? o : nil
         }
         guard !outlines.isEmpty else { return }
-        let reduce = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        let reduce = Motion.reduced
         let timer = Timer.scheduledTimer(withTimeInterval: reduce ? 0.6 : 0.15, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.flashTick(reduce ? 4 : 1) }
         }
@@ -2162,6 +2212,9 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             return hideToolbar()
         }
         hideMarkBar()
+        // at a find match, the Comment button alone (BRIEF E5); a selection of your own, the whole toolbar
+        let only = pendingBox == nil && find.currentIsSelection
+        if model.toolbar.matchOnly != only { model.toolbar.matchOnly = only }
         // made once; a paper switch or a trip to the hub makes a new PDF view, and the toolbar moves into it
         let bar = toolbarView ?? makeToolbar()
         if bar.superview !== v { v.addSubview(bar) }
@@ -2170,6 +2223,11 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         bar.frame.size = size
         let top = v.bounds.maxY - (model.toolbar.reanchor != nil ? 56 : 0)  // below the re-anchor bar
         if let o = FloatPlace.origin(size: size, lines: [first, last], width: v.bounds.width, top: top) { bar.setFrameOrigin(o) }
+        // the Comment button alone, or the whole toolbar again, shows in the toolbar's next update: laid again then
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.toolbarShown, let bar = self.toolbarView, bar.fittingSize != bar.frame.size else { return }
+            self.showToolbar()
+        }
     }
 
     func hideToolbar() {
@@ -2683,12 +2741,29 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
 }
 
 /// The floating toolbar's ground: `Palette.float` with `Palette.floatLine` round it, radius 8, in the view's appearance.
+/// Every float over the page has one look (design/review-page/BRIEF.md E1): the overview's tag's soft shadow (black 14%,
+/// blur 10, 4 pt down), with a shadow path so nothing is redrawn while the page scrolls under it.
 final class FloatView: NSView {
     override init(frame: NSRect) {
         super.init(frame: frame)
         wantsLayer = true
         layer?.cornerRadius = 8
         layer?.borderWidth = 0.5
+        layer?.masksToBounds = false
+        layer?.shadowColor = NSColor.black.cgColor
+        layer?.shadowOpacity = 0.14
+        layer?.shadowRadius = 5  // CALayer's radius is about half SwiftUI's `shadow(radius: 10)` blur
+        layer?.shadowOffset = CGSize(width: 0, height: -4)  // 4 pt down (the layer's y goes up)
+    }
+
+    override func layout() {
+        super.layout()
+        layer?.shadowPath = CGPath(roundedRect: bounds, cornerWidth: 8, cornerHeight: 8, transform: nil)
+    }
+
+    override func setFrameSize(_ newSize: NSSize) {
+        super.setFrameSize(newSize)
+        layer?.shadowPath = CGPath(roundedRect: CGRect(origin: .zero, size: newSize), cornerWidth: 8, cornerHeight: 8, transform: nil)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
@@ -2726,7 +2801,11 @@ struct FloatingToolbar: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            if let id = toolbar.reanchor {
+            if toolbar.matchOnly && toolbar.reanchor == nil {
+                Button { actions.comment() } label: { Text("Comment").fontWeight(.semibold) }
+                    .buttonStyle(VerdictButtonStyle(active: true, color: .accentColor))
+                    .help("Write a comment (Return)")
+            } else if let id = toolbar.reanchor {
                 Button { actions.place() } label: { Text("Place \(id)").fontWeight(.semibold) }
                     .buttonStyle(VerdictButtonStyle(active: true, color: .accentColor))
                     .help("Move \(id) here (Return)")
@@ -2933,13 +3012,16 @@ final class MarkAnnotation: PDFAnnotation {
             ctx.setFillColor(fill.withAlphaComponent(style == .band ? 1 : 0.7).cgColor)
             lines.forEach { ctx.fill(CGRect(x: $0.minX, y: $0.minY - 2, width: $0.width, height: 2)) }
         case .cross:
+            // A deletion: a caret under the line at the deletion point, in the change bands' lane, so it never covers
+            // the letters (design/review-page/BRIEF.md E10; it was a × over them). `.gone`'s triangle without its bar,
+            // so it is not taken for a comment whose text has gone: 6 pt wide, its apex at the line box's foot, its base
+            // 2.5 pt below, in the gap before the next line's ascenders.
             let r = lines[0]
-            let c = CGPoint(x: r.midX, y: r.midY), s: CGFloat = 4
-            ctx.setStrokeColor(ink.cgColor)
-            ctx.setLineWidth(1.6)
-            ctx.move(to: CGPoint(x: c.x - s, y: c.y - s)); ctx.addLine(to: CGPoint(x: c.x + s, y: c.y + s))
-            ctx.move(to: CGPoint(x: c.x - s, y: c.y + s)); ctx.addLine(to: CGPoint(x: c.x + s, y: c.y - s))
-            ctx.strokePath()
+            ctx.setFillColor(ink.cgColor)
+            ctx.move(to: CGPoint(x: r.midX - 3, y: r.minY - 2.5))
+            ctx.addLine(to: CGPoint(x: r.midX + 3, y: r.minY - 2.5))
+            ctx.addLine(to: CGPoint(x: r.midX, y: r.minY))
+            ctx.fillPath()
         case .reading:
             // A paragraph to read: a bar in the page margin beside it (UX.md §18).
             ctx.setFillColor(fill.cgColor)
@@ -3130,4 +3212,300 @@ final class OutlineView: NSView {
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
+}
+
+// MARK: The column beside the scroller (design/review-page/BRIEF.md §3–6; mac/UX.md §42)
+
+extension PDFController {
+    /// The column's view in a new PDF view (another paper, Review again after the hub), and its hover's hooks.
+    func attachLane(_ v: ReviewPDFView) {
+        lane?.removeFromSuperview()
+        laneHover.reset()
+        let l = MarkLane()
+        l.controller = self
+        v.addSubview(l)
+        lane = l
+        laneHover.canOpen = { [weak self] in self?.laneCanOpen ?? false }
+        laneHover.changed = { [weak self] c in self?.laneChanged(c) }
+        laneWindow.go = { [weak self] k in self?.laneRowClicked(k) }
+        laneWindow.hover = { [weak self] inside in
+            if inside { self?.laneHover.enterWindow() } else { self?.laneHover.leaveWindow() }
+        }
+        if !strip.items.isEmpty { l.set(strip.items, layout: strip.layout, find: strip.find) }
+    }
+
+    /// The scroller's width (a mouse's, or an overlay scroller's when it shows), which the column's foot keeps clear of.
+    private var scrollerInset: CGFloat {
+        guard let sv = view?.documentView?.enclosingScrollView else { return 0 }
+        return sv.scrollerStyle == .legacy
+            ? (sv.hasVerticalScroller ? sv.verticalScroller?.frame.width ?? 0 : 0)
+            : NSScroller.scrollerWidth(for: .regular, scrollerStyle: .overlay)
+    }
+
+    /// The column's height: from 46 pt under the view's top to `max(4, scroller)` above its foot.
+    var laneHeight: CGFloat { max(0, (view?.bounds.height ?? 0) - StripLayout.top - max(4, scrollerInset)) }
+
+    /// The column at R − 50 … R − 20, clear of the scroller as the find's button is; laid again at a new height (the
+    /// window closes at once when the view resizes).
+    func placeLane() {
+        guard let v = view, let l = lane else { return }
+        if l.superview !== v { v.addSubview(l) }
+        let h = laneHeight, foot = max(4, scrollerInset)
+        let f = CGRect(x: v.bounds.width - 50, y: foot - StripLayout.below, width: StripLayout.width,
+                       height: h + StripLayout.above + StripLayout.below)
+        if l.frame != f {
+            if l.frame.size != .zero, laneHover.shown != nil { closeLane() }
+            l.frame = f
+        }
+        if h != strip.height, strip.set(strip.items, height: h, find: strip.find) {
+            l.set(strip.items, layout: strip.layout, find: strip.find)
+            updateLaneHalo()
+        }
+    }
+
+    /// The selection's halo (a comment's or an edit's glyph, however it was selected), Find's current match, and the
+    /// rail when the page is wider than the view.
+    func updateLaneHalo() {
+        guard let l = lane else { return }
+        let sel: ScrollerMark.Target? = selectedID.map { .comment($0) } ?? selectedChangeID.map { .change($0) }
+        let glyph = sel.flatMap { t in strip.items.firstIndex { $0.target == t } }.flatMap { strip.layout.glyph(of: $0) }
+        let current = strip.find ? find.index.flatMap { i in strip.items.firstIndex { $0.target == .find(i) } }.map { strip.layout.ys[$0] } : nil
+        let rail = (view?.documentView?.frame.width ?? 0) > (view?.bounds.width ?? 0) + 0.5
+        l.setHalo(glyph, current: current, rail: rail)
+        l.refreshCurrentLabel()
+    }
+
+    /// The targets of a group, to find it again in a new layout.
+    private func shownTargets(_ g: Int) -> Set<ScrollerMark.Target> {
+        guard g < strip.layout.groups.count else { return [] }
+        return Set(strip.layout.groups[g].members.map { strip.items[$0].target })
+    }
+
+    /// Whether the window may open now (BRIEF §4.1): no button down, the PDF still for 150 ms, the app active (unless
+    /// forced), and no other float: a selection's toolbar (not a find match's Comment), the mark's toolbar, a reference
+    /// preview, the composer, a popover.
+    var laneCanOpen: Bool {
+        guard NSEvent.pressedMouseButtons == 0, ProcessInfo.processInfo.systemUptime - lastScroll >= 0.15,
+              laneForced || NSApp.isActive, !markBarShown, !previewShown, popover?.isShown != true,
+              model?.showBuildDetails != true else { return false }
+        if toolbarShown && !(model?.toolbar.matchOnly ?? false) { return false }
+        return !NSApp.windows.contains { $0.isVisible && $0.className.contains("Popover") }
+    }
+
+    var laneShown: Bool { laneHover.shown != nil }
+
+    /// The pointer over the column (`MarkLane`): in group `g`'s zone, or none.
+    func lanePointer(_ g: Int?, at p: CGPoint?) {
+        guard laneForced || NSApp.isActive || g == nil else { return }
+        laneHover.point(g, at: p)
+    }
+
+    func lanePress(_ down: Bool) { laneHover.press(down) }
+
+    /// The page's id label or a link a click previews under a point of the PDF view: it wins over the column.
+    func pageWins(at p: CGPoint) -> Bool {
+        guard let v = view, let page = v.page(for: p, nearest: false) else { return false }
+        let q = v.convert(p, to: page)
+        return labelHit(page: page, at: q) || previewLink(page: page, at: q) != nil
+    }
+
+    /// A group's rows, with the pointer where it is now (a run's five nearest matches).
+    func laneRows(_ g: Int, pointer: CGFloat? = nil) -> LaneRows {
+        guard g < strip.layout.groups.count else { return LaneRows() }
+        let cards = Dictionary((model?.panel.cards ?? []).map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        let all = (model?.changes.unrequested ?? []) + (model?.changes.linked ?? [])
+        let changes = Dictionary(all.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        var edits: [String: Int] = [:]
+        for ch in all { for l in ch.links { edits[l.id, default: 0] += 1 } }
+        return LaneRows.make(strip.layout.groups[g].members, items: strip.items, ys: strip.layout.ys, pointer: pointer ?? laneHover.pointer?.y,
+                             currentMatch: strip.find ? find.index : nil, card: { cards[$0] }, change: { changes[$0] },
+                             edits: { edits[$0] ?? 0 }, line: { [weak self] in self?.find.matchLine($0) ?? LaneMatchLine() })
+    }
+
+    /// On a grown run, the match nearest the pointer: the one a click opens.
+    private var laneNear: CGFloat? {
+        guard strip.find, let g = laneHover.grown, g < strip.layout.groups.count, let y = laneHover.pointer?.y,
+              strip.layout.groups[g].glyphs.contains(where: { strip.layout.glyphs[$0].shape == .run }) else { return nil }
+        return strip.layout.groups[g].members.map { strip.layout.ys[$0] }.min { abs($0 - y) < abs($1 - y) }
+    }
+
+    private func laneChanged(_ c: LaneHover.Change) {
+        switch c {
+        case .grow: break
+        case .pointer: if strip.find, laneHover.shown != nil { showLaneRows() }
+        case .open(let instant): showLaneWindow(appear: !instant)
+        case .glide: showLaneWindow(appear: false, glide: true)
+        case .close(let fade): hideLaneWindow(fade: fade)
+        }
+        lane?.setGrown(laneHover.grown, pressed: laneHover.pressed, near: laneNear)
+    }
+
+    /// The window's frame for its rows (BRIEF §5.5), in the PDF view (y up).
+    private func laneFrame(_ rows: LaneRows, group g: Int) -> CGRect? {
+        guard let v = view, g < strip.layout.groups.count else { return nil }
+        let under: CGFloat = find.open ? 41 : 40  // the find's bar, or its button, 10 pt down
+        let f = LaneRows.frame(height: rows.height, first: StripLayout.top + strip.layout.groups[g].first, view: v.bounds.size, under: under)
+        return CGRect(x: f.minX, y: v.bounds.height - f.maxY, width: f.width, height: f.height)
+    }
+
+    /// The rows of the shown group again, in place (the pointer moved along a run, the group changed).
+    private func showLaneRows() {
+        guard let g = laneHover.shown, let host = laneWindowView, host.superview != nil else { return }
+        let rows = laneRows(g)
+        laneWindow.show(rows)
+        if let f = laneFrame(rows, group: g), f != host.frame { host.frame = f; noteLaneFrame(f) }
+    }
+
+    /// The window appears (a fade with a 4 pt slide out of the column, 120 ms ease-out; a 100 ms fade with Reduce
+    /// Motion; at once when warm), or glides to another group (120 ms ease-out; a jump with Reduce Motion), its rows
+    /// changing at once.
+    private func showLaneWindow(appear: Bool, glide: Bool = false) {
+        guard let v = view, let g = laneHover.shown else { return }
+        let rows = laneRows(g)
+        guard !rows.rows.isEmpty, let f = laneFrame(rows, group: g) else { return laneHover.closeNow() }
+        laneWindow.onMark = !laneHover.inWindow
+        laneWindow.show(rows)
+        let host = laneWindowView ?? FloatView.holding(LaneWindowView(model: laneWindow))
+        laneWindowView = host
+        let fresh = host.superview !== v || host.isHidden
+        if host.superview !== v { v.addSubview(host, positioned: .above, relativeTo: lane) }
+        host.isHidden = false
+        noteLaneFrame(f)
+        let reduce = Motion.reduced
+        if fresh {
+            host.layer?.removeAllAnimations()
+            host.frame = appear && !reduce ? f.offsetBy(dx: 4, dy: 0) : f
+            host.alphaValue = appear ? 0 : 1
+            if appear {
+                NSAnimationContext.runAnimationGroup { ctx in
+                    ctx.duration = reduce ? 0.1 : 0.12
+                    ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.33, 1, 0.68, 1)
+                    ctx.allowsImplicitAnimation = true
+                    host.animator().alphaValue = 1
+                    host.animator().frame = f
+                }
+            }
+        } else if glide && !reduce {
+            host.alphaValue = 1
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.12
+                ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.33, 1, 0.68, 1)
+                host.animator().frame = f
+            }
+        } else {
+            host.alphaValue = 1
+            host.frame = f
+        }
+        if laneMonitor == nil {
+            // a click anywhere but the window and the column, and any key, close it at once; Esc is spent doing so
+            laneMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown, .keyDown]) { [weak self] e in
+                let type = e.type, key = type == .keyDown ? e.keyCode : 0, window = e.window, at = e.locationInWindow
+                let spent = MainActor.assumeIsolated { () -> Bool in
+                    guard let self, self.laneShown else { return false }
+                    if type == .leftMouseDown, let host = self.laneWindowView, window === host.window,
+                       host.bounds.contains(host.convert(at, from: nil)) { return false }
+                    if type == .leftMouseDown, let l = self.lane, window === l.window, l.group(at: l.convert(at, from: nil)) != nil {
+                        return false
+                    }
+                    self.closeLane()
+                    return type == .keyDown && key == 53
+                }
+                return spent ? nil : e
+            }
+        }
+    }
+
+    /// The window's frame in the column's coordinates (for the aim's triangle), and the find match's Comment button
+    /// hidden where the window would cover it.
+    private func noteLaneFrame(_ f: CGRect) {
+        guard let v = view else { return }
+        laneHover.windowFrame = CGRect(x: f.minX - (v.bounds.width - 50), y: v.bounds.height - f.maxY - StripLayout.top,
+                                       width: f.width, height: f.height)
+        if let bar = toolbarView, toolbarShown, bar.frame.intersects(f) {
+            bar.isHidden = true
+            laneHidToolbar = true
+        }
+    }
+
+    /// The window goes: a 100 ms fade (ease-in) after the grace, at once otherwise; a Comment button it hid comes back.
+    private func hideLaneWindow(fade: Bool) {
+        if let m = laneMonitor { NSEvent.removeMonitor(m) }
+        laneMonitor = nil
+        laneWindow.onMark = true
+        laneWindow.hot = nil
+        if laneHidToolbar {
+            laneHidToolbar = false
+            if model?.hasPDFSelection == true { showToolbar() }
+        }
+        guard let host = laneWindowView, !host.isHidden else { return }
+        if fade {
+            NSAnimationContext.runAnimationGroup({ ctx in
+                ctx.duration = 0.1
+                ctx.timingFunction = CAMediaTimingFunction(controlPoints: 0.42, 0, 1, 1)
+                host.animator().alphaValue = 0
+            }, completionHandler: { [weak self, weak host] in
+                MainActor.assumeIsolated {
+                    guard let self, let host, self.laneHover.shown == nil else { return }
+                    host.isHidden = true
+                }
+            })
+        } else {
+            host.isHidden = true
+            host.alphaValue = 1
+        }
+    }
+
+    /// Closes the column's window at once (a click, a key, Esc, a zoom, Focus, Find, change marks, a resize).
+    func closeLane() { laneHover.closeNow() }
+
+    /// A click on a group's mark: its first row (Find: the current match, else the match nearest the pointer).
+    func laneClick(_ g: Int, at p: CGPoint) {
+        guard g < strip.layout.groups.count else { return }
+        let rows = laneRows(g, pointer: p.y)
+        laneHover.closeNow()
+        if let t = rows.target { laneGo(t) }
+    }
+
+    /// A click on a row of the window, or on "+N more" (the first item not listed).
+    func laneRowClicked(_ k: Int) {
+        let rows = laneWindow.rows
+        let t = k < rows.rows.count ? rows.rows[k].target : rows.moreTarget
+        laneHover.closeNow()
+        if let t { laneGo(t) }
+    }
+
+    /// VoiceOver pressed an element: its item; in Find, the current match if it is on that page, else its first.
+    func laneAccessibilityPress(_ idx: [Int]) {
+        let ts = idx.filter { $0 < strip.items.count }.map { strip.items[$0].target }
+        if let i = find.index, ts.contains(.find(i)) { return laneGo(.find(i)) }
+        if let t = ts.first { laneGo(t) }
+    }
+
+    /// Goes to an item as Jump does (`goMark`). The halo is drawn first, before the PDF moves; the item already
+    /// selected scrolls nothing, its page mark flashing again.
+    func laneGo(_ t: ScrollerMark.Target) {
+        guard let model else { return }
+        switch t {
+        case .comment(let id) where selectedID == id:
+            model.tab = .comments
+            if let c = model.comment(id) { flash(page: c.page, rects: c.rects) }
+        case .change(let id) where selectedChangeID == id:
+            model.tab = .changes
+            if let ch = model.change(id) { flash(page: ch.page, rects: ch.rects) }
+        case .comment(let id):
+            selectedID = id
+            selectedChangeID = nil
+            updateLaneHalo()
+            selectedID = nil  // `setSelected` lays its outline
+            goMark(t)
+        case .change(let id):
+            selectedChangeID = id
+            updateLaneHalo()
+            selectedChangeID = nil
+            goMark(t)
+        case .find:
+            goMark(t)
+        }
+        updateLaneHalo()
+    }
 }

@@ -4,9 +4,9 @@ import XCTest
 @testable import Paperole
 
 /// The fixes of the 2026-10-20 UI audit that a test can hold: the closed comments' PDF labels, the map's dimmed words
-/// and calmer light ramp, its links, one sign per meaning (Kept as is, did not build, position uncertain), the toast
-/// kept off the answer row, a group header's short forms, the tag signs in one box, and typographic apostrophes.
-/// Synthetic values only.
+/// (its calmer light ramp gave way to Sage green on 2026-11-01), its links, one sign per meaning (Kept as is, did not
+/// build, position uncertain), the toast kept off the answer row, a group header's short forms, the tag signs in one
+/// box, and typographic apostrophes. Synthetic values only.
 @MainActor
 final class AuditFixTests: XCTestCase {
     private func srgb(_ c: NSColor, dark: Bool) -> NSColor {
@@ -37,18 +37,30 @@ final class AuditFixTests: XCTestCase {
     }
 
     /// While something is followed, a dimmed cell's name and number step back together, by colour, and still read at
-    /// 4.5:1 on the darkest step dimmed and on the panel; the light steps are as nearly neutral as the dark ones.
-    func testDimmedWordsAndTheCalmLightRamp() {
+    /// 4.5:1 on every step dimmed and on the panel. The audit calmed the light ramp to the dark one's near-neutral
+    /// grey; since the advisor's choice of 2026-10-31 the ramp is Sage green (mac/UX.md §40.10): its steps in the
+    /// accent's hue, more of it a step, an older round's too, over a track still nearly neutral, so an empty cell stays
+    /// quiet.
+    func testDimmedWordsAndTheSageRamp() {
         for dark in [false, true] {
             let ink = MapInk(dark: dark)
-            let dimmedCell = over(ink.over(.s3), CGFloat(ink.dim), ink.over(.content))
-            XCTAssertGreaterThanOrEqual(MapFoldTests.contrast(ink.over(.dimText), dimmedCell), 4.5, "dark \(dark)")
+            for step in [MapRole.s1, .s2, .s3] {
+                let dimmedCell = over(ink.over(step), CGFloat(ink.dim), ink.over(.content))
+                XCTAssertGreaterThanOrEqual(MapFoldTests.contrast(ink.over(.dimText), dimmedCell), 4.5, "\(step), dark \(dark)")
+            }
             XCTAssertGreaterThanOrEqual(MapFoldTests.contrast(ink.over(.dimText), ink.over(.content)), 4.5, "dark \(dark)")
             XCTAssertLessThan(MapFoldTests.contrast(ink.over(.dimText), ink.over(.content)),
                               MapFoldTests.contrast(ink.over(.number), ink.over(.content)), "it steps back")
-            for step in [MapRole.track, .s1, .s2, .s3, .otrack, .os1, .os2, .os3] {
-                let c = DesignPaletteTests.lab(ink.over(step))
-                XCTAssertLessThanOrEqual(hypot(c.a, c.b), 6, "nearly neutral: \(step), dark \(dark)")  // UI v4 s3: 5.2 (5.8 dark)
+            func hue(_ r: MapRole) -> Double { let c = DesignPaletteTests.lab(ink.over(r)); return atan2(c.b, c.a) * 180 / .pi }
+            func chroma(_ r: MapRole) -> Double { let c = DesignPaletteTests.lab(ink.over(r)); return hypot(c.a, c.b) }
+            for steps in [[MapRole.s1, .s2, .s3], [.os1, .os2, .os3]] {
+                for step in steps {
+                    XCTAssertLessThanOrEqual(abs(hue(step) - hue(.accent)), 12, "Sage's hue: \(step), dark \(dark)")  // s1 dark: 10.6°
+                }
+                XCTAssertEqual(steps.map(chroma), steps.map(chroma).sorted(), "more Sage a step, dark \(dark)")
+            }
+            for step in [MapRole.track, .otrack] {
+                XCTAssertLessThanOrEqual(chroma(step), 3, "nearly neutral: \(step), dark \(dark)")  // 2.1 and 1.6 (2.5 dark)
             }
             // the map's links are the system's link colour, as every link in words
             XCTAssertLessThan(DesignPaletteTests.deltaE(ink.over(.link), srgb(Palette.link, dark: dark)), 1, "dark \(dark)")

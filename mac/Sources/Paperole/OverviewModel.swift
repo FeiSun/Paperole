@@ -20,6 +20,21 @@ final class OverviewModel: ObservableObject {
     @Published var selection: OverviewItem?
     /// The round the thumbnail strip shows; nil: the latest.
     @Published var strip: Int?
+    /// The round previewed under the pointer (mac/UX.md §40.9): the pointer rested `previewDwell` on its row of the map,
+    /// so the strip shows its pages and the map's box slides to it, until the pointer leaves the rows and the strip
+    /// (back to `strip`) or a click picks it. Never kept in a place; a key or VoiceOver picks, never previews.
+    @Published private(set) var preview: Int?
+    /// How long the pointer rests on a row (moving no more than `previewSlop` from where it stopped), or stays off the
+    /// rows and the strip, before the preview follows: a row crossed, however slowly, previews nothing.
+    static let previewDwell: TimeInterval = 0.08
+    static let previewSlop: CGFloat = 3
+    /// Where the pointer is for the preview: over a round's row, where it stopped there (nil once a click or a key
+    /// picked: that row previews again only once the pointer has left it), over the strip or the map's lens.
+    private enum Pointer: Equatable { case row(Int), pages, away }
+    private var pointer = Pointer.away
+    private var stop: CGPoint?
+    private var onStrip = false, onLens = false
+    private var previewTask: Task<Void, Never>?
     @Published var unfold = false
     /// The folded parts (the appendix, a long References list) shown at their real length (VISUAL v3 §5.1), and those
     /// the map folds now (written by the map, as `folded`): following something inside one shows it first.
@@ -31,6 +46,8 @@ final class OverviewModel: ObservableObject {
     @Published var keyOpen = false
     /// What the pointer is over and the help tag: observed only by the hover layer, the tag and the panel's lines.
     let hover = OverviewHover()
+    /// The strip's sideways scroll, observed only by the lens (mac/UX.md §40.9).
+    let stripScroll = StripScroll()
     /// The view that has the map's keys (`OverviewKeyTarget`), and the rounds the map folds now (a key that moves into
     /// one unfolds them).
     weak var keyView: OverviewKeyView?
@@ -58,7 +75,8 @@ final class OverviewModel: ObservableObject {
     func reset(for paper: String?) {
         if !whenLoaded.isEmpty { ran(false) }  // waited for the paper left
         self.paper = paper
-        hover.leave()
+        pointerLeft()
+        stripScroll.reset()
         data = nil
         status = .idle
         selection = nil
@@ -77,8 +95,10 @@ final class OverviewModel: ObservableObject {
     func restore(_ p: OverviewPlace) {
         if selection != p.selection { selection = p.selection }
         if strip != p.strip { strip = p.strip }
+        endPreview()
         if unfold != p.unfold { unfold = p.unfold }
         if shownParts != p.shownParts { shownParts = p.shownParts }
+        stripScroll.follow(p.selection, round: p.strip ?? MapRules.defaultStrip(data), data: data)
         savedScroll = p.scroll
         pendingScroll = p.scroll
         applyPendingScroll()
@@ -106,6 +126,83 @@ final class OverviewModel: ObservableObject {
 
     /// The map has the keys: ← → ↑ ↓ and Return move and open what it follows.
     var hasKeys: Bool { keyView.map { $0.window?.firstResponder === $0 } ?? false }
+
+    // MARK: The round previewed
+
+    /// The pointer at `p` on the map: over round `n`'s row, over the lens between the strip's ruler and the rows
+    /// (`lens`), or neither (under the rows). A row's round is previewed once the pointer has rested on it
+    /// `previewDwell`; a row crossed previews nothing. The lens and the strip (`point(strip:)`) keep the round shown, so
+    /// a round previewed can be clicked on the strip; anywhere else as long, the strip's round is back.
+    func point(round n: Int?, lens: Bool = false, at p: CGPoint) {
+        onStrip = false  // on the map, so off the strip, whatever exit the strip missed
+        onLens = n == nil && lens
+        guard let n else { return settle() }
+        // the same row: the wait goes on while the pointer rests (or after a pick there); moved on, it starts again
+        if pointer == .row(n), stop.map({ hypot(p.x - $0.x, p.y - $0.y) <= Self.previewSlop }) ?? true { return }
+        pointer = .row(n)
+        stop = p
+        wait(for: n)
+    }
+
+    /// The pointer off the map (its hover ended): onto the strip, which keeps the round shown, or anywhere else.
+    func pointOffMap() {
+        onLens = false
+        settle()
+    }
+
+    /// The pointer over the strip or its ruler (`on`), or off them. The strip's exit that comes after the pointer is on
+    /// a row already (two views' events, in either order) leaves the row's wait alone.
+    func point(strip on: Bool) {
+        onStrip = on
+        if !on, case .row = pointer { return }
+        settle()
+    }
+
+    /// Off the rows: the round shown stays while the pointer is over the strip or the lens; elsewhere the strip's round
+    /// is back after the dwell, counted from when the pointer left (moving on elsewhere does not put it off).
+    private func settle() {
+        let now: Pointer = onStrip || onLens ? .pages : .away
+        guard now != pointer else { return }
+        pointer = now
+        stop = nil
+        if now == .away { return wait(for: nil) }
+        previewTask?.cancel()
+        previewTask = nil
+    }
+
+    /// Round `n` previewed (nil: the strip's round back) after the dwell, unless the pointer moves on first.
+    private func wait(for n: Int?) {
+        previewTask?.cancel()
+        previewTask = nil
+        guard n != preview else { return }
+        previewTask = Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: UInt64(Self.previewDwell * 1_000_000_000))
+            guard !Task.isCancelled, let self else { return }
+            self.previewTask = nil
+            if self.preview != n { self.preview = n }
+        }
+    }
+
+    /// No preview, and none on its way (a click picked a round, a key, another place): the row under the pointer
+    /// previews again only once the pointer has left it.
+    func endPreview() {
+        previewTask?.cancel()
+        previewTask = nil
+        stop = nil
+        if preview != nil { preview = nil }
+    }
+
+    /// The overview left (Review, another paper, a page of the hierarchy): no preview, none on its way, the pointer
+    /// nowhere and its help tag gone. Its views go before the pointer's exit reaches them (Return on the map, a menu
+    /// command, Back: the review of 2026-11-01), so All Rounds shows the strip's round, and the row under the pointer
+    /// previews again.
+    func pointerLeft() {
+        hover.leave()
+        endPreview()
+        pointer = .away
+        onStrip = false
+        onLens = false
+    }
 
     // MARK: Loading
 
@@ -142,6 +239,7 @@ final class OverviewModel: ObservableObject {
             status = .loaded
             if let s = selection, !Self.valid(s, in: d) { selection = nil }
             if let n = strip, d.round(n) == nil { strip = nil }  // a round gone (Put Back): the latest that built
+            if let n = preview, d.round(n) == nil { endPreview() }
             ran(true)
         case .failure(let e):
             let message = e.localizedDescription

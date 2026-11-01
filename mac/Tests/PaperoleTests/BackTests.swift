@@ -214,7 +214,6 @@ final class BackFlowTests: XCTestCase {
         XCTAssertEqual(model.pdf.shownPage, 3)
         XCTAssertEqual(steps, [left.label])
         XCTAssertEqual(model.pdf.backChip.label, left.label)
-        XCTAssertFalse(model.pdf.backChip.faded)
         XCTAssertEqual(model.backLabel, left.label)
         model.goBack()
         view.layoutDocumentView()

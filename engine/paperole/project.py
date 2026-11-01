@@ -6,6 +6,7 @@ import shutil
 import signal
 import stat
 import subprocess
+import sys
 import time
 import unicodedata
 import zipfile
@@ -24,6 +25,43 @@ WARNING = re.compile(r"^(?:LaTeX(?: Font)?|Package \S+|Class \S+) Warning: ")
 FOLLOW_UP = re.compile(r"Emergency stop\.|==> Fatal error occurred")
 # Warnings of a run that stopped early say only that it did not finish (undefined references, reruns).
 UNFINISHED = re.compile(r"undefined|[Rr]erun|may have changed")
+# A package or class asking for shell escape: minted's "You must invoke LaTeX with the -shell-escape flag",
+# standalone's "Shell escape needed to create graphic!", tikz's "… this is 'pdflatex -shell-escape'", svg's "You didn't
+# enable `shell escape' (or `write18') so it wasn't possible to launch the Inkscape export for `figure.svg'". LaTeX's
+# own messages are not asking: they quote the student's labels and file names.
+ASKS_SHELL_ESCAPE = re.compile(r"(?:Package|Class) \S+ (?:Error|Warning): .*(?:shell[ -]escape|write18)", re.I)
+# A name a message quotes is the student's (natbib's "Citation `shell-escape' on page 1 undefined"): never asking. svg
+# quotes its own `shell escape', which no key or label is.
+QUOTED = re.compile(r"`(?!shell escape')[^`']*'")
+# What a package says as it loads, whether anything needs shell escape or not: shellesc's "Shell escape disabled" (svg,
+# standalone and minted load it), epstopdf's "Shell escape feature is not enabled", ifplatform's "shell escape is
+# disabled", gnuplottex's "Shell escape not enabled".
+LOADING = re.compile(r"Package (?:shellesc|epstopdf|ifplatform|gnuplottex) Warning: ")
+# epstopdf asks by the figure it could not make: figure.eps becomes figure-eps-converted-to.pdf by a program it runs
+CONVERTED = re.compile(r"File `[^`']*-eps-converted-to\.pdf' not found")
+# What a shell still reads inside "…", where latexmk puts the output folder (and the main file) in its command lines:
+# in a path, a $(…) or a backquote would run as a command, with shell escape or without (compile refuses such a path)
+SHELL_QUOTED = "$`\"\\"
+# minted's outputdir, in a pretex only when it is this plain: latexmk puts the pretex in "…" in a shell command line
+PLAIN_PATH = re.compile(r"[A-Za-z0-9._/-]+")
+# latexmk builds the bibtex, biber and makeindex command lines from auxiliary-file names the student's LaTeX chooses
+# (imakeidx's \makeindex[name=…], multibib's \newcites{…}) and runs them through /bin/sh with the name in "…", where a
+# backquote or $(…) still runs — with shell escape or without. The names exist only after TeX has run, so compile
+# cannot screen them (the main file and the folder paths it can, and does). This fixed -e Perl, with no student string
+# in it, makes latexmk run those three as its own `internal` commands that call one sub, which runs the program as an
+# argv list (system BLOCK, never the shell); latexmk splits the substituted arguments itself (its parse_quotes). The
+# rest of the command, and the *latex run, are unchanged. Two more places hand such names to the shell (latexmk 4.79):
+# its kpsewhich sub, which looks up \bibdata and \bibstyle names and names read from the log through open "$cmd|"
+# with the names unquoted, is replaced by one that runs kpsewhich as an argv list; and parse_aux1 and parse_bcf, which
+# open an .aux named in an .aux with Perl's two-argument open (a name ending in | would run), refuse a name with a |.
+# CONTRACT §"Shell escape per paper" (Security).
+SAFE_AUX = ("sub paperole_run { my $p = shift; return system { $p } $p, @_; } "
+            "foreach my $c (\\$bibtex, \\$biber, \\$makeindex) { $$c = \"internal paperole_run $$c\"; } "
+            "no warnings 'redefine'; "
+            "*kpsewhich = sub { my @found; open(my $fh, '-|', 'kpsewhich', @_) or return (); "
+            "while (<$fh>) { s/\\r?\\n$//; push @found, $_; } close $fh; return @found; }; "
+            "foreach my $s ('parse_aux1', 'parse_bcf') { my $orig = \\&$s; "
+            "*$s = sub { return 0 if $_[0] =~ /\\|/; return $orig->(@_); }; }")
 
 
 def _skipped(parts):
@@ -207,17 +245,31 @@ def tex_env():
     return dict(os.environ, PATH=TEXBIN + os.pathsep + os.environ.get("PATH", ""))
 
 
-def compile(src, build, main, engine, progress=lambda message: None):
-    """Run latexmk in src with output in build; return the build result with absolute paths."""
+def compile(src, build, main, engine, progress=lambda message: None, shell_escape=False):
+    """Run latexmk in src with output in build; return the build result with absolute paths. shell_escape (the paper's
+    choice, off unless the advisor turns it on): \\write18 may run any command, for minted and the like
+    (_with_shell_escape); off, the command and its environment are as they always were."""
+    # latexmk reads an argument that starts with - as its own option, and puts the name in "…" in a shell command
+    # line, where a backquote is not quoted; the output folder too, where the shell reads a $, backquote, " or \ of the
+    # review folder's path, which src shares (SHELL_QUOTED)
+    if main.startswith("-") or "`" in main:
+        raise EngineError("The main file's name {} starts with - or has a `, which latexmk would misread. Rename the "
+                          "file.".format(main))
+    for path in (build, src):
+        if any(c in str(path) for c in SHELL_QUOTED):
+            raise EngineError("The folder path {} has a $, `, \" or \\, which latexmk would run as part of a command. "
+                              "Rename the folder that has it.".format(path))
     src, build = Path(src), Path(build)
     build.mkdir(parents=True, exist_ok=True)
     for d in src.rglob("*"):  # latexmk does not create output subfolders for \include{chap/a}
         if d.is_dir():
             (build / d.relative_to(src)).mkdir(parents=True, exist_ok=True)
     env = dict(tex_env(), max_print_line="10000")  # keep log lines unwrapped
-    cmd = ["latexmk", "-norc", ENGINES[engine], "-f", "-synctex=1", "-interaction=nonstopmode",
+    cmd = ["latexmk", "-norc", "-e", SAFE_AUX, ENGINES[engine], "-f", "-synctex=1", "-interaction=nonstopmode",
            "-file-line-error", "-no-shell-escape", "-outdir=" + str(build), main]
-    progress("Compiling with {}…".format(engine))
+    if shell_escape:
+        cmd, env = _with_shell_escape(cmd, env, src, build)
+    progress("Compiling with {}{}…".format(engine, " and shell escape" if shell_escape else ""))
     start = time.monotonic()
     out, timed_out = _latexmk(cmd, src, env, TIMEOUT)
 
@@ -246,7 +298,37 @@ def compile(src, build, main, engine, progress=lambda message: None):
         warnings = [w for w in warnings if not UNFINISHED.search(w)]
     return {"status": status, "pdf": str(pdf) if status != "failed" else None,
             "log": str(log) if log.exists() else None, "pages": pages, "errors": errors, "warnings": warnings,
-            "tex": tex_version(log)}
+            "tex": tex_version(log), "shell_escape": bool(shell_escape)}
+
+
+def _with_shell_escape(cmd, env, src, build):
+    """cmd and env for a build with shell escape: -shell-escape for -no-shell-escape; the folder of the engine's own
+    Python last on PATH (not resolved: the venv's bin), where pygmentize is, which minted runs and an app launched from
+    the GUI finds nowhere else; and, as a pretex, minted 2's outputdir: the build folder relative to src, where TeX
+    writes what pygmentize reads and minted keeps its cache (without it minted finds no output with -outdir, and
+    writes _minted-<job>/ into src). The rest of the command is unchanged: no student string is added to it."""
+    cmd = ["-shell-escape" if a == "-no-shell-escape" else a for a in cmd]
+    python = os.path.dirname(sys.executable or "")
+    if python:  # an empty entry would put src on PATH
+        env = dict(env, PATH=env["PATH"] + os.pathsep + python)
+    rel = os.path.relpath(build, src)
+    if PLAIN_PATH.fullmatch(rel):
+        cmd.insert(-1, "-usepretex=\\PassOptionsToPackage{outputdir=" + rel + "}{minted}")
+    return cmd, env
+
+
+def needs_shell_escape(build):
+    """Whether a round's build asks for shell escape: it was built without it, it has errors, and a package or class
+    asks for it (ASKS_SHELL_ESCAPE) in an error or in a warning other than one printed as it loads (LOADING), the names
+    the messages quote aside (QUOTED); or epstopdf's figure is missing (CONVERTED). So a build without errors never
+    asks, nor one whose only asking is a package loading (standalone, epstopdf and svg say shell escape is off whether
+    anything needs it). Derived from the build as stored, so a round built before builds recorded shell_escape has it
+    too."""
+    errors = [e["message"] for e in build["errors"]]
+    if build.get("shell_escape") is True or not errors:
+        return False
+    asking = [QUOTED.sub("", m) for m in errors + [w for w in build["warnings"] if not LOADING.match(w)]]
+    return any(ASKS_SHELL_ESCAPE.search(m) for m in asking) or any(CONVERTED.search(m) for m in errors)
 
 
 def _latexmk(cmd, src, env, timeout):

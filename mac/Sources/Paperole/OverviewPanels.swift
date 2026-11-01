@@ -166,7 +166,7 @@ extension OverviewPanel {
 
     static func editLine(_ e: PaperOverview.Edit, _ r: PaperOverview.Round) -> EditLine {
         let first = r.excerpts?[e.id].flatMap { $0.isEmpty ? nil : $0 }
-        let text = first ?? (e.move ? "A section moved (prints no words)" : "Edit nobody asked for")
+        let text = first ?? (e.move ? "A section moved (prints no words)" : "Unasked edit")
         let status = [e.page.map { "p.\($0 + 1)" }, e.toCheck ? "○ to check" : nil].compactMap { $0 }.joined(separator: " · ")
         return EditLine(id: e.id, round: r.n, text: text, status: status, section: e.section)
     }
@@ -211,7 +211,7 @@ extension OverviewPanel {
             if !resp.isEmpty { meta.append(student + ": " + resp.joined(separator: " · ")) }
             if let w = r.words, let a = w.added { meta.append("+\(a) −\(w.deleted ?? 0) words") }
             let edits = r.edits ?? [], unasked = edits.filter(\.unrequested).count
-            meta.append(count(edits.count, "edit") + (unasked > 0 ? ", \(unasked) nobody asked for" : ""))
+            meta.append(count(edits.count, "edit") + (unasked > 0 ? ", \(unasked) unasked" : ""))
         }
         let inRound = d.comments.filter { $0.step(in: n) != nil }
         func chips(_ cs: [PaperOverview.Comment]) -> [Chip] { cs.map { Chip(id: $0.id, color: $0.color) } }
@@ -236,7 +236,7 @@ extension OverviewPanel {
         if open {
             let unasked = (r.edits ?? []).filter(\.unrequested)
             if !unasked.isEmpty {
-                groups.append(Group(label: "Edits nobody asked for · \(unasked.count)", glyph: .none, edits: unasked.map { editLine($0, r) }))
+                groups.append(Group(label: "Unasked edits · \(unasked.count)", glyph: .none, edits: unasked.map { editLine($0, r) }))
             }
         }
         let title = "Open Round \(n) in Review" + (r.isClosed ? " (read-only)" : "")
@@ -253,7 +253,7 @@ extension OverviewPanel {
         let secs = r.hasSections
             ? (r.spans ?? []).filter { $0.start < Double(p + 1) && $0.end > Double(p) }.map(\.title).joined(separator: ", ")
             : "sections not known yet"
-        let meta = [secs, count(cs.count, "comment"), count(edits.count, "edit") + (unasked.isEmpty ? "" : ", \(unasked.count) nobody asked for")]
+        let meta = [secs, count(cs.count, "comment"), count(edits.count, "edit") + (unasked.isEmpty ? "" : ", \(unasked.count) unasked")]
         return OverviewPanel(title: "Page \(p + 1) · Round \(n)", meta: meta.filter { !$0.isEmpty }.joined(separator: " · "),
                              buttons: [Button(title: "Open page \(p + 1) in Review", action: .review(.page(round: n, page: p)))],
                              body: .lines(cs.map { line($0, d, strip: strip) }, edits: unasked.map { editLine($0, r) },
@@ -444,7 +444,7 @@ struct PanelLines: View {
         .modifier(EditClicks(model: model, data: data, edit: e))
         .overviewTip(hover, key: "edit:" + e.id) { MapHelp.lines(.edit(e.id, round: e.round), data, student: student) }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Edit nobody asked for: \(e.text). \(e.status.replacingOccurrences(of: "○", with: ""))")
+        .accessibilityLabel("Unasked edit: \(e.text). \(e.status.replacingOccurrences(of: "○", with: ""))")
     }
 }
 
@@ -539,7 +539,7 @@ struct PanelGroups: View {
         .modifier(EditClicks(model: model, data: data, edit: e))
         .overviewTip(hover, key: "edit:" + e.id) { MapHelp.lines(.edit(e.id, round: e.round), data, student: student) }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Edit nobody asked for: \(e.text)")
+        .accessibilityLabel("Unasked edit: \(e.text)")
     }
 }
 

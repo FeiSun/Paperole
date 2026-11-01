@@ -21,6 +21,8 @@ final class OverviewHover: ObservableObject {
     /// coordinates); written as the overview scrolls, read only when a tag is shown.
     var mapOrigin: CGPoint = .zero
     var stripOrigin: CGPoint = .zero
+    /// The section ruler's, for the debug script's check that nothing moves when the strip shows another round.
+    var rulerOrigin: CGPoint = .zero
     /// The map drawn last, for the debug script's `ovhover` (it points at a thing by its name).
     var scene: MapScene?
     /// The help tag shows this long after the pointer comes to rest on something; at once while another was just shown

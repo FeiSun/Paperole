@@ -410,6 +410,7 @@ final class PaperFind: ObservableObject {
         guard let sel = matches[i]?.copy() as? PDFSelection, let page = sel.pages.first else { return }
         index = i
         placeRing()
+        c.updateLaneHalo()  // the column's Sage tick follows the current match
         v.setCurrentSelection(sel, animate: false)
         let cb = page.bounds(for: .cropBox)
         let lines = sel.selectionsByLine().map { $0.bounds(for: page) }.filter { !$0.isEmpty }
@@ -436,6 +437,30 @@ final class PaperFind: ObservableObject {
             o.removeFromSuperview()
         }
         ring = o
+    }
+
+    /// The current match is the PDF's selection: the floating toolbar is its Comment button alone (BRIEF E5).
+    var currentIsSelection: Bool { index.map(stillSelected) ?? false }
+
+    /// The line match `i` is in (PDFKit's line selection at it), cut so the match stays in view: the column's window
+    /// (BRIEF §5.2).
+    func matchLine(_ i: Int) -> LaneMatchLine {
+        guard i < hits.count, i < matches.count, let doc = view?.document else { return LaneMatchLine() }
+        if matches[i] == nil { matches[i] = selection(hits[i], in: doc) }
+        guard let sel = matches[i], let page = sel.pages.first, let word = sel.string, !word.isEmpty else { return LaneMatchLine() }
+        let b = sel.bounds(for: page)
+        guard let line = page.selectionForLine(at: CGPoint(x: b.minX + 0.5, y: b.midY)), let text = line.string,
+              line.numberOfTextRanges(on: page) > 0, sel.numberOfTextRanges(on: page) > 0 else { return LaneMatchLine(match: word) }
+        let ns = text as NSString, at = sel.range(at: 0, on: page).location - line.range(at: 0, on: page).location
+        let len = sel.range(at: 0, on: page).length
+        guard at >= 0, at + len <= ns.length else { return LaneMatchLine(match: word) }
+        func clean(_ s: String) -> String { s.replacingOccurrences(of: "\n", with: " ") }
+        let joined = clean(ns.substring(to: at)) + clean(ns.substring(with: NSRange(location: at, length: len)))
+        let start = joined.index(joined.startIndex, offsetBy: clean(ns.substring(to: at)).count)
+        var after = clean(ns.substring(from: at + len))
+        while after.last?.isWhitespace == true { after.removeLast() }  // the line's end, never the space after the match
+        let full = joined + after
+        return LaneMatchLine.cut(full, match: start..<full.index(start, offsetBy: joined.distance(from: start, to: joined.endIndex)))
     }
 
     /// Whether the match is still the PDF's selection (a click elsewhere has not replaced it).
@@ -485,7 +510,8 @@ struct FindBar: View {
     var body: some View {
         Group {
             if find.open {
-                bar.transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .topTrailing)))
+                // a fade alone with Reduce Motion (BRIEF E11)
+                bar.transition(Motion.reduced ? .opacity : .opacity.combined(with: .scale(scale: 0.96, anchor: .topTrailing)))
             } else {
                 button.transition(.opacity)
             }

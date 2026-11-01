@@ -92,7 +92,7 @@ final class MapInteractionTests: XCTestCase {
         let r4 = try XCTUnwrap(OverviewPanel.make(.round(4), data: d, strip: 4, student: "Tomás"))
         guard case .groups(let g4) = r4.body else { return XCTFail("groups") }
         XCTAssertEqual(g4.first { $0.glyph == .toCheck }?.chips.count, d.round(4)?.comments?.toCheck)
-        XCTAssertEqual(g4.first { $0.label.hasPrefix("Edits nobody asked for") }?.edits.count, d.round(4)?.edits?.filter(\.unrequested).count)
+        XCTAssertEqual(g4.first { $0.label.hasPrefix("Unasked edits") }?.edits.count, d.round(4)?.edits?.filter(\.unrequested).count)
         XCTAssertTrue(r4.meta.contains("open · Tomás: "), r4.meta)
         let r2 = try XCTUnwrap(OverviewPanel.make(.round(2), data: d, strip: 4, student: "Tomás"))
         guard case .groups(let g2) = r2.body else { return XCTFail("groups") }
@@ -267,7 +267,7 @@ final class MapInteractionTests: XCTestCase {
 
     /// A click on a comment's mark in a thumbnail follows the comment; elsewhere on the page, the page.
     func testWhatAPointOnTheStripIsOver() {
-        let geo = StripGeometry(width: 800, pages: 4, aspect: 612.0 / 792)
+        let geo = StripGeometry(width: 800, pages: 4)
         let mark = PaperOverview.Mark(page: 1, kind: "comment", rect: CGRect(x: 100, y: 200, width: 120, height: 12), id: "R1-04")
         let change = PaperOverview.Mark(page: 1, kind: "change", rect: CGRect(x: 100, y: 400, width: 120, height: 12), id: "c01")
         let size: (Int) -> CGSize? = { _ in CGSize(width: 612, height: 792) }
@@ -279,6 +279,43 @@ final class MapInteractionTests: XCTestCase {
         XCTAssertEqual(geo.target(at: CGPoint(x: on.x, y: geo.thumbHeight + 8), marks: [mark], pageSize: size), .page(1), "its number")
         XCTAssertEqual(geo.target(at: on, marks: [mark], pageSize: { _ in nil }), .page(1), "not drawn yet")
         XCTAssertNil(geo.target(at: CGPoint(x: 900, y: 5), marks: [], pageSize: size))
+        // a landscape round in a paper whose row is a Letter page's (mac/UX.md §40.9): its pages lower, on the numbers'
+        // line; over one the page, on its mark the comment
+        let wide = CGSize(width: 792, height: 612)
+        let low = StripGeometry(width: 800, pages: 4, thumb: StripGeometry.thumbSize(page: wide), row: 72)
+        XCTAssertEqual(low.top + low.thumbHeight, 72, accuracy: 0.01)
+        XCTAssertGreaterThan(low.top, 10)
+        XCTAssertEqual(geo.top, 0)
+        let kl = low.thumbHeight / 612
+        let onLow = CGPoint(x: low.thumbX(1) + 160 * kl, y: low.top + 206 * kl)
+        XCTAssertEqual(low.target(at: onLow, marks: [mark], pageSize: { _ in wide }), .comment("R1-04", page: 1))
+        XCTAssertEqual(low.target(at: CGPoint(x: onLow.x, y: 206 * kl), marks: [mark], pageSize: { _ in wide }), .page(1), "over the page")
+    }
+
+    /// A strip that scrolls (mac/UX.md §40.9): a point in its visible frame is over what is there once scrolled.
+    func testWhatAPointOnAScrolledStripIsOver() {
+        let geo = StripGeometry(width: 800, pages: 30)
+        XCTAssertTrue(geo.scrolls)
+        let mark = PaperOverview.Mark(page: 24, kind: "comment", rect: CGRect(x: 100, y: 200, width: 120, height: 12), id: "R1-09")
+        let size: (Int) -> CGSize? = { _ in CGSize(width: 612, height: 792) }
+        let k = geo.thumbHeight / 792
+        let offset = geo.x(20)
+        // page 25 at its place less the offset
+        let seen = CGPoint(x: geo.thumbX(24) - offset + 160 * k, y: 206 * k)
+        XCTAssertEqual(geo.target(seen: seen, offset: offset, marks: [mark], pageSize: size), .comment("R1-09", page: 24))
+        XCTAssertEqual(geo.target(seen: CGPoint(x: 5, y: 5), offset: offset, marks: [mark], pageSize: size), .page(20))
+        XCTAssertEqual(geo.target(seen: CGPoint(x: 5, y: 5), offset: 0, marks: [mark], pageSize: size), .page(0))
+        XCTAssertEqual(geo.target(at: seen, marks: [mark], pageSize: size), .page(Int(seen.x / geo.slot)), "unscrolled: another page")
+        XCTAssertNil(geo.target(seen: CGPoint(x: 801, y: 5), offset: offset, marks: [mark], pageSize: size), "past the visible frame")
+        XCTAssertNil(geo.target(seen: CGPoint(x: -1, y: 5), offset: offset, marks: [mark], pageSize: size))
+        // the pages in view, and what shows page 25 from the start: as little a move as shows it, 8 pt to spare
+        XCTAssertEqual(geo.visible(offset: 0).lowerBound, 0)
+        XCTAssertEqual(geo.visible(offset: geo.maxOffset).upperBound, 30, accuracy: 0.001)
+        let to = try? XCTUnwrap(geo.reveal(24, 25, from: 0))
+        XCTAssertEqual(to ?? 0, geo.x(25) - 800 + 8, accuracy: 0.01)
+        XCTAssertNil(geo.reveal(2, 3, from: 0), "in view")
+        XCTAssertEqual(geo.reveal(29, 30, from: 0) ?? 0, geo.maxOffset, accuracy: 0.01, "never past the end")
+        XCTAssertNil(StripGeometry(width: 800, pages: 4).reveal(3, 4, from: 0), "nothing scrolls")
     }
 }
 

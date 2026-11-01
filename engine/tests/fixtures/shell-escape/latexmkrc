@@ -1,0 +1,4 @@
+# A student's latexmkrc is Perl, which latexmk runs before anything else unless it is given -norc. This one leaves
+# rc-ran.txt behind when it runs, and asks for shell escape, which would let write18/main.tex write ran.txt.
+open(my $marker, '>', 'rc-ran.txt'); close($marker);
+$pdflatex = 'pdflatex %O -shell-escape %S';

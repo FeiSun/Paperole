@@ -160,7 +160,6 @@ struct KeyPageStack: View {
     var depth = 3
     /// The key page's comment marks in their colours (UI v4, BRIEF §8.1: the thumbnail as the paper's icon).
     var marks = false
-    @Environment(\.colorScheme) private var scheme
 
     var body: some View {
         let built = (data?.rounds ?? []).filter { $0.pdf != nil && ($0.build?.pages ?? 0) > 0 && !$0.failed }
@@ -191,7 +190,6 @@ struct KeyPageStack: View {
         return ZStack {
             Rectangle().fill(Color.white)
             if let im { Image(nsImage: im).resizable().interpolation(.high) }
-            if scheme == .dark { Color.black.opacity(PageThumb.darkDim) }
             if let round, im != nil, let ps = thumbs.pageSize(pdf: pdf, page: page), ps.height > 0 {
                 Canvas { ctx, _ in
                     PageThumb.drawMarks(ctx, round: round, data: data, page: page, k: h / ps.height, coloured: { _ in true }, outline: nil)

@@ -66,7 +66,7 @@ def test_round1_rpc(tmp_path):
         assert set(state["round"]) == {"n", "closed", "created", "closed_at", "build", "final_pdf", "email",
                                        "resumable", "finishes"}
         assert set(state["round"]["build"]) == {"status", "pdf", "pages", "text_x", "columns", "rulers", "warnings",
-                                                 "errors", "log_tail"}
+                                                 "errors", "log_tail", "shell_escape", "needs_shell_escape"}
         assert set(state["rounds"][0]) == {"n", "created", "source", "closed", "closed_at", "status", "pdf"}
         assert all(set(c) == {"id", "kind", "color", "note", "source", "created_round", "carried", "verdict",
                               "verdict_note", "anchor_state", "confidence", "method", "page", "rects", "text",

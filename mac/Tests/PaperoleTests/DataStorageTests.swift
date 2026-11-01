@@ -59,6 +59,10 @@ final class DataStorageTests: XCTestCase {
         XCTAssertEqual(DataFiles.name("  "), "Paper")
         XCTAssertEqual(DataFiles.name(String(repeating: "x", count: 200)).count, 80)
         XCTAssertEqual(DataFiles.name("海带漂移"), "海带漂移")
+        // latexmk's command lines would read these in a review folder's path (the engine refuses one): safe_name too
+        XCTAssertEqual(DataFiles.name("Why `make` hangs"), "Why make hangs")
+        XCTAssertEqual(DataFiles.name("o$(touch MARK)o \"q\" a\\b"), "o(touch MARK)o q ab")
+        XCTAssertEqual(DataFiles.name("`$\"\\"), "Paper")
     }
 
     func testAFileIsWrittenWholeOrNotAtAll() throws {
