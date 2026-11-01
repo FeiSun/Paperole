@@ -1,21 +1,23 @@
 """Students' notes (CONTRACT.md amendment "Student notes"): a LaTeX comment whose text starts with a comment's ID,
 "% R1-05 kept as is because the reviewer asked for this definition". At ingest, the notes added or edited since the
 previous round go to the comments they name, the changes next to them are attached to those comments, and the notes
-that cannot be used are warnings with their file and line (`find`)."""
+that cannot be used are warnings with their file and line (`find`). A check item's ID, "% A2-03 …", is read as a
+comment's (amendment "Checks to the student"); its note attaches no change."""
 import bisect
 import re
 
-from . import ledger, texdiff
+from . import check_items, ledger, texdiff
 
 _DASH = "\\-\u2010\u2011\u2012\u2013\u2014\u2212\uff0d"  # - and its Unicode and full-width look-alikes
 _OPEN, _CLOSE = "\\[(\uff08\uff3b\u3010", "\\])\uff09\uff3d\u3011"  # [ ( and ] ) with their full-width forms
-_R = "Rr\uff32\uff52"
-# a comment's ID: R<round>-<number> in any case, R1-3 for R1-03, in brackets ([R1-03]), in full-width forms
-ID = re.compile(r"[{o}]?\s*[{r}](\d+)[{d}](\d+)(?![0-9A-Za-z\uff10-\uff19\uff21-\uff3a\uff41-\uff5a])\s*[{c}]?"
-                .format(o=_OPEN, r=_R, d=_DASH, c=_CLOSE))
+_R, _A = "Rr\uff32\uff52", "Aa\uff21\uff41"
+# a comment's ID: R<round>-<number> in any case, R1-3 for R1-03, in brackets ([R1-03]), in full-width forms; a check
+# item's the same with A (A2-03)
+ID = re.compile(r"[{o}]?\s*([{r}{a}])(\d+)[{d}](\d+)(?![0-9A-Za-z\uff10-\uff19\uff21-\uff3a\uff41-\uff5a])\s*[{c}]?"
+                .format(o=_OPEN, r=_R, a=_A, d=_DASH, c=_CLOSE))
 JOIN = re.compile(r"\s*(?:(?:[,\uff0c\u3001;\uff1b/&+]|and\b|\u548c|\u4e0e|\u53ca)\s*)?")  # , ， 、 ; ； / & + and 和 与 及
 SEP = re.compile(r"\s*[:\uff1a\-\u2013\u2014\u00b7.,\uff0c\u3002]?\s*")  # : ： - – — · . , ， 。
-# what starts like an ID but is none: R1.03, R1_03, R1 - 03, R-03, R1-03a, R103
+# what starts like an ID but is none: R1.03, R1_03, R1 - 03, R-03, R1-03a, R103 (not for A: "A100" is a GPU)
 MALFORMED = re.compile(r"[{o}]?\s*[{r}](?:\s*\d+\s*[{d}_.\uff0e]+\s*\d|\s*[{d}_]+\s*\d|\d{{3,4}}(?![0-9A-Za-z]))"
                        .format(o=_OPEN, r=_R, d=_DASH))
 NEAR = 3  # lines: how far a note on a line of its own looks for the change next to it
@@ -43,7 +45,7 @@ def parse(body):
         return ([], " ".join(body[i:].split())) if MALFORMED.match(body, i) else None
     ids = []
     while m is not None:
-        cid = "R{}-{:02d}".format(int(m.group(1)), int(m.group(2)))
+        cid = "{}{}-{:02d}".format("A" if m.group(1) in _A else "R", int(m.group(2)), int(m.group(3)))
         if cid not in ids:
             ids.append(cid)
         i = m.end()
@@ -164,8 +166,9 @@ def find(diff, lg, n, changes):
     where the first is, the ids of the changes next to its lines (_Source.nearest), those of them the comment had not
     been given by carry (outside its sentence), and each line with its changes. Those changes (`changes`: the round's,
     one per hunk of diff, in its order) are attached to the comment, which is also listed in their "student_notes".
-    Any other note new in round n is a warning: {"kind": unknown, closed, malformed, unread or not_tex, "ids", "file",
-    "line", "text": the comment as written, "message"}, in order of file and line.
+    A note on a check item open into round n (check_items.open_ids) is {"text", "file", "line"} alone, attaching no
+    change. Any other note new in round n is a warning: {"kind": unknown, closed, malformed, unread or not_tex, "ids",
+    "file", "line", "text": the comment as written, "message"}, in order of file and line.
 
     New in round n: a note (an ID and its text) that round n−1's tree did not hold in a file its build read, or held
     elsewhere (moved, or written again at a new place: texdiff's same_place) when it has a change next to it and names
@@ -187,7 +190,7 @@ def find(diff, lg, n, changes):
                 seen.add((cid, got[1]))
                 if read:
                     before.setdefault((cid, got[1]), []).append((f, p))
-    carried = {c["id"] for c in ledger.carried_into(lg, n)}
+    carried = {c["id"] for c in ledger.carried_into(lg, n)} | set(check_items.open_ids(lg, n))
     known = {c["id"]: c for c in lg["comments"]}
     lines, warnings = {}, []  # lines: comment id -> [(file, line, text, hunk indexes)]
     for f, text in sorted(diff.new_texts.items()):
@@ -222,6 +225,12 @@ def find(diff, lg, n, changes):
                     if old and not near:
                         continue  # moved, with no change next to it
                     lines.setdefault(cid, []).append((f, line, note, near))
+                elif cid[0] == "A":  # a check item's: closed (fixed, or marked OK), else none was sent
+                    closed = check_items.closed_as(lg, cid)
+                    warnings.append(_warning("closed", [cid], f, line, comment, "{} was closed in Round {} ({}), so "
+                                             "this note is ignored.".format(cid, *closed)) if closed else
+                                    _warning("unknown", [cid], f, line, comment, "There is no automatic check {}, so "
+                                             "this note is ignored.".format(cid)))
                 elif cid in known:
                     k = max(known[cid]["rounds"], key=int)
                     verdict = known[cid]["rounds"][k]["verdict"]
@@ -234,6 +243,10 @@ def find(diff, lg, n, changes):
     warnings = sorted(warnings + _others(diff), key=lambda w: (w["file"], w["line"]))
     notes = {}
     for cid, entries in lines.items():
+        if cid[0] == "A":  # a check item's note: its words and where they are; no change is attached (a check is
+            # found in the PDF, not at a place of the source)
+            notes[cid] = {"text": _joined([e[:3] for e in entries]), "file": entries[0][0], "line": entries[0][1]}
+            continue
         near = sorted({k for *_, ks in entries for k in ks})
         notes[cid] = {"text": _joined([e[:3] for e in entries]), "file": entries[0][0], "line": entries[0][1],
                       "changes": [changes[k]["id"] for k in near],

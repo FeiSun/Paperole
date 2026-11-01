@@ -12,8 +12,8 @@ import sys
 import traceback
 from pathlib import Path
 
-from . import EngineError, analysis, anchor, archive, cards, check, checks, comments, disk, export, history, ledger, \
-    links, notes, overview, project, prose, render, state, tags, texdiff
+from . import EngineError, analysis, anchor, archive, cards, check, check_items, checks, comments, disk, export, \
+    history, ledger, links, notes, overview, project, prose, render, state, tags, texdiff
 
 _REQUIRED = object()
 
@@ -147,7 +147,7 @@ def ingest(params, progress):
     escape = _shell_escape(params)
     with _edit(paper, keep="ingest") as lg:
         last = ledger.latest_round(lg)
-        last_seq = 0
+        last_seq, last_check_seq = 0, None
         replacing = bool(last and not last["closed"])
         aside = None
         if replacing:
@@ -157,13 +157,17 @@ def ingest(params, progress):
                 raise EngineError("Round {} was finished before and resumed. Finish it again before ingesting a new "
                                   "round.".format(n))
             if any(c["created_round"] == n or (c["rounds"].get(str(n)) or {}).get("verdict")
-                   or (c["rounds"].get(str(n)) or {}).get("revived") for c in lg["comments"]):
+                   or (c["rounds"].get(str(n)) or {}).get("revived") for c in lg["comments"]) \
+                    or any("advisor_note" in (it["rounds"].get(str(n)) or {})
+                           for it in (lg.get("check_items") or {}).values()):  # or the advisor's words on a check
                 raise EngineError("Round {} already has comments or verdicts. Finish it before ingesting a new "
                                   "round.".format(n))
             last_seq = last["last_seq"]  # deleted ids stay used
+            last_check_seq = last.get("last_check_seq")  # so do check items' (check_items.py)
             lg["rounds"].remove(last)
             for c in lg["comments"]:
                 c["rounds"].pop(str(n), None)
+            check_items.drop(lg, n)
         else:
             n = last["n"] + 1 if last else 1
             if last:
@@ -184,6 +188,8 @@ def ingest(params, progress):
             if aside is not None and aside.exists():
                 aside.rename(rdir)
             raise
+        if last_check_seq is not None:  # the replaced round's check ids stay used (check_items.py)
+            next(r for r in lg["rounds"] if r["n"] == n)["last_check_seq"] = last_check_seq
     if aside is not None:  # the ledger names the new round now (killed before this: _recover deletes it)
         with ledger.locked(paper):  # so an export meanwhile never catches it half deleted
             shutil.rmtree(aside, ignore_errors=True)
@@ -192,7 +198,7 @@ def ingest(params, progress):
 
 def _new_round(paper, lg, n, source, main, engine, last_seq, progress):
     """Snapshot, detect (round 1 or when asked), compile (with shell escape when the paper has it) and, from round 2,
-    carry the open comments."""
+    carry the open comments and check items."""
     rdir = paper / "r{}".format(n)
     src = rdir / "src"
     progress("Copying the source…")
@@ -257,6 +263,7 @@ def _carry(paper, lg, n, progress):
         if c["id"] in found:
             c["rounds"][str(n)]["student_note"] = found[c["id"]]
         c["rounds"][str(n)]["context"] = cards.record_context(paper, lg, c, n, changes)
+    check_items.carry(lg, n, found)  # the open check items, with the student's notes on them
     shadows = _shadows(paper, lg, n, diff, changes, progress)
     progress("Reading the {} changes in both PDFs…".format(len(changes)))
     cards.change_details(old_src, paper / before if before else None, src, paper / rnd["build"]["pdf"], diff, changes)
@@ -528,16 +535,40 @@ def import_(params, progress):
     return _state(paper, **result)
 
 
+def _checks_flag(params):
+    """The `checks` given (default false): whether the round's check items go to the student (the app's Checks
+    setting)."""
+    flag = params.get("checks", False)
+    if not isinstance(flag, bool):
+        raise EngineError("checks is true or false.")
+    return flag
+
+
 def finish(params, progress):
     paper = _paper(params)
+    send = _checks_flag(params)
     with _edit(paper, keep="finish") as lg:
         rnd = comments.require_open(lg)
         n = rnd["n"]
         rdir = paper / "r{}".format(n)
+        if send:  # synced once more with checks.json when it is current (else as last synced); an item marked OK
+            # before it was sent never goes out
+            found = checks.load(paper, n)
+            if found is not None:
+                check_items.sync(lg, n, found["checks"], rnd.get("check_groups") or checks.GROUPS)
+            check_items.drop(lg, n, unsent=True)
+        else:  # nothing goes out: the open items stay open for a later round
+            check_items.drop(lg, n)
+        sent = check_items.outgoing(lg, n) if send else None
+        rnd.pop("checks_sent", None)
+        rnd.pop("checks_fixed", None)
+        if send:
+            rnd["checks_sent"] = len(sent["items"]) if sent else 0
+            rnd["checks_fixed"] = len(sent["fixed"]) if sent else 0
         prose.materialize(paper, lg)  # before closing: an older ledger counts the rounds closed before as read
         progress("Writing final.pdf…")
-        render.final_pdf(paper, lg, n, rdir / "final.pdf")
-        disk.atomic_write(rdir / "email.txt", render.email_text(lg, n))
+        render.final_pdf(paper, lg, n, rdir / "final.pdf", sent)
+        disk.atomic_write(rdir / "email.txt", render.email_text(lg, n, sent))
         # every paragraph is read once the round is closed (round 1: the advisor read it in the PDF while
         # commenting), so the next round's bars are the paragraphs changed since; after final.pdf, which lists the
         # changes read in this round only
@@ -768,6 +799,65 @@ def check_ok(params, progress):
         return {"checks_ok": sorted(lg.get("checks_ok") or {})}
 
 
+def _check_groups(params):
+    """The check groups asked (default: all five), in checks.GROUPS' order."""
+    groups = params.get("groups")
+    if groups is None:
+        return list(checks.GROUPS)
+    if not isinstance(groups, list) or not all(isinstance(g, str) and g in checks.GROUPS for g in groups):
+        raise EngineError("groups is a list of {}.".format(", ".join(checks.GROUPS)))
+    return [g for g in checks.GROUPS if g in groups]
+
+
+def check_items_(params, progress):
+    """Round n's check items (default: the latest round; check_items.py), without state: {"round", "items", "closed":
+    {"fixed", "ok"}}. For the latest round while open, its records are first synced with its checks.json under the
+    ledger's lock (check_items.sync, the groups asked; refused while the checks are not built: the app asks `checks`
+    first), which gives new items their ids; a closed or earlier round is read as recorded."""
+    paper = _paper(params)
+    groups = _check_groups(params)
+    lg = ledger.load(paper)
+    n = params.get("round")
+    rnd = ledger.latest_round(lg) if n is None else next((r for r in lg["rounds"] if r["n"] == n), None)
+    if rnd is None:
+        raise EngineError("There is no round {}.".format(n) if n is not None else
+                          "There is no round yet. Ingest the student's source first.")
+    if rnd is not ledger.latest_round(lg) or rnd["closed"]:
+        return check_items.views(lg, rnd["n"])
+    found = checks.load(paper, rnd["n"])
+    if found is None:
+        raise EngineError("The round's checks are not built yet.")
+    with _edit(paper) as lg:
+        rnd = ledger.latest_round(lg)
+        if rnd["n"] != found["round"] or rnd["closed"]:  # finished, or replaced, meanwhile: as recorded
+            return check_items.views(lg, rnd["n"])
+        check_items.sync(lg, rnd["n"], found["checks"], groups)
+        if rnd.get("check_groups") != groups:  # finish syncs again with them
+            rnd["check_groups"] = groups
+        return check_items.views(lg, rnd["n"])
+
+
+def check_note(params, progress):
+    """The advisor's words on a check item carried into the open round and open there (its round-n advisor_note: the
+    follow-up of a check; empty text removes it). Returns the item's view (check_items.view), without state."""
+    paper = _paper(params)
+    cid, text = _param(params, "id"), _param(params, "text")
+    if not isinstance(text, str):
+        raise EngineError("text is the advisor's words, a string.")
+    with _edit(paper) as lg:
+        n = comments.require_open(lg)["n"]
+        item = (lg.get("check_items") or {}).get(cid)
+        if item is None or item["created_round"] >= n or str(n) not in item["rounds"] \
+                or not check_items.is_open(lg, item, n):
+            raise EngineError("{} is not a check carried into Round {} and open there.".format(cid, n))
+        rec = item["rounds"][str(n)]
+        if text.strip():
+            rec["advisor_note"] = text
+        else:
+            rec.pop("advisor_note", None)
+        return check_items.view(lg, item, n)
+
+
 def follow(params, progress):
     """Where the reader's paragraph is in another round (design/pdf-reader/PLAN.md P1.1), read only and without state:
     round `round`'s block `block` in round `to` (prose.follow), else the nearest block before it that has one there
@@ -849,9 +939,10 @@ def email_preview(params, progress):
     """The email `finish` would write for the open round now: render.email_text of the ledger as it stands, which
     depends on nothing else. Read only, for the app's Finish sheet; like summaries, its result has no state."""
     paper = _paper(params)
+    send = _checks_flag(params)  # as finish's: with the round's check items as last synced
     lg = ledger.load(paper)
     n = comments.require_open(lg)["n"]
-    return {"round": n, "text": render.email_text(lg, n)}
+    return {"round": n, "text": render.email_text(lg, n, check_items.outgoing(lg, n) if send else None)}
 
 
 def _int(v, least):
@@ -1014,6 +1105,11 @@ def put_back_ledger(params, progress):
         for r in copy["rounds"]:  # ids given out since stay used (CONTRACT §4)
             if isinstance(seqs.get(r["n"]), int) and isinstance(r.get("last_seq"), int):
                 r["last_seq"] = max(r["last_seq"], seqs[r["n"]])
+        check_seqs = {r.get("n"): r.get("last_check_seq") for r in (current or {}).get("rounds", [])
+                      if isinstance(r, dict)}
+        for r in copy["rounds"]:  # and so do check items' (check_items.py)
+            if isinstance(check_seqs.get(r["n"]), int):
+                r["last_check_seq"] = max(r.get("last_check_seq") or 0, check_seqs[r["n"]])
         if (paper / "ledger.json").exists():
             history.keep(paper, (paper / "ledger.json").read_bytes(), current, "replaced")
         trail = list((current or copy).get("trail") or [])
@@ -1147,7 +1243,8 @@ def swap_in(params, progress):
 METHODS = {"new": new, "ingest": ingest, "comment": comment, "edit_comment": edit_comment, "reanchor": reanchor,
            "delete_comment": delete_comment, "verdict": verdict, "import": import_, "finish": finish,
            "check_change": check_change, "state": state_, "summaries": summaries, "prose": prose_, "links": links_,
-           "checks": checks_, "check_ok": check_ok, "follow": follow, "read": read,
+           "checks": checks_, "check_ok": check_ok, "check_items": check_items_, "check_note": check_note,
+           "follow": follow, "read": read,
            "email_preview": email_preview, "edit_paper": edit_paper, "overview": overview_, "tag": tag, "retag": retag,
            "revive": revive, "export_comments": export_comments, "adopt_facts": adopt_facts, "fork": fork,
            "history": history_, "put_back_ledger": put_back_ledger, "check": check_, "archive_write": archive_write,

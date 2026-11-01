@@ -21,7 +21,9 @@ struct PDFPane: NSViewRepresentable {
         v.textX = model.round?.build.textX ?? []
         v.columns = model.round?.build.columns ?? []
         v.rulers = model.round?.build.rulers ?? []
-        model.pdf.update(url: model.pdfURL, key: MarkKey(version: model.stateVersion, showChanges: model.showChanges))
+        model.pdf.update(url: model.pdfURL, key: MarkKey(version: model.stateVersion, showChanges: model.showChanges,
+                                                         checks: model.checkMarksVersion))
+        model.pdf.setSelectedCheck(model.selectedCheckID, place: model.selectedCheckPlace)
     }
 }
 
@@ -30,6 +32,8 @@ struct MarkKey: Equatable {
     var version: Int
     var showChanges: Bool
     var reanchor: String? = nil
+    /// The checks' marks (`AppModel.checkMarksVersion`).
+    var checks = 0
 }
 
 final class ReviewPDFView: PDFView {
@@ -378,6 +382,11 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     private var readingMarks: [Int: (parts: [PageRect], bold: Bool, marks: [(PDFPage, MarkAnnotation)])] = [:]
     private var changeMarks: [String: PDFPage] = [:]
     private var shapes: [Int: [MarkShape]] = [:]  // page index → clickable areas of its comments
+    /// The checks' marks by id (their first place's), and their clickable areas by page index (design/checks-ui).
+    private var checkMarks: [String: [Int: (page: PDFPage, mark: MarkAnnotation)]] = [:]  // id → place → mark
+    private var checkShapes: [Int: [MarkShape]] = [:]
+    private var selectedCheck: String?
+    private var selectedCheckPlace = 0
     private var changeAreas: [Int: [(id: String, rects: [CGRect], delete: Bool)]] = [:]
     private var placedLabels: [Int: [CGRect]] = [:]
     private var rulers: [Int: CGRect?] = [:]  // rulerBounds: page index × 2 + side
@@ -718,6 +727,8 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         for (page, a) in marks { page.removeAnnotation(a) }
         marks = []
         commentMarks = [:]
+        checkMarks = [:]
+        checkShapes = [:]
         changeMarks = [:]
         shapes = [:]
         changeAreas = [:]
@@ -738,6 +749,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
                 changeAreas[idx, default: []].append((ch.id, rs, ch.kind == "delete"))
             }
         }
+        var later: [(PDFPage, MarkAnnotation)] = []  // the comments' marks: their labels placed first, drawn last
         for (order, c) in (st?.comments ?? []).enumerated() {
             guard let (page, idx, rs) = pageRects(doc, c.page, c.rects) else { continue }
             let status = Status(c)
@@ -762,7 +774,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
                                    label: labels[size], labelRect: lr, labelColor: c.markColor.ink, labelSize: size)
             a.faded = status.closed
             a.dashed = c.id == k.reanchor
-            page.addAnnotation(a)
+            later.append((page, a))  // added after the checks' marks, so it lies over them
             marks.append((page, a))
             commentMarks[c.id] = (page, a)
             var s = [MarkShape.label(c.id, lr, order: order)]
@@ -774,6 +786,25 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             }
             shapes[idx, default: []] += s
         }
+        // the checks that go to the student: Paperole's slate highlight and a square label, placed after the comments'
+        // labels (a comment's never moves for a check's) and drawn under the comments' marks
+        for (order, c) in model.checkMarks.enumerated() {
+            guard let id = c.id else { continue }
+            let glyph = c.status.glyph
+            for (k, place) in c.places.enumerated() where !place.rects.isEmpty {
+                guard let (page, idx, rs) = pageRects(doc, place.page, place.rects) else { continue }
+                let labels = MarkAnnotation.labels(id, glyph: glyph)
+                let (lr, size) = labelRect(labels, beside: rs[0], on: page, index: idx)
+                let a = MarkAnnotation(rects: rs, style: .highlight, fill: Palette.checkFill, ink: Palette.checkInk,
+                                       label: labels[size], labelRect: lr, labelColor: Palette.checkInk, labelSize: size)
+                a.square = true
+                page.addAnnotation(a)
+                marks.append((page, a))
+                checkMarks[id, default: [:]][k] = (page, a)
+                checkShapes[idx, default: []] += [.label(id, lr, order: order), .text(id, rs, order: order)]
+            }
+        }
+        for (page, a) in later { page.addAnnotation(a) }
     }
 
     /// The bars beside the paragraphs to read (UX.md §18): added and removed one by one as paragraphs are read or
@@ -840,6 +871,14 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         return rs.isEmpty ? nil : (page, index, rs)
     }
 
+    /// The check selected on the Checks tab gets the same outline while no comment is selected.
+    func setSelectedCheck(_ id: String?, place: Int = 0) {
+        guard id != selectedCheck || place != selectedCheckPlace else { return }
+        selectedCheck = id
+        selectedCheckPlace = place
+        placeSelectionOutline()
+    }
+
     /// The selected comment's mark gets an accent outline; no page is redrawn.
     func setSelected(_ id: String?) {
         if markBarID != nil && id != markBarID { hideMarkBar() }
@@ -852,7 +891,9 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     /// Lays the selected comment's outline over its mark again (a new selection, new marks, a zoom). In re-anchor mode
     /// only the label's ring: the old place is drawn dashed.
     private func placeSelectionOutline() {
-        let m = selectedID.flatMap { commentMarks[$0] }
+        let m = selectedID.flatMap { commentMarks[$0] } ?? selectedCheck.flatMap { id in
+            checkMarks[id].flatMap { $0[selectedCheckPlace] ?? $0.min { $0.key < $1.key }?.value }
+        }
         let boxes = m.map { SelectionOutline.boxes(lines: $0.mark.dashed ? [] : $0.mark.lines, label: $0.mark.labelRect) } ?? []
         guard let m, !boxes.isEmpty else {
             selectionOutline?.removeFromSuperview()
@@ -1027,6 +1068,11 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             model.markClicked(id)
             showMarkBar(id)
             return id
+        }
+        // a check's mark, under every comment's and change's (design/checks-ui): its card on the Checks tab
+        if let id = MarkHit.pick(MarkHit.hits(at: p, shapes: checkShapes[idx] ?? [], minSize: minSize), selected: selectedCheck) {
+            model.checkMarkClicked(id)
+            return nil
         }
         return nil
     }
@@ -2699,6 +2745,11 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         self.saveDraft = saveDraft
     }
 
+    /// The new-comment editor closed, saved or not: a check's My Comment… waits no longer.
+    func popoverDidClose(_ notification: Notification) {
+        model?.commentEditorClosed()
+    }
+
     /// A click elsewhere (or Esc) closes the popover only while its note is untouched.
     func popoverShouldClose(_ popover: NSPopover) -> Bool {
         guard popover === self.popover, let d = draft else { return true }
@@ -2868,6 +2919,7 @@ final class MarkAnnotation: PDFAnnotation {
     let labelSize: Int  // which of labelFonts: the type labelPlace found room for
     var faded = false  // resolved or kept as is this round
     var dashed = false  // being re-anchored
+    var square = false  // an automatic check's label: square, so it is never read as a comment's
     /// The id label's type at the sizes labelPlace tries in turn (UX.md §5): 8.5 pt Semibold with tabular digits and
     /// the status sign (design/ui-v2/PROPOSAL.md §3); where that does not fit, M1's 7 pt Bold with the sign (a ruler
     /// close to the text: ACL); then 6 pt, with the sign while it fits (closer still: ICML, ACM review), without it
@@ -2931,7 +2983,7 @@ final class MarkAnnotation: PDFAnnotation {
         }
         if let label, let lr = labelRect {
             ctx.setBlendMode(.normal)
-            let corner: CGFloat = labelSize == 0 ? 2 : 1.5
+            let corner: CGFloat = square ? 0 : labelSize == 0 ? 2 : 1.5
             let style = Self.labelStyle(labelColor, faded: faded)
             ctx.setFillColor(style.fill.cgColor)
             ctx.addPath(CGPath(roundedRect: lr, cornerWidth: corner, cornerHeight: corner, transform: nil))

@@ -47,8 +47,8 @@ struct SettingsView: View {
     static let detail = "A bar beside each paragraph changed since the last round, until you mark it read. "
         + "The Changes tab lists every edit either way."
     static let checksTitle = "Checks"
-    static let checksDetail = "Find slips every draft should avoid: undefined references, bibliography entries, spellings, "
-        + "overfull lines, fonts and anonymity, listed in a Checks tab beside the comments. Nothing reaches the student unless you comment."
+    static let checksDetail = "Check each round’s PDF for slips every draft should avoid, in a Checks tab beside the comments. "
+        + "What is found goes to the student with your comments, unless you mark it OK."
     static let width: CGFloat = 560
 
     var body: some View {
@@ -236,11 +236,21 @@ struct ReadingSettings: View {
                     Text(SettingsView.checksTitle)
                     Text(SettingsView.checksDetail)
                 }
+                HStack(spacing: 14) {
+                    ForEach(ChecksModel.groups, id: \.id) { g in
+                        Toggle(g.title, isOn: Binding(get: { model.checkKinds.contains(g.id) },
+                                                      set: { on in
+                                                          if on { model.checkKinds.insert(g.id) } else { model.checkKinds.remove(g.id) }
+                                                      }))
+                        .toggleStyle(.checkbox)
+                    }
+                }
+                .disabled(!model.checksOn)
             }
         }
         .formStyle(.grouped)
         .scrollDisabled(true)
-        .frame(width: SettingsView.width, height: 180)
+        .frame(width: SettingsView.width, height: 220)
     }
 }
 

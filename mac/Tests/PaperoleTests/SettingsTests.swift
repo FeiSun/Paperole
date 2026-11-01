@@ -225,6 +225,8 @@ final class ReadingSettingTests: XCTestCase {
         XCTAssertTrue(m.checksOn)
         XCTAssertFalse(m.readingMarksOn)
         XCTAssertEqual(SettingsView.checksTitle, "Checks")
-        XCTAssertTrue(SettingsView.checksDetail.hasSuffix("Nothing reaches the student unless you comment."))
+        XCTAssertTrue(SettingsView.checksDetail.hasSuffix("goes to the student with your comments, unless you mark it OK."))
+        // the kinds under it, all on by default (a test run reads no saved choice)
+        XCTAssertEqual(m.checkKinds, Set(ChecksModel.groups.map(\.id)))
     }
 }

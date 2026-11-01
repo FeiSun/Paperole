@@ -489,6 +489,12 @@ struct RoundCardView: View {
                     .lineLimit(1)
                     .padding(.top, 16)
             }
+            if let s = stats.checksLine {
+                (Text(s.lead).font(.system(size: 12, weight: .medium)).foregroundStyle(t.ink2)
+                    + Text(" · " + s.rest).font(.system(size: 12)).foregroundStyle(t.secondary))
+                    .lineLimit(1)
+                    .padding(.top, stats.studentLine(named: showStudent) == nil ? 16 : 6)
+            }
             FactList(facts: Array(stats.facts.prefix(facts)), size: 13.5, t: t).padding(.top, 10)
             Spacer(minLength: 0)
         }
@@ -585,6 +591,12 @@ struct CompactRoundCard: View {
             PageStrip(stats: stats, width: Self.inner, perRow: max(14, (stats.pages + 1) / 2), gap: 4, lines: false,
                       maxPage: 30, t: t)
                 .padding(.top, 14)
+            if let c = stats.checksLine {
+                (Text(c.lead).font(.system(size: 11.5, weight: .medium)).foregroundStyle(t.ink2)
+                    + Text(" · " + c.rest).font(.system(size: 11.5)).foregroundStyle(t.secondary))
+                    .lineLimit(1)
+                    .padding(.top, 9)
+            }
             if !stats.facts.isEmpty {
                 FactList(facts: Array(stats.facts.prefix(1)), size: 12.5, t: t).padding(.top, 9)
             }
@@ -759,7 +771,13 @@ struct RoundSummaryView: View {
 extension AppModel {
     /// A round's numbers for its card, from its state and its PDF's page sizes.
     func roundStats(_ st: EngineState) -> RoundStats {
-        RoundStats(state: st, pageSizes: RoundStats.pageSizes(resolve(st.round?.build.pdf)), catalog: tags.catalog)
+        var s = RoundStats(state: st, pageSizes: RoundStats.pageSizes(resolve(st.round?.build.pdf)), catalog: tags.catalog)
+        // an open round's: what would go out now, from the Checks shown for it
+        if let c = finishChecks, st.round?.closed == false, st.round?.n == round?.n {
+            s.checksSent = c.sent
+            s.checksFixed = checks.list.filter(\.fixed).count
+        }
+        return s
     }
 
     /// Round N Summary… (the round menu, the overview's More, Jump): the card of a finished round, from the state

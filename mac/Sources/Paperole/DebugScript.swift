@@ -179,12 +179,15 @@ import SwiftUI
 ///   setting checks on|off       Settings' Checks, as its toggle (never saved; on asks the engine at once): the checks
 ///                               result 0.5 s later
 ///   checks                      the panel's Checks tab (UX.md §39): {on, state (hidden, asking or ready), tab (its
-///                               title, null when not shown), shown (the tab shown), sentence, round, count, rows:
-///                               [{group, code, text, page, places, key, ok}], showOK (Marked OK unfolded), items: the
-///                               page's rows in order ("group: …", "message: …", "ok: <n>" (the Marked OK header),
-///                               "check <i>"), current, cursor: [check, place]}
+///                               title, null when not shown), shown (the tab shown), sentence, round, open, count, rows:
+///                               [{id, state, carried, answered, group, code, text, page, places, key, ok, status}],
+///                               showClosed, showStudent, items: the page's rows in order ("group: <group> <n>",
+///                               "kind: …", "message: …", "check <i>"), current, cursor: [check, place], sent, marks
+///                               (the ids marked on the page), selected (the check outlined there)}
 ///   checkok <i> [off]           Mark as OK the i-th check (off: Not OK), as its button: the checks result 0.5 s later
-///   checkokfold                 the marked OK group's Show / Hide: the checks result
+///   checkokfold                 Closed this round's Show / Hide: the checks result
+///   checkmark <id>              a click on check <id>'s mark on the page: the checks result
+///   checkfollow <i> <words>     Follow Up… on the i-th check with these words: the checks result 0.5 s later
 ///   checkclick <i>              a click on the i-th check's row (from 0, in the list's order): the checks result plus
 ///                               {nav} 0.5 s later
 ///   checkmenu <i> [<title>]     the i-th check's right-click menu: {menu: [[title, enabled]]}; with a title, that item
@@ -723,8 +726,15 @@ final class DebugScript {
             model?.markCheck(Int(words.first ?? "") ?? -1, words.count < 2 || words[1] != "off")
             next(0.5) { [weak self] in self?.checksResult() }
         case "checkokfold":
-            model?.checks.showOK.toggle()
+            model?.checks.showClosed.toggle()
             next(0.2) { [weak self] in self?.checksResult() }
+        case "checkmark":
+            model?.checkMarkClicked(rest)
+            next(0.2) { [weak self] in self?.checksResult() }
+        case "checkfollow":
+            let words = rest.split(separator: " ", maxSplits: 1).map(String.init)
+            model?.followUpCheck(Int(words.first ?? "") ?? -1, words.count > 1 ? words[1] : "")
+            next(0.5) { [weak self] in self?.checksResult() }
         case "checkclick":
             model?.checkClicked(Int(rest) ?? -1)
             next(0.5) { [weak self] in
@@ -1778,8 +1788,9 @@ final class DebugScript {
     /// What the Finish sheet states and shows (UX.md §17).
     private func finishResult() -> Any {
         guard let m = model else { return NSNull() }
-        let s = FinishSummary(round: m.round?.n ?? 0, comments: m.state?.comments ?? [], drafts: m.drafts,
+        var s = FinishSummary(round: m.round?.n ?? 0, comments: m.state?.comments ?? [], drafts: m.drafts,
                               unrequested: m.toCheck, unread: m.unreadCount)
+        s.checks = m.finishChecks
         let rows = FinishSummary.rows(s.drafts, handled: m.finishPreview.handled)
         let sections = (s.left.isEmpty ? [] : ["Left for you"]) + (rows.isEmpty ? [] : ["Words not sent yet"])
             + ["Goes to the student"]
@@ -1943,16 +1954,20 @@ final class DebugScript {
         let shown: [String] = c.items.map { item in
             switch item.kind {
             case .message(let t): return "message: " + t
-            case .group(let g): return "group: " + g
+            case .group(let g, let n): return "group: \(g.rawValue) \(n)"
+            case .kind(let k): return "kind: " + k
             case .check(let i): return "check \(i)"
-            case .ok(let n): return "ok: \(n)"
             }
         }
         return ["on": m.checksOn, "state": state, "tab": m.checksOn ? c.tabTitle : NSNull(), "shown": m.tab == .checks,
-                "sentence": c.sentence, "round": nul(c.round), "count": c.list.count, "current": nul(c.current),
-                "rows": c.list.map { ["group": $0.group, "code": $0.code, "text": $0.text, "page": nul($0.places.first?.page),
-                                      "places": $0.places.count, "key": $0.key, "ok": $0.ok] as [String: Any] },
-                "showOK": c.showOK,
+                "sentence": c.sentence, "round": nul(c.round), "open": c.roundOpen, "count": c.list.count,
+                "current": nul(c.current),
+                "rows": c.list.map { ["id": nul($0.id), "state": nul($0.state), "carried": $0.carried, "answered": $0.answered,
+                                      "group": $0.group, "code": $0.code, "text": $0.text, "page": nul($0.places.first?.page),
+                                      "places": $0.places.count, "key": $0.key, "ok": $0.ok, "status": $0.stateWord,
+                                      "advisorNote": nul($0.advisorNote)] as [String: Any] },
+                "showClosed": c.showClosed, "showStudent": c.showStudent, "sent": c.sent,
+                "marks": m.checkMarks.compactMap(\.id), "selected": nul(m.selectedCheckID),
                 "items": shown, "cursor": c.cursor.map { [$0.check, $0.place] } ?? NSNull()] as [String: Any]
     }
 

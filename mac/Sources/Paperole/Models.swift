@@ -199,6 +199,11 @@ struct RoundInfo: Decodable, Equatable {
     var build: Build
     var finalPdf: String?
     var email: String?
+    /// How many automatic checks went out with the round once finished (CONTRACT amendment "Checks to the student");
+    /// nil while open and from an engine before it.
+    var checksSent: Int? = nil
+    /// How many were closed as fixed in it (no longer found), once finished.
+    var checksFixed: Int? = nil
     /// The paper's latest round, finished: Resume Round N can open it again (CONTRACT amendment "Resume a finished
     /// round"). False for an earlier round shown, nil from an engine before Resume.
     var resumable: Bool? = nil

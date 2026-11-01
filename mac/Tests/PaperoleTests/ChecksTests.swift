@@ -122,9 +122,7 @@ final class ChecksTests: XCTestCase {
         // a place past the round's pages (4) is left out when shown; an unknown group after the known ones
         model.setChecks(cs + (try Self.reply().checks ?? []), round: 2)
         XCTAssertEqual(model.checks.list[0].places, [Check.Place(page: 0, rects: [[10, 10, 20, 20]])])
-        XCTAssertEqual(model.checks.sections.map(\.title),
-                       ["References", "Bibliography", "Consistency", "Typesetting", "Submission", "Style", "Other"])
-        XCTAssertEqual(model.checks.items.compactMap { if case .group(let g) = $0.kind { return g } else { return nil } },
+        XCTAssertEqual(model.checks.items.compactMap { if case .kind(let k) = $0.kind { return k } else { return nil } },
                        ["References", "Bibliography", "Consistency", "Typesetting", "Submission", "Style", "Other"])
     }
 
@@ -149,19 +147,11 @@ final class ChecksTests: XCTestCase {
     /// A third tab beside the comments while Checks is on: its count, its page's groups and rows, its sentence.
     func testTheTab() throws {
         XCTAssertEqual(model.checks.phase, .ready)
-        XCTAssertEqual(model.checks.tabTitle, "Checks 6")
-        let shown = model.checks.items.map { item -> String in
-            switch item.kind {
-            case .message(let m): return "message: " + m
-            case .group(let g): return "group: " + g
-            case .check(let i): return "check \(i)"
-            case .ok(let n): return "ok: \(n)"
-            }
-        }
-        XCTAssertEqual(shown, ["group: References", "check 0", "group: Bibliography", "check 1", "group: Consistency", "check 2",
-                               "group: Typesetting", "check 3", "group: Submission", "check 4", "check 5"])
-        XCTAssertEqual(model.checks.sections.map(\.checks), [[0], [1], [2], [3], [4, 5]])
-        XCTAssertTrue(model.checks.sentence.hasPrefix("Slips found"))
+        XCTAssertEqual(model.checks.tabTitle, "Checks", "nothing the student answered: no count, as the Comments tab's")
+        XCTAssertEqual(shown(), ["group: forStudent 6", "kind: References", "check 0", "kind: Bibliography", "check 1",
+                                 "kind: Consistency", "check 2", "kind: Typesetting", "check 3", "kind: Submission", "check 4",
+                                 "check 5"])
+        XCTAssertEqual(model.checks.sentence, "Found by Paperole. They go to the student with your comments.")
         XCTAssertEqual(model.sidebarRows.last, .contents(6), "nothing after the Contents in the sidebar")
         // no problems; asking
         model.setChecks([], round: 2)
@@ -170,7 +160,19 @@ final class ChecksTests: XCTestCase {
         XCTAssertEqual(model.checks.sentence, "No problems found in this round’s PDF.")
         model.checks.ask("x")
         XCTAssertEqual(model.checks.items, [ChecksItem(kind: .message("Checking…"))])
-        XCTAssertEqual(model.checks.sections.count, 0)
+        XCTAssertEqual(model.checks.order, [])
+    }
+
+    /// The page's rows as the debug item names them.
+    private func shown() -> [String] {
+        model.checks.items.map { item -> String in
+            switch item.kind {
+            case .message(let m): return "message: " + m
+            case .group(let g, let n): return "group: \(g.rawValue) \(n)"
+            case .kind(let k): return "kind: " + k
+            case .check(let i): return "check \(i)"
+            }
+        }
     }
 
     /// The Checks tab shown: no comment or change selected in the PDF; J and K step through its rows as clicks; Focus
@@ -266,28 +268,29 @@ final class ChecksTests: XCTestCase {
         XCTAssertEqual(model.checkMenu(2).first?.title, "Mark as OK")
         model.pickCheckMenu(2, .ok)
         XCTAssertTrue(model.checks.list[2].ok)
-        XCTAssertEqual(model.checks.tabTitle, "Checks 5")
+        XCTAssertEqual(model.checks.sent, 5)
         XCTAssertEqual(model.checkMenu(2).first?.title, "Mark as Not OK")
         let shown = model.checks.items.map(\.kind)
-        XCTAssertFalse(shown.contains(.group("Consistency")), "its group had only it")
-        XCTAssertEqual(shown.last, .ok(1), "folded: the header only")
+        XCTAssertFalse(shown.contains(.kind("Consistency")), "its kind had only it")
+        XCTAssertEqual(shown.last, .group(.closed, 1), "folded: the header only")
+        XCTAssertEqual(model.checks.closedWords, "1 marked OK")
         XCTAssertFalse(model.checks.order.contains(2))
         model.tab = .checks
         model.move(1); model.move(1)
         XCTAssertEqual(model.checks.current, 1)
         model.move(1)
         XCTAssertEqual(model.checks.current, 3, "J passes the folded one")
-        model.checks.showOK = true
-        XCTAssertEqual(model.checks.items.suffix(2).map(\.kind), [.ok(1), .check(2)])
+        model.checks.showClosed = true
+        XCTAssertEqual(model.checks.items.suffix(2).map(\.kind), [.group(.closed, 1), .check(2)])
         XCTAssertEqual(model.checks.order.last, 2)
         model.markCheck(2, false)
         XCTAssertFalse(model.checks.list[2].ok)
-        XCTAssertEqual(model.checks.tabTitle, "Checks 6")
-        XCTAssertFalse(model.checks.items.contains { if case .ok = $0.kind { return true } else { return false } })
+        XCTAssertEqual(model.checks.sent, 6)
+        XCTAssertFalse(model.checks.items.contains { $0.kind == .group(.closed, 1) })
         // all marked OK
         for i in model.checks.list.indices { model.markCheck(i, true) }
         XCTAssertEqual(model.checks.tabTitle, "Checks")
-        XCTAssertEqual(model.checks.sentence, "Every check of this round’s PDF is marked OK.")
+        XCTAssertEqual(model.checks.sentence, "Nothing goes to the student: every check is fixed or marked OK.")
         // decoded from the reply
         let json = #"{"round": 2, "checks": [{"code": "a", "text": "A", "key": "a|A", "ok": true}, {"code": "b", "ok": "x"}]}"#
         let cs = try XCTUnwrap(try makeDecoder().decode(ChecksReply.self, from: Data(json.utf8)).checks)
@@ -354,7 +357,7 @@ final class ChecksTests: XCTestCase {
                 v = view.superview
             }
         }
-        XCTAssertEqual(titles, ["Mark as OK", "Comment…", "Keep Open", "Copy"])
+        XCTAssertEqual(titles, ["Mark as OK", "My Comment…", "Keep Open", "Copy"])
     }
 
     // MARK: Clicks
@@ -435,7 +438,7 @@ final class ChecksTests: XCTestCase {
     // MARK: The menu
 
     func testTheMenu() throws {
-        XCTAssertEqual(titles(0), ["Comment…", "Keep Open", "Copy"])
+        XCTAssertEqual(titles(0), ["My Comment…", "Keep Open", "Copy"])
         XCTAssertEqual(enabled(0), [true, true, true])
         XCTAssertEqual(enabled(4), [false, false, true], "a page only: no words to comment on or keep")
         XCTAssertEqual(enabled(5), [false, false, true], "no places")
@@ -450,7 +453,9 @@ final class ChecksTests: XCTestCase {
         json["round"] = r
         model.apply(try EngineState.decode(JSONSerialization.data(withJSONObject: json)))
         XCTAssertFalse(model.roundIsOpen)
-        XCTAssertEqual(model.checks.phase, .ready, "the same round: kept")
+        XCTAssertEqual(model.checks.phase, .hidden, "the round closed: its checks are asked again, read as recorded")
+        model.setChecks(try Self.reply().checks, round: 2)
+        XCTAssertFalse(model.checks.roundOpen)
         XCTAssertFalse(model.checks.canComment)
         XCTAssertEqual(enabled(0), [false, true, true])
     }
@@ -539,21 +544,21 @@ final class ChecksTests: XCTestCase {
         }
         XCTAssertEqual(lines.count, 6)
         XCTAssertEqual(lines[0]["state"] as? String, "ready")
-        XCTAssertEqual(lines[0]["tab"] as? String, "Checks 6")
+        XCTAssertEqual(lines[0]["tab"] as? String, "Checks")
         XCTAssertEqual(lines[0]["shown"] as? Bool, false)
         XCTAssertEqual(lines[0]["count"] as? Int, 6)
         let rows = try XCTUnwrap(lines[0]["rows"] as? [[String: Any]])
         XCTAssertEqual(rows[0]["code"] as? String, "undefined_ref")
         XCTAssertEqual(rows[0]["places"] as? Int, 2)
         XCTAssertEqual(rows[3]["page"] as? Int, 2)
-        XCTAssertEqual((lines[0]["items"] as? [String])?.first, "group: References")
+        XCTAssertEqual((lines[0]["items"] as? [String])?.prefix(2), ["group: forStudent 6", "kind: References"])
         XCTAssertEqual(lines[1]["tab"] as? String, "checks")
         XCTAssertEqual(lines[2]["shown"] as? Bool, true)
         XCTAssertEqual(lines[2]["current"] as? Int, 3)
         XCTAssertEqual(lines[2]["cursor"] as? [Int], [3, 0])
         XCTAssertNotNil(lines[2]["nav"] as? [String: Any])
         XCTAssertEqual(lines[3]["menu"] as? [[AnyHashable]],
-                       [["Mark as OK", true], ["Comment…", false], ["Keep Open", false], ["Copy", true]])
+                       [["Mark as OK", true], ["My Comment…", false], ["Keep Open", false], ["Copy", true]])
         XCTAssertEqual(lines[4]["picked"] as? String, "Keep Open")
         XCTAssertEqual(lines[4]["pinned"] as? [String], ["“SAND” prints as “Sand” · [2]"])
         XCTAssertEqual(lines[5]["on"] as? Bool, false)

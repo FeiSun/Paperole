@@ -212,6 +212,14 @@ def new_id(lg, n):
     return "R{}-{:02d}".format(n, rnd["last_seq"])
 
 
+def new_check_id(lg, n):
+    """A check item's id A<n>-<seq> (check_items.py): its own sequence, the round's last_check_seq (no key until the
+    round's first)."""
+    rnd = next(r for r in lg["rounds"] if r["n"] == n)
+    rnd["last_check_seq"] = rnd.get("last_check_seq", 0) + 1
+    return "A{}-{:02d}".format(n, rnd["last_check_seq"])
+
+
 def carried_into(lg, n):
     """Comments open at the close of round n-1: verdict there null or reopened."""
     prev = str(n - 1)

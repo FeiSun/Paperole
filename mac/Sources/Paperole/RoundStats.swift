@@ -146,6 +146,10 @@ struct RoundStats: Equatable {
     var own: Int
     var studentNotes: Int
     var facts: [String]
+    /// The automatic checks that went out with the round (or go out, while it is open), and those fixed since the
+    /// round before (open rounds only): the card's Paperole line.
+    var checksSent: Int?
+    var checksFixed = 0
     var title: String
     var student: String
 
@@ -211,6 +215,8 @@ struct RoundStats: Equatable {
         edits = st.changes.count
         own = st.changes.filter(\.unrequested).count
         studentNotes = st.comments.filter { !($0.studentNote?.isEmpty ?? true) }.count
+        checksSent = r?.checksSent
+        checksFixed = r?.checksFixed ?? 0
 
         // the facts, the first two that hold (only facts: no better or worse, no earlier round, no "most" for a tag)
         var facts: [String] = []
@@ -332,6 +338,16 @@ struct RoundStats: Equatable {
         if edits > 0 { parts.append(Self.count(edits, "edit") + (own > 0 ? ", \(Self.grouped(own)) of their own" : "")) }
         if studentNotes > 0 { parts.append(Self.count(studentNotes, "note") + " on your comments") }
         return (named && !student.isEmpty ? student : "The student", parts.joined(separator: " · "))
+    }
+
+    /// "Paperole · 7 automatic checks · 4 fixed": what Paperole sent with the round; nil when it sent none and none
+    /// were fixed (Checks off, or an engine before it).
+    var checksLine: (lead: String, rest: String)? {
+        let n = checksSent ?? 0
+        guard n > 0 || checksFixed > 0 else { return nil }
+        var parts = [Self.count(n, "automatic check")]
+        if checksFixed > 0 { parts.append("\(Self.grouped(checksFixed)) fixed") }
+        return ("Paperole", parts.joined(separator: " · "))
     }
 
     // MARK: Page sizes

@@ -31,6 +31,12 @@ enum Palette {
     /// Only "your move": the To check chip, position uncertain, an unsent draft. UI v4 (design/ui-v4/BRIEF.md §8.4):
     /// the icon's vermilion in place of amber, for marks only (rings, outlines, the open line), never for words.
     static let toCheck = NSColor(light: 0xC04734, dark: 0xDB6A50)
+    /// Paperole's own mark (design/checks-ui): an automatic check's highlight on the page and its square id label, one
+    /// slate never among the six comment colours. The page is white in either appearance, so the marks keep one
+    /// colour; the panel's bar and words take the pair.
+    static let checkInk = NSColor(hex: 0x4E5D6C)
+    static let checkFill = NSColor(srgbRed: 0x6E / 255, green: 0x80 / 255, blue: 0x92 / 255, alpha: 0.30)
+    static let checkBar = NSColor(light: 0x8E9CAA, dark: 0x7D8C9B)
     /// Only an error: Not found, a failed build. #C42121 (POLISH §6, 13): #DC2626 was 4.46:1 on the panel.
     static let danger = NSColor(light: 0xC42121, dark: 0xF98B8B)
     /// Every decided status (Follow-up, Resolved, Kept as is, New), told apart by its sign.

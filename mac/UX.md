@@ -1244,7 +1244,82 @@ The app half of `design/pdf-reader/PLAN.md` P1.5 (the advisor's decision, 2026-1
 
 **Checked** (2026-10-30): `ChecksTests` on the reading fixture with `Fixtures/checks-round2.json` (made by hand; its places are rects of real words of the fixture's round-2 PDF, read with PyMuPDF): the reply and a lenient decoding (defaults, bad rects, pages past the PDF, unknown groups after the five; a place without a page and a rect with a null or a string left out by themselves), the tab's title and count, the rows, their order, the groups and their titles, the sentences, "No problems found" and "Checking…", nothing in the sidebar, the hosted page's row menu, J and K on the tab, Focus and the setting turned off leaving it, a click's reveal with a step of Back and the flash, a second click cycling and another row starting at its first, a page-only place and a check without places, another round's checks dropped, another paper's choice dropping them, the menu's items and their enabling (a page only, no places, busy, a closed round, re-anchoring, with `canComment` following), Comment… with the note on the place's words and on a blank place's box, Comment… waiting for a note being written (the editor stands as shown: no window is on screen in a test run), Keep Open, the debug items, the launch flag, off hides and asks nothing, a test run never saves the setting; `ReadingSettingTests.testTheChecksToggle` (the second switch). 2026-10-31: a background test bundle on a scratch copy of samples/promo-demo with `--checks on --tab checks`: the tab "Checks 1" after Changes 2, the sentence, References 1 and its row (Algorithm 1, p.4, 2, the detail under it), the sidebar ending with the Contents.
 
-**Not built**: a check's place marked on the page beyond the click's flash; the checks listed in Jump; a sort or filter of the rows; checks of an earlier round compared with the shown round's.
+**Checks to the student** (2026-11-01; `design/checks-ui/PROPOSAL.md` and `mockup.html`; engine/CONTRACT.md amendment "Checks to the student"). The advisor decided that day:
+- What the program finds goes to the student to verify: every check, unless the advisor marks it OK.
+- Checks and comments are told apart everywhere.
+- A check no longer found closes itself.
+- The UI is the Comments tab's.
+
+This replaces "nothing reaches the student unless you comment" above.
+
+- **Items** (`Check`'s `id`, `state`, `carried`, `studentNote`, `advisorNote`, `history`, decoded leniently from the engine's `check_items`).
+  - The id is "A2-03": the round the check was first found in, then its number in that round.
+  - The state is new, still (found again) or fixed (no longer found: closed by Paperole).
+  - `status` reads as a comment's: + new, ○ still open, ✓ fixed, – marked OK.
+  - An engine before check items gives none: the checks show as new, without ids.
+- **The request**.
+  - The checks are built by an engine process of their own (`checksEngine`). The engine answers one request at a time, so this way a long paper's checks never hold the window's requests.
+  - Then the window's engine gives the items: `check_items`, with the kinds chosen in Settings. In an open round it numbers and syncs them.
+  - The round's key holds whether it is open, so a finished round is asked again and read as recorded.
+  - The panel's toast says "Checks done · 7 found" (or "nothing found") once a round per run, for an open round only. A finished round's tab shows what went out with it, nothing when it was finished with Checks off. Meanwhile the tab's sentence says "Checking…", and nothing is busy.
+- **The tab** (`ChecksModel.Group`): the Comments tab's headers (`SectionHeader`), rows and card.
+  - **To check**: in an open round, the checks found again that the student answered with `% A2-05`. As for comments to check: the vermilion ring, and the tab's count, "Checks 1".
+  - **For the student**: "goes in the Round 2 final.pdf". Shown until hidden. Its rows are under the kinds' titles (References…).
+  - **Closed this round**: "4 fixed · 1 marked OK". Folded.
+  - The sentence above them reads:
+    - "Found by Paperole. They go to the student with your comments.";
+    - "Nothing goes to the student: every check is fixed or marked OK." when nothing goes out;
+    - "Found by Paperole." in a closed round, or "No checks went out with this round." for one finished with Checks off.
+- **A row** (`CheckLine`, as `CompactRow`), 44 pt:
+  - a 3 pt slate bar (`Palette.checkBar`);
+  - the chip's sign and id, then the state word;
+  - the student's note sign;
+  - the check mark, shown under the pointer (Mark as OK);
+  - the pages;
+  - the check's words under them.
+- **The selected row** is its card (`CheckCard`, raised as `ExpandedCard`):
+  - **Header**: the chip, the status word (New, Still found, To check, Fixed, Marked OK) and the pages (a link that goes to its places in turn).
+  - **Words**: the finding as the title (15 Semibold); the sentence the student reads (13, label2), or the detail when there is none; the place's printed words (New York, a rule beside them).
+  - **Turns**, from its second round: "R1 · found by Paperole"; "R2 · Mei Lin answered", with the bubble and its `main.tex:40`; "R2 · you followed up"; "R2 · still found".
+  - **A quiet line**, only when the group's header does not say it: "Goes out again unless you mark it OK", "No longer found in Round 3: closed by Paperole", "Marked OK: not sent" or "Closed as no change needed".
+  - The chip's vermilion ring only for To check; a check found again that the student did not answer has the neutral chip. The status word is 12 pt, secondary (To check Medium in the label colour), and the pages a plain button, as a comment card's. The place's words are left out when the title already holds them. A click on the card does nothing; its pages go to its places.
+  - **Closed this round** lists 30 pt lines, as comments' `ClosedLine`: the sign and id, "fixed · …" or "marked OK · …". A fixed check offers no Mark as OK (row, card or menu).
+  - **The answer row**, in an open round:
+    - Mark as OK (or Not OK);
+    - for a new check, My Comment…: the comment editor opens with its note, and the check is marked OK once the comment is made on that page;
+    - for one that went out before, Follow Up…: the advisor's words go with it again (`check_note`), with Send and Cancel.
+- **On the page** (`PDFController.rebuildMarks`, `MarkKey.checks` ← `AppModel.checkMarksVersion`).
+  - **Which**: the checks that go out (not fixed, not marked OK), on every tab while Checks is on, under the comments' marks.
+  - **The mark**: each place's rects as a highlight in `Palette.checkFill`, a slate at 30%. The page is white in either appearance.
+  - **The label**: in the margin, placed as a comment's (`labelRect`, so it never sits on one), but square (`MarkAnnotation.square`) and in `Palette.checkInk`: "+ A2-03", "○ A1-02".
+  - **A click** on one is tried after every comment's and change's (`click`). It shows the Checks tab with its card (`checkMarkClicked`).
+  - **The selected check** is outlined as a selected comment is (`setSelectedCheck`), at the place it went to last.
+  - The comments' labels are placed first, so a check's label never moves one; the checks' marks lie under the comments'.
+- **Settings › Reading**.
+  - The switch's words: "Check each round's PDF for slips every draft should avoid, in a Checks tab beside the comments. What is found goes to the student with your comments, unless you mark it OK."
+  - Under it, the five kinds as checkboxes (`checkKinds`, all on by default). Only these kinds become items.
+- **Finish** (`FinishSummary.checks`, `AppModel.finishChecks`).
+  - Left for you gains "Checks the student answered · They go out again as “still open”.", with Review.
+  - Goes to the student gains "Automatic checks · found by Paperole · 1 marked OK is left out".
+  - While the checks are still being found, Left for you says "Automatic checks still being found · Finished now, none of them goes out with this round."
+  - `finish` is sent `checks` (the setting).
+- **The round card** (and the Finish sheet's small card, above its fact): under the student's line, "Paperole · 7 automatic checks · 4 fixed" (`RoundStats.checksLine`). A finished round's comes from `round.checks_sent` and `round.checks_fixed`; an open round's from the Checks shown.
+- **Debug items**:
+  - `checks` gains `open`, `sent`, `showClosed`, `showStudent`, `marks` (the ids on the page) and `selected`, and each row's id, state, carried, answered, status and advisorNote.
+  - Its items read "group: forStudent 6", "kind: References", "check 2".
+  - `checkokfold` folds Closed this round.
+  - New: `checkmark <id>` (a click on its mark) and `checkfollow <i> <words>`.
+- **Checked** (2026-11-01):
+  - `CheckItemsTests`:
+    - the items decoded;
+    - the groups in an open and a closed round, the folds, and J/K;
+    - the marks on the page: their labels, colours and count, a click on one, and a mark taken away once its check is marked OK;
+    - Follow Up… and My Comment…;
+    - the Finish sheet's lines;
+    - the round card's line.
+  - `ChecksTests` brought to the new groups and words.
+
+**Not built**: rings for checks the student answered in the column beside the scroller (§42); the checks listed in Jump; a sort or filter of the rows; checks of an earlier round compared with the shown round's; the reference look-ups' progress line (`ChecksModel.progress`, for P1.3) has no source yet.
 
 ## 40. UI v4 (2026-10-31)
 

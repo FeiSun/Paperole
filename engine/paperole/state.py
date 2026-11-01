@@ -362,7 +362,10 @@ def build(paper, n=None):
                   "shell_escape": b.get("shell_escape") is True, "needs_shell_escape": project.needs_shell_escape(b)},
         "final_pdf": str(final) if rnd["closed"] and final.exists() else None,
         "email": email.read_text(encoding="utf-8") if rnd["closed"] and email.exists() else None,
-        "resumable": rnd is ledger.latest_round(lg) and bool(rnd["closed"]), "finishes": finishes(paper, rnd)}
+        "resumable": rnd is ledger.latest_round(lg) and bool(rnd["closed"]), "finishes": finishes(paper, rnd),
+        # how many check items went out with the round (finish with checks), for the round card
+        "checks_sent": rnd.get("checks_sent") if rnd["closed"] else None,
+        "checks_fixed": rnd.get("checks_fixed") if rnd["closed"] else None}
     if b["status"] == "failed":
         return state
     data = prose.load(paper, n)

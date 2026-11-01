@@ -119,7 +119,9 @@ def _parser():
     p = sub.add_parser("import", help="import the comments of an annotated build PDF")
     p.add_argument("paper")
     p.add_argument("pdf")
-    sub.add_parser("finish", help="write final.pdf and email.txt and close the round").add_argument("paper")
+    p = sub.add_parser("finish", help="write final.pdf and email.txt and close the round")
+    p.add_argument("paper")
+    p.add_argument("--checks", action="store_true", help="send the round's check items too (the app's Checks setting)")
     sub.add_parser("resume-round", help="open the latest round again after it was finished (its earlier files are "
                                         "kept in rN/earlier)").add_argument("paper")
     p = sub.add_parser("state", help="print the state JSON")
@@ -140,11 +142,22 @@ def _parser():
     p.add_argument("paper")
     p.add_argument("key")
     p.add_argument("--clear", action="store_true", help="mark it not OK")
+    p = sub.add_parser("check-items", help="print a round's check items (ids A2-03): the checks that go to the "
+                                           "student, synced with the open round's checks first")
+    p.add_argument("paper")
+    p.add_argument("--round", type=int, help="an earlier round")
+    p.add_argument("--groups", type=_ids, help="the check groups asked, comma-separated (default: all five)")
+    p = sub.add_parser("check-note", help="write the advisor's words on a check item carried into the open round")
+    p.add_argument("paper")
+    p.add_argument("id")
+    p.add_argument("text", nargs="?", default="", help="the words (none: take them off)")
     p = sub.add_parser("read", help="mark paragraphs (block indices) of this round read")
     p.add_argument("paper")
     p.add_argument("blocks", type=int, nargs="+")
     p.add_argument("--clear", action="store_true", help="mark them unread")
-    sub.add_parser("email-preview", help="print the email finish would write now").add_argument("paper")
+    p = sub.add_parser("email-preview", help="print the email finish would write now")
+    p.add_argument("paper")
+    p.add_argument("--checks", action="store_true", help="with the round's check items, as finish --checks")
     p = sub.add_parser("summaries", help="print each paper's next step (the papers list)")
     p.add_argument("papers", nargs="+")
     p = sub.add_parser("overview", help="print the overview of papers: rounds, sections, edits, comments, students")
@@ -267,15 +280,17 @@ def main(argv=None):
                                         "verdict": None if args.verdict == "clear" else args.verdict}),
         "check": lambda: ("check_change", {"id": args.id, "checked": not args.clear}),
         "import": lambda: ("import", {"pdf": os.path.abspath(args.pdf)}),
-        "finish": lambda: ("finish", {}),
+        "finish": lambda: ("finish", {"checks": args.checks}),
         "resume-round": lambda: ("resume_round", {}),
         "state": lambda: ("state", {"round": args.round}),
         "prose": lambda: ("prose", {"round": args.round, "state": not args.no_state}),
         "links": lambda: ("links", {"round": args.round}),
         "checks": lambda: ("checks", {"round": args.round}),
         "check-ok": lambda: ("check_ok", {"key": args.key, "ok": not args.clear}),
+        "check-items": lambda: ("check_items", {"round": args.round, "groups": args.groups}),
+        "check-note": lambda: ("check_note", {"id": args.id, "text": args.text}),
         "read": lambda: ("read", {"blocks": args.blocks, "read": not args.clear}),
-        "email-preview": lambda: ("email_preview", {}),
+        "email-preview": lambda: ("email_preview", {"checks": args.checks}),
         "edit-paper": lambda: ("edit_paper", dict({"title": args.title, "student": args.student},
                                                   **{k: getattr(args, k) for k in ("finished", "buckets", "key_page")
                                                      if hasattr(args, k)}, **escape)),

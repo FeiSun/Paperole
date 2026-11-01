@@ -372,7 +372,7 @@ struct FinishSummary: Equatable {
     /// One of the sheet's rows: what it counts, its words and how many. `nothing`: the line saying none go to the
     /// student, drawn without a sign or a count (review 2026-10-24: it read "+ No follow-ups, new or closed comments 0").
     struct Line: Equatable {
-        enum Item: String { case comments, edits, paragraphs, followUps, new, closed, nothing }
+        enum Item: String { case comments, edits, paragraphs, checksToCheck, checksPending, followUps, new, closed, checks, nothing }
         var item: Item
         var title: String
         var sub = ""
@@ -388,6 +388,17 @@ struct FinishSummary: Equatable {
     var drafts: [Draft] = []  // unsent drafts of cards to check, by id
     var unrequested = 0  // edits no comment asked for, not checked, asked about or read (AppModel.toCheck)
     var unread: Int?  // changed paragraphs not marked read, from round 2 (nil before they are found)
+    /// The round's automatic checks that go out, those marked OK, and those the student answered (design/checks-ui):
+    /// nil while Checks is off or its checks are not in.
+    var checks: Checks?
+
+    struct Checks: Equatable {
+        var sent: Int
+        var ok: Int
+        var toCheck: Int
+        /// Still being found: Finish now sends none of this round's new ones.
+        var pending = false
+    }
 
     init(round: Int, comments: [Comment], drafts: [String: String], unrequested: Int, unread: Int?) {
         self.round = round
@@ -424,6 +435,15 @@ struct FinishSummary: Equatable {
             out.append(Line(item: .edits, title: unrequested == 1 ? "Unasked edit not checked" : "Unasked edits not checked",
                             sub: "", count: unrequested))
         }
+        if let c = checks, c.pending {
+            out.append(Line(item: .checksPending, title: "Automatic checks still being found",
+                            sub: "Finished now, none of them goes out with this round.", count: 0))
+        }
+        if let c = checks, c.toCheck > 0 {
+            out.append(Line(item: .checksToCheck, title: c.toCheck == 1 ? "Check the student answered" : "Checks the student answered",
+                            sub: c.toCheck == 1 ? "It goes out again as “still open”." : "They go out again as “still open”.",
+                            count: c.toCheck))
+        }
         if let u = unread, u > 0 {
             out.append(Line(item: .paragraphs, title: u == 1 ? "Changed paragraph not read" : "Changed paragraphs not read",
                             sub: u == 1 ? "Finishing marks it read." : "Finishing marks them read.", count: u))
@@ -442,6 +462,11 @@ struct FinishSummary: Equatable {
         }
         if new > 0 { out.append(Line(item: .new, title: "New comments", count: new)) }
         if closed > 0 { out.append(Line(item: .closed, title: "Closed", count: closed)) }
+        if let c = checks, c.sent > 0 {
+            out.append(Line(item: .checks, title: "Automatic checks",
+                            sub: "found by Paperole" + (c.ok > 0 ? " · \(c.ok) marked OK " + (c.ok == 1 ? "is" : "are") + " left out" : ""),
+                            count: c.sent))
+        }
         return out.isEmpty ? [Line(item: .nothing, title: "No follow-ups, new or closed comments", count: 0)] : out
     }
 
@@ -489,8 +514,9 @@ struct FinishSheet: View {
 
     private var finishing: some View {
         let n = model.round?.n ?? 0
-        let s = FinishSummary(round: n, comments: model.state?.comments ?? [], drafts: model.drafts,
+        var s = FinishSummary(round: n, comments: model.state?.comments ?? [], drafts: model.drafts,
                               unrequested: model.toCheck, unread: model.unreadCount)
+        s.checks = model.finishChecks
         return VStack(alignment: .leading, spacing: 0) {
             Text("Finish Round \(n)").font(.title2.bold())  // as every sheet's title
             Text("This writes final.pdf, then closes Round \(n). A closed round is read only.")
@@ -614,7 +640,7 @@ struct FinishSheet: View {
                             .buttonStyle(AnswerButtonStyle(style: .plain, small: true))
                             .help(w.help)
                     }
-                    if l.item != .nothing {
+                    if l.item != .nothing && l.item != .checksPending {
                         Text("\(l.count)").font(.system(size: 13, weight: .semibold)).monospacedDigit().frame(minWidth: 18, alignment: .trailing)
                     }
                 }
@@ -637,8 +663,10 @@ struct FinishSheet: View {
         case .paragraphs: RoundedRectangle(cornerRadius: 1.5).fill(Color(nsColor: Palette.reading)).frame(width: 3, height: 13)
         default:
             let (name, color): (String, Color) = switch item {
-            case .comments: ("circle", attention)
+            case .comments, .checksToCheck: ("circle", attention)
+            case .checksPending: ("hourglass", neutral)
             case .edits: ("pencil", attention)
+            case .checks: ("square.dashed", neutral)
             case .followUps: ("arrow.uturn.backward", neutral)
             case .new: ("plus", neutral)
             default: ("checkmark", neutral)
@@ -652,6 +680,7 @@ struct FinishSheet: View {
     private func way(_ item: FinishSummary.Line.Item) -> (title: String, help: String)? {
         switch item {
         case .comments: ("Review", "Show the first comment still to check")
+        case .checksToCheck: ("Review", "Show the first check the student answered, on the Checks tab")
         case .edits: ("Review", "Show the first other edit not checked, on the Changes tab")
         case .paragraphs: ("Show", "Go to the next changed paragraph to read")
         default: nil
@@ -663,6 +692,7 @@ struct FinishSheet: View {
         case .comments: model.review(FinishSummary.firstToCheck(model.panel.cards).map { .comment($0) })
         case .edits: model.review(model.changes.unrequested.first { !$0.handled }.map { .change($0.id) })
         case .paragraphs: model.reviewReading()
+        case .checksToCheck: model.reviewCheck()
         default: break
         }
     }

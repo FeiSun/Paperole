@@ -493,6 +493,17 @@ final class AppModel: ObservableObject {
     /// sets it, kept in the app's defaults; a test run never saves it, and --checks on|off sets it for the run.
     @Published var checksOn: Bool { didSet { if checksOn != oldValue { checksChanged() } } }
     static let checksKey = "checks"
+    /// Settings › Reading › Checks: the kinds checked (references, bibliography, consistency, typesetting, submission),
+    /// all by default; kept in the app's defaults, never by a test run. Only these become items that go to the student.
+    @Published var checkKinds: Set<String> {
+        didSet {
+            guard checkKinds != oldValue else { return }
+            if fixtureURL == nil { Prefs.set(Array(checkKinds).sorted(), Self.checkKindsKey) }
+            checksAsked = nil
+            requestChecks()
+        }
+    }
+    static let checkKindsKey = "checkKinds"
     /// Settings › Overview (VISUAL v3 §5, §7): a long appendix (and a References list over four pages) folds into one
     /// block on the paper map and the small maps. On by default; kept in the app's defaults, never by a test run (a
     /// fixture run reads none; `--fold on|off` sets it for a run). The paper map on screen observes only the overview,
@@ -673,6 +684,14 @@ final class AppModel: ObservableObject {
     private var readingRequested: Set<String> = []  // paper|round|created whose paragraphs were asked for
     private var linksKey: String?  // paper|round|created whose link table was asked for (`requestLinks`)
     private var checksAsked: String?  // paper|round|created whose checks were asked for (`requestChecks`)
+    /// The checks are built by an engine of their own, so a long paper's checks never hold the window's requests (the
+    /// engine answers one request at a time); it writes only the round's checks.json, a cache.
+    private lazy var checksEngine = EngineClient()
+    /// The rounds whose "Checks done" was said this run (once a round).
+    private var checksToasted: Set<String> = []
+    /// My Comment… on a check: its paper|round, its key and its page, marked OK once a comment is made on that page
+    /// while the editor it opened is open (`commentEditorClosed` lets it go).
+    private var checkComment: (round: String, key: String, page: Int)?
     private var markGuard: TimeInterval = 0  // a row's check mark: until when a click is a double click's second
     private var readingFailed: String?
     private var readingRound: String?  // paper|round|created of the paragraphs shown (currentParagraph is per round)
@@ -699,6 +718,7 @@ final class AppModel: ObservableObject {
         // a fixture run (`swift test` too) reads no setting: off unless --reading says on
         readingMarksOn = options.reading ?? (options.fixture == nil ? Prefs.bool(Self.readingMarksKey) : nil) ?? false
         checksOn = options.checks ?? (options.fixture == nil ? Prefs.bool(Self.checksKey) : nil) ?? false
+        checkKinds = Set(Prefs.strings(Self.checkKindsKey) ?? ChecksModel.groups.map(\.id))
         foldParts = options.fold ?? (options.fixture == nil ? Prefs.bool(Self.foldPartsKey) : nil) ?? true
         openAtLaunch = (options.fixture == nil ? Prefs.string(Self.openAtLaunchKey).flatMap(OpenAtLaunch.init(rawValue:)) : nil) ?? .lastPlace
         // a fixture run, --no-list or a unit test shows its own papers only: the list is not read (a unit test's model
@@ -1504,8 +1524,14 @@ final class AppModel: ObservableObject {
             let names = tags.catalog.names(for: picked.on)
             if !names.isEmpty { params["names"] = names }
         }
+        let fromCheck = checkComment
+        checkComment = nil
         call("comment", anchor.merging(params) { a, _ in a },
              then: { reply in
+                 if let f = fromCheck, f.round == self.checks.key, anchor["page"] as? Int == f.page,
+                    let i = self.checks.list.firstIndex(where: { $0.key == f.key }), !self.checks.list[i].ok {
+                     self.markCheck(i, true)
+                 }
                  self.pdf.clearSelection()
                  self.pdf.dropPendingBox()
                  // From a change ("Comment on this change"): the Changes tab keeps its place, and the row shows the
@@ -2030,7 +2056,7 @@ final class AppModel: ObservableObject {
         guard let paper = selectedPath, let n = round?.n, canFinish else { return }
         finishPreview.finishing = true
         finishPreview.error = nil
-        call("finish", ["paper": paper], quiet: true, then: { reply in
+        call("finish", ["paper": paper, "checks": checksOn], quiet: true, then: { reply in
             self.finishPreview.finishing = false
             self.draftStore.save(paper: paper, round: n, drafts: [:])
             let card = RoundCardAsk(stats: self.roundStats(reply.state), justFinished: true, finalPdf: reply.state.round?.finalPdf)
@@ -2582,6 +2608,7 @@ final class AppModel: ObservableObject {
         } else {
             checks.unhover()  // the hidden page's rows get no exit from the pointer
         }
+        pdf.setSelectedCheck(selectedCheckID, place: selectedCheckPlace)
         if let e = edit.id, s != .comment(e) { commitEdit(focusLost: true) }
         if tab != .comments { leaveField(); edit.choice = nil }
         selection = s
@@ -2601,7 +2628,7 @@ final class AppModel: ObservableObject {
     /// shown tab's Closed this round, or its changes answering comments. Hidden with one of its cards or changes
     /// selected, the selection goes too: what is not listed takes no keys.
     func toggleFold(_ g: FoldedGroup? = nil) {
-        if g == nil && tab == .checks { return }  // the Checks' Marked OK folds by its own Show / Hide (`showOK`)
+        if g == nil && tab == .checks { return }  // the Checks' groups fold by their own Show / Hide
         switch g ?? (tab == .comments ? .closed : .linked) {
         case .student:
             panel.showStudent.toggle()
@@ -2949,7 +2976,9 @@ final class AppModel: ObservableObject {
 
     /// The shown round's paper|round|created, when it has a PDF: what the checks are for.
     private var checksRoundKey: String? {
-        selectedPath.flatMap { path in round.flatMap { r in r.build.pdf == nil ? nil : "\(path)|\(r.n)|\(r.created ?? "")" } }
+        selectedPath.flatMap { path in
+            round.flatMap { r in r.build.pdf == nil ? nil : "\(path)|\(r.n)|\(r.created ?? "")|\(r.closed ? "closed" : "open")" }
+        }
     }
 
     /// Settings' Checks turned on or off: saved (never by a test run); on asks for the shown round's checks at once, off
@@ -2964,10 +2993,13 @@ final class AppModel: ObservableObject {
         requestChecks()
     }
 
-    /// The shown round's checks (the engine's read-only `checks`), asked once per round shown while Checks is on, outside
-    /// `call` as `links` (it changes nothing, has no state and is not busy work). An error, an older engine's "Unknown
-    /// method 'checks'." or no checks (the paragraphs cannot be found) leaves the tab without them; a reply for another round than the
-    /// one asked is dropped. A fixture run and `swift test` never ask: their checks are set (`setChecks`).
+    /// The shown round's checks (UX.md §39; engine/CONTRACT.md amendments "Checks" and "Checks to the student"), asked
+    /// once per round shown while Checks is on, outside `call` (nothing is busy, the window goes on): the engine of the
+    /// checks builds them (`checks`, seconds on a long paper), then the window's engine gives their items (`check_items`:
+    /// in an open round it numbers them, A2-03, and finds which went out before and which are fixed). An error, an older
+    /// engine's "Unknown method 'checks'." or no checks leaves the tab without them; an engine before check items shows
+    /// the checks without ids. A reply for another round than the one asked is dropped. "Checks done · 7 found" is
+    /// said once a round. A fixture run and `swift test` never ask: their checks are set (`setChecks`).
     func requestChecks() {
         let key = checksOn ? checksRoundKey : nil
         if checks.key != nil && checks.key != key { checks.clear() }
@@ -2975,13 +3007,31 @@ final class AppModel: ObservableObject {
         checksAsked = key
         guard let key, fixtureURL == nil, !LaunchOptions.unitTest, let path = selectedPath, let n = round?.n,
               let json = try? JSONSerialization.data(withJSONObject: ["paper": path, "round": n]) else { return }
+        let open = roundIsOpen
+        checks.roundOpen = open
         checks.ask(key)
         let pages = round?.build.pages
-        let id = engine.send("checks", params: json)
+        let kinds = ChecksModel.groups.map(\.id).filter(checkKinds.contains)
+        let built = checksEngine.send("checks", params: json)
         Task {
-            let reply = try? makeDecoder().decode(ChecksReply.self, from: try await engine.result(id))
+            let reply = try? makeDecoder().decode(ChecksReply.self, from: try await checksEngine.result(built))
             guard checksAsked == key, checksOn else { return }
-            checks.show(reply?.round == n ? reply?.checks : nil, round: n, key: key, pages: pages)
+            guard reply?.round == n, let list = reply?.checks else { return checks.show(nil, round: n, key: key, pages: pages) }
+            var items: [Check]? = nil
+            if let params = try? JSONSerialization.data(withJSONObject: ["paper": path, "round": n, "groups": kinds]) {
+                let asked = engine.send("check_items", params: params)
+                let r = try? makeDecoder().decode(CheckItemsReply.self, from: try await engine.result(asked))
+                items = r?.round == n ? r?.items : nil
+            }
+            guard checksAsked == key, checksOn else { return }
+            // a finished round shows what went out with it (nothing, when it was finished with Checks off)
+            checks.show(items ?? (open ? list.filter { kinds.contains($0.group) } : []), round: n, key: key, pages: pages)
+            checksMarksChanged()
+            if open && !checksToasted.contains(key) {  // said for the round being reviewed, not one looked back at
+                checksToasted.insert(key)
+                let k = checks.sent
+                showPanelToast(k == 0 ? "Checks done · nothing found" : "Checks done · \(k) found")
+            }
         }
     }
 
@@ -2990,7 +3040,78 @@ final class AppModel: ObservableObject {
     func setChecks(_ list: [Check]?, round n: Int) {
         guard checksOn, let key = checksRoundKey, round?.n == n else { return }
         checksAsked = key
+        checks.roundOpen = roundIsOpen
         checks.show(list, round: n, key: key, pages: round?.build.pages)
+        checksMarksChanged()
+    }
+
+    /// The new-comment editor closed: a check's My Comment… is over, saved (it was read when the comment was sent) or
+    /// not.
+    func commentEditorClosed() { checkComment = nil }
+
+    /// The Finish sheet's checks: what goes out, what is marked OK and what the student answered; nil while Checks is
+    /// off or the shown round's checks are not in.
+    var finishChecks: FinishSummary.Checks? {
+        guard checksOn else { return nil }
+        if checks.phase == .asking && checks.key == checksRoundKey { return FinishSummary.Checks(sent: 0, ok: 0, toCheck: 0, pending: true) }
+        guard checksShown else { return nil }
+        return FinishSummary.Checks(sent: checks.sent, ok: checks.markedOK, toCheck: checks.members(.toCheck).count)
+    }
+
+    /// The Finish sheet's Review for the checks the student answered: the sheet closes, the first one's card shows.
+    func reviewCheck() {
+        showFinish = false
+        guard let i = checks.members(.toCheck).first else { return }
+        tab = .checks
+        checkClicked(i)
+    }
+
+    /// The checks' marks on the page follow their list (`ChecksModel.version`): the PDF view is told to draw them again.
+    @Published private(set) var checkMarksVersion = 0
+    private func checksMarksChanged() { checkMarksVersion = checks.version }
+
+    /// A click on a check's mark on the page: the Checks tab shows its card, as a click on a comment's mark shows the
+    /// comment's (`markClicked`); nothing moves.
+    func checkMarkClicked(_ id: String) {
+        guard checksShown, let i = checks.index(of: id), !checks.list[i].closed else { return }  // only those marked have marks
+        tab = .checks
+        checks.select(i)
+        pdf.setSelectedCheck(selectedCheckID, place: selectedCheckPlace)
+    }
+
+    /// The checks with marks on the page: the shown round's that go to the student (not fixed, not marked OK), their
+    /// ids and the places with rects.
+    var checkMarks: [Check] {
+        guard checksOn, checksShown else { return [] }
+        return checks.list.filter { $0.id != nil && !$0.closed }
+    }
+
+    /// The id of the check selected on the Checks tab, outlined on the page, and the place it went to last.
+    var selectedCheckID: String? {
+        guard tab == .checks, checksShown, let i = checks.current, checks.list.indices.contains(i) else { return nil }
+        return checks.list[i].id
+    }
+
+    var selectedCheckPlace: Int { checks.cursor.flatMap { $0.check == checks.current ? $0.place : nil } ?? 0 }
+
+    /// Follow Up… on a check that went out before: the advisor's words go with it again (`check_note`, outside `call`;
+    /// a refusal says why and puts the words back).
+    func followUpCheck(_ i: Int, _ text: String) {
+        guard checksShown, roundIsOpen, checks.list.indices.contains(i), let id = checks.list[i].id, let paper = selectedPath else { return }
+        let words = Self.trimmed(text), before = checks.list[i].advisorNote, round = checks.key
+        checks.setAdvisorNote(i, words.isEmpty ? nil : words)
+        guard fixtureURL == nil, !LaunchOptions.unitTest,
+              let json = try? JSONSerialization.data(withJSONObject: ["paper": paper, "id": id, "text": words]) else { return }
+        let sent = engine.send("check_note", params: json)
+        Task {
+            do {
+                _ = try await engine.result(sent)
+            } catch {
+                alertMessage = describe(error)
+                guard checks.key == round, checks.list.indices.contains(i), checks.list[i].id == id else { return }
+                checks.setAdvisorNote(i, before)
+            }
+        }
     }
 
     /// Whether Comment… can be offered, for the rows' menus (`ChecksModel.canComment`): every condition of `checkMenu`'s
@@ -3007,6 +3128,7 @@ final class AppModel: ObservableObject {
     /// Back and a flash; a place without rects, the page's top; a check without places, nothing.
     func checkClicked(_ i: Int) {
         guard checksShown, checks.list.indices.contains(i) else { return }
+        defer { pdf.setSelectedCheck(selectedCheckID, place: selectedCheckPlace) }
         guard let p = checks.step(i) else { return checks.select(i) }  // no place: the row is still the one chosen
         let place = checks.list[i].places[p]
         if place.rects.isEmpty {
@@ -3022,8 +3144,9 @@ final class AppModel: ObservableObject {
     func checkMenu(_ i: Int) -> [CheckMenuItem] {
         guard checks.list.indices.contains(i) else { return [] }
         let place = checksShown ? checks.menuPlace(i) : nil
-        return [CheckMenuItem(action: .ok, title: checks.list[i].ok ? "Mark as Not OK" : "Mark as OK", enabled: checksShown),
-                CheckMenuItem(action: .comment, title: "Comment…",
+        return [CheckMenuItem(action: .ok, title: checks.list[i].ok ? "Mark as Not OK" : "Mark as OK",
+                              enabled: checksShown && !checks.list[i].fixed),  // a fixed one is closed already
+                CheckMenuItem(action: .comment, title: "My Comment…",
                               enabled: place != nil && roundIsOpen && !busy && toolbar.reanchor == nil),
                 CheckMenuItem(action: .keepOpen, title: "Keep Open", enabled: place != nil),
                 CheckMenuItem(action: .copy, title: "Copy", enabled: true)]
@@ -3044,9 +3167,11 @@ final class AppModel: ObservableObject {
     /// tab's count follows; the engine's `check_ok` keeps it in the paper's ledger, for this round and the rounds after
     /// (outside `call`: it changes no state); a refusal puts it back and says why. A fixture run keeps it here.
     func markCheck(_ i: Int, _ ok: Bool) {
-        guard checksShown, checks.list.indices.contains(i), checks.list[i].ok != ok, let paper = selectedPath else { return }
+        guard checksShown, checks.list.indices.contains(i), checks.list[i].ok != ok, !checks.list[i].fixed,
+              let paper = selectedPath else { return }
         let key = checks.list[i].key, round = checks.key
         checks.setOK(i, ok)
+        checksMarksChanged()
         guard fixtureURL == nil, !LaunchOptions.unitTest,
               let json = try? JSONSerialization.data(withJSONObject: ["paper": paper, "key": key, "ok": ok]) else { return }
         let id = engine.send("check_ok", params: json)
@@ -3057,6 +3182,7 @@ final class AppModel: ObservableObject {
                 alertMessage = describe(error)  // said even when another paper or round is shown by now
                 guard checks.key == round, checks.list.indices.contains(i), checks.list[i].key == key else { return }
                 checks.setOK(i, !ok)
+                checksMarksChanged()
             }
         }
     }
@@ -3077,6 +3203,8 @@ final class AppModel: ObservableObject {
         case .comment:
             // a note being written keeps its words selected and the PDF where it is (UX.md §8), as Comment on it… does
             guard !waitsForNote(), let p = checks.menuPlace(i) else { return }
+            // the comment takes its place: the check is marked OK once the comment is made (on that page)
+            if let k = checks.key { checkComment = (k, c.key, p.page) }
             pdf.commentOn(check: p, note: c.note ?? "")
         case .keepOpen: if let p = checks.menuPlace(i) { pdf.keepOpen(check: p, title: c.text) }
         case .copy:
