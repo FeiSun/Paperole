@@ -1665,12 +1665,11 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         if pv.canGo { goToTarget(pv.target) } else if pv.url != nil { openPreviewURL() } else { closePreview() }
     }
 
-    /// What the preview of a target shows; `link`, the link clicked (a citation's other keys are its other entries).
+    /// What the clicked target shows; a grouped citation previews only that target, as its metadata does.
     func makePreview(link: Int?, target: Int) -> LinkPreview? {
         guard let t = table, target >= 0, target < t.targets.count, let doc = view?.document, let model else { return nil }
         let main = t.targets[target]
-        let ids = main.kind == "cite" ? (link.map { t.links[$0].targets } ?? [target]) : [target]
-        let entries = ids.compactMap { i -> LinkPreview.Entry? in
+        let entries = [target].compactMap { i -> LinkPreview.Entry? in
             guard let at = t.targets[i].place, at.page < doc.pageCount, let pg = doc.page(at: at.page) else { return nil }
             let cb = pg.bounds(for: .cropBox), r = t.targets[i].kind == "cite" ? hanging(at, on: pg) : at.rect
             let clip = [max(r[0] - 4, 0), max(r[1] - 4, 0), min(r[2] + 4, Double(cb.width)), min(r[3] + 4, Double(cb.height))]

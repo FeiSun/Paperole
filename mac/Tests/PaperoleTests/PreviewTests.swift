@@ -309,13 +309,70 @@ final class PreviewTests: XCTestCase {
         XCTAssertEqual(model.pdf.pointAtThird()?.page, 1)
     }
 
-    /// `\citep{wang,oakes}` printed "[10, 8]": each link shows every entry, the clicked one first.
-    func testACitationOfSeveralKeys() {
+    /// `\citep{wang,oakes}` printed "[10, 8]": only the clicked entry, with its own metadata.
+    func testACitationOfSeveralKeys() throws {
+        let t = try Self.table()
+        let wang = try XCTUnwrap(t.targets[1].key), oakes = try XCTUnwrap(t.targets[2].key)
+        model.lookUp = [.semanticScholar, .googleScholar]
+        model.showReferences([RefEntry(key: wang, title: "Wang reference"), RefEntry(key: oakes, title: "Oakes reference")],
+                             [RefSource.semanticScholar.rawValue: [wang: RefResult(found: true, citations: 27),
+                                                                  oakes: RefResult(found: true, citations: 61)],
+                              RefSource.googleScholar.rawValue: [wang: RefResult(found: true, citations: 35),
+                                                                 oakes: RefResult(found: true, citations: 90)]])
         click(127, 383)  // "8]."
-        XCTAssertEqual(model.pdf.shownPreview?.entries.map(\.label), ["[8]", "[10]"])
-        XCTAssertEqual(model.pdf.shownPreview?.title, "[8] · p.4")
+        let first = try XCTUnwrap(model.pdf.shownPreview)
+        XCTAssertEqual(first.entries.map(\.label), ["[8]"])
+        XCTAssertEqual(first.entries.map(\.id), [2])
+        XCTAssertEqual(first.title, "[8] · p.4")
+        XCTAssertEqual(first.refKey, oakes)
+        XCTAssertEqual(first.cited, [0])
+        XCTAssertEqual(first.count, 2)
+        XCTAssertEqual(first.refs?.counts.map(\.count), [.cited(61, nil), .cited(90, nil)])
+        XCTAssertTrue(first.reference?.contains("Oakes") == true)
         click(115, 383)  // "[10,": a click on another link closes this preview and shows its own
-        XCTAssertEqual(model.pdf.shownPreview?.entries.map(\.label), ["[10]", "[8]"])
+        let second = try XCTUnwrap(model.pdf.shownPreview)
+        XCTAssertEqual(second.entries.map(\.label), ["[10]"])
+        XCTAssertEqual(second.entries.map(\.id), [1])
+        XCTAssertEqual(second.title, "[10] · p.4")
+        XCTAssertEqual(second.refKey, wang)
+        XCTAssertEqual(second.cited, [0, 1])
+        XCTAssertEqual(second.count, 2)
+        XCTAssertEqual(second.refs?.counts.map(\.count), [.cited(27, nil), .cited(35, nil)])
+        XCTAssertTrue(second.reference?.contains("Wang") == true)
+        XCTAssertNotEqual(first.reference, second.reference)
+    }
+
+    func testAuthorYearCitationLabelsStayWithTheClickedEntry() throws {
+        let t = try table { d in
+            var targets = d["targets"] as! [[String: Any]]
+            targets[1]["label"] = "Wang et al., 2018"
+            targets[1]["count"] = 3
+            targets[2]["label"] = "Oakes et al., 2018"
+            targets[2]["count"] = 5
+            d["targets"] = targets
+        }
+        model.pdf.setLinks(t)
+        for (x, target) in [(115.0, 1), (127.0, 2)] {
+            click(x, 383)
+            let preview = try XCTUnwrap(model.pdf.shownPreview)
+            XCTAssertEqual(preview.entries.map(\.id), [target])
+            XCTAssertEqual(preview.title, t.targets[target].title)
+            XCTAssertEqual(preview.refKey, t.targets[target].key)
+            XCTAssertEqual(preview.count, t.targets[target].count)
+            XCTAssertEqual(preview.cited, t.targets[target].cited)
+        }
+        if let directory = ProcessInfo.processInfo.environment["PAPEROLE_CITATION_SHOTS"] {
+            let until = Date().addingTimeInterval(3)
+            while ((state["entries"] as? [[Any]])?.first?[2] as? Bool) != true && Date() < until { spin(0.05) }
+            for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+                view.appearance = NSAppearance(named: appearance)
+                view.layoutSubtreeIfNeeded()
+                let rep = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+                view.cacheDisplay(in: view.bounds, to: rep)
+                try XCTUnwrap(rep.representation(using: .png, properties: [:]))
+                    .write(to: URL(fileURLWithPath: directory).appendingPathComponent("single-citation-\(name).png"))
+            }
+        }
     }
 
     /// The pin makes a small window of it; several can stay; they close with the round or paper.

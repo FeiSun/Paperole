@@ -147,7 +147,7 @@ struct LinkPreview: Equatable {
     var target: Int
     var kind: String
     var title: String
-    /// The clicked target, then a citation's other entries.
+    /// The clicked target's crop only; neighbouring citations are not part of this preview.
     var entries: [Entry]
     /// The page of the target's next part (a table across pages).
     var continues: Int?
