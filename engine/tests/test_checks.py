@@ -285,7 +285,8 @@ def _line(slots, needle, nth=0):
 # defect paper has no look-ups' results
 REFS = {"venue_forms", "venue_style", "author_names", "author_case", "title_case", "etal_by_hand", "leftovers",
         "field_mix", "page_dash", "arxiv_forms", "published_preprint", "no_record", "record_differs"}
-ALL = set(checks.CODES) - REFS
+# The other writing checks have their own fixture in test_writing_checks.py; this paper also has a short last line.
+ALL = set(checks.CODES) - REFS - {"paragraph_break", "heading_break", "split_phrase", "sentence_start"}
 NO_BIB = {"lowered_caps", "no_year", "no_venue", "pdf_author"}  # need a .bib (or hyperref's pdfauthor)
 
 
@@ -432,8 +433,10 @@ def test_without_hyperref_and_with_thebibliography(plain):
     assert by["coloured_text"][0]["text"] == "Red text · “This sentence is still a…”"
 
 
-def test_the_clean_twin_and_the_fixture_paper_have_no_checks(clean, paper):
-    assert _checks(clean) == []
+def test_the_clean_twin_has_only_its_short_last_line_and_the_fixture_is_clean(clean, paper):
+    found = _checks(clean)
+    assert [(c["code"], c["text"]) for c in found] == [("short_last_line", "Short last line · “policy.”")]
+    assert _words(clean, found[0]["places"][0]) == "policy."
     assert _checks(paper) == []  # tests/fixtures/paper v1: not anonymous, its "% TODO" a comment
 
 
@@ -462,7 +465,9 @@ def test_the_promo_demo_rounds(tmp_path):
             assert type3["text"] == "Type 3 font · DejaVuSans" and [p["page"] for p in type3["places"]] == [5]
             assert type3["places"][0]["rects"] and "Q1" in _words(paper, type3["places"][0], 1)
         else:
-            assert set(by) == {"float_far", "etal_by_hand"}
+            assert set(by) == {"float_far", "etal_by_hand", "short_last_line"}
+            assert [c["places"][0]["text"] for c in by["short_last_line"]] == ["laptop.", "solution.", "best.", "wrong."]
+            assert all(_words(paper, c["places"][0], n) == c["places"][0]["text"] for c in by["short_last_line"])
 
 
 def test_the_cache(defect, copy, monkeypatch, capsys):
@@ -935,7 +940,10 @@ def test_a_draft_switch_and_inline_notes(tmp_path):
 def test_biblatex_two_columns_and_what_tex_skips(columns):
     by = _by_code(_checks(columns))
     assert set(by) == {"undefined_cite", "label_twice", "same_work", "no_year", "no_venue", "spelling", "overfull",
-                       "title_case", "leftovers"}
+                       "title_case", "leftovers", "heading_break"}
+    heading, = by["heading_break"]
+    assert heading["text"] == "Heading before a column break · Cost"
+    assert [_words(columns, p) for p in heading["places"]] == ["2.2 Cost", "The cost is small."]
     # biblatex prints the titles as written (3 in title case, smith2019b's in sentence case) and noyear's empty date "()"
     assert [c["text"] for c in by["title_case"]] == ["Titles: 3 in title case, 1 in sentence case"]
     assert [c["key"] for c in by["leftovers"]] == ["leftovers|noyear|()"]
@@ -966,7 +974,10 @@ def test_biblatex_two_columns_and_what_tex_skips(columns):
 
 def test_natbib_citations_and_many_todo_notes(long, monkeypatch):
     by = _by_code(_checks(long))
-    assert set(by) == {"undefined_cite"}  # the \todo notes print nothing: no slip a reader sees
+    assert set(by) == {"undefined_cite", "heading_break"}  # the \todo notes print nothing
+    heading, = by["heading_break"]
+    assert heading["text"] == "Heading before a page break · Intro"
+    assert _words(long, heading["places"][0]) == "1 Intro"
     # one "?" each: the .log's warning of a key the table placed takes none
     cites = sorted(by["undefined_cite"], key=lambda c: c["places"][0]["rects"][0][0])
     assert [c["text"] for c in cites] == ["Undefined citation nobody2020", "Undefined citation missing2021"]

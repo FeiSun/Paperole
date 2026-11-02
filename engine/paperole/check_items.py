@@ -100,7 +100,7 @@ def _let_go(items, ok, c, n):
     return False
 
 
-def sync(lg, n, found, groups):
+def sync(lg, n, found, groups, disabled=()):
     """Bring round n's records in step with its checks (`found`: checks.json's) of the groups asked: each check of
     those groups is an item open into round n or one created in it (_match), now `still` (or `new`, created in n), or
     a new item `new` with the next id (none for a check marked OK); an open item of a group asked that no check is
@@ -112,7 +112,7 @@ def sync(lg, n, found, groups):
             if it["created_round"] == n or is_open(lg, it, n)]
     matched = {}
     for c in found:
-        if c["group"] not in groups:
+        if c["group"] not in groups or c["code"] in disabled:
             continue
         it = _match(live, matched, c, n)
         if it is None:
@@ -130,6 +130,8 @@ def sync(lg, n, found, groups):
             it["rounds"][str(n)] = dict({"state": "new" if it["created_round"] == n else "still", "text": c["text"],
                                          "detail": c["detail"], "note": c["note"], "places": c["places"]},
                                         **_kept(rec))
+        elif it["code"] in disabled:
+            it["rounds"][str(n)] = dict({"state": None}, **_kept(rec))  # paused, never fixed by a switch
         elif it["created_round"] == n:
             it["rounds"].pop(str(n), None)
             if not it["rounds"]:
@@ -193,7 +195,11 @@ def views(lg, n):
     """Round n's items ({"round", "items", "closed": {"fixed", "ok"}}): every item with a round-n record, in _order;
     closed: those fixed in it, and those carried into it and marked OK in it (no change needed)."""
     ok = lg.get("checks_ok") or {}
-    have = [it for it in _items(lg).values() if str(n) in it["rounds"]]
+    rnd = next((r for r in lg["rounds"] if r["n"] == n), {})
+    disabled = rnd.get("check_disabled") or []
+    groups = rnd.get("check_groups", checks.GROUPS)
+    have = [it for it in _items(lg).values() if str(n) in it["rounds"] and it["code"] not in disabled
+            and it["group"] in groups]
     done = sorted((it["id"] for it in have if it["created_round"] < n and ok.get(it["key"]) == n and _went_out(it, n)),
                   key=ledger.id_key)
     fixed = sorted((it["id"] for it in have if it["rounds"][str(n)].get("state") == "fixed" and it["id"] not in done),

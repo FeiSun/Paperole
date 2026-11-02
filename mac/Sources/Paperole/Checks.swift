@@ -181,6 +181,16 @@ struct ChecksItem: Identifiable, Equatable {
 /// asked for, and the row last clicked with the place it went to.
 @MainActor
 final class ChecksModel: ObservableObject {
+    /// Per-rule choices in Settings; an empty disabled set keeps the existing behaviour.
+    static let writingRules: [(code: String, title: String, group: String, help: String)] = [
+        ("short_last_line", "Short last lines", "typesetting", "A paragraph ending in one word or symbol."),
+        ("paragraph_break", "Single-line paragraph breaks", "typesetting", "One paragraph line left across a page or column break."),
+        ("heading_break", "Hanging headings", "typesetting", "A heading with fewer than two following lines before a break."),
+        ("split_phrase", "Split references and units", "typesetting", "Figure 3 or 10 GB split across lines."),
+        ("draft_marker", "Draft markers", "submission", "TODO, TBD, [Ref], [??] and [citation needed] left in the PDF."),
+        ("sentence_start", "Sentence openings", "typesetting", "A sentence starting with inline math or a numeric citation.")
+    ]
+
     /// The tab's groups, as the Comments tab's (UX.md §39, design/checks-ui): the checks the student answered (the
     /// advisor's move), those that go out, and those closed this round (fixed by the student, or marked OK).
     enum Group: String, Equatable {

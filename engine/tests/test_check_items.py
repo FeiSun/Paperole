@@ -200,6 +200,62 @@ def test_ids_sync_groups_and_rebuilt_checks(paper):
         _call(paper, "check_items", round=4)
 
 
+@pytest.mark.parametrize("code", ["short_last_line", "paragraph_break", "heading_break", "split_phrase",
+                                  "draft_marker", "sentence_start"])
+def test_rule_switch_pauses_and_restores_the_same_item(paper, code):
+    found = [_check(code, "Writing check", [_place(paper, 1, 0, "minimise the sum")])]
+    _write(paper, 1, found)
+    first = _call(paper, "check_items")["items"][0]
+    reply = _call(paper, "check_items", disabled=[code])
+    assert reply["items"] == [] and reply["closed"] == {"fixed": [], "ok": []}
+    assert ledger.load(paper)["check_items"][first["id"]]["rounds"]["1"]["state"] is None
+    restored = _call(paper, "check_items", disabled=[])["items"][0]
+    assert restored["id"] == first["id"] and restored["state"] == "new"
+    _call(paper, "finish", checks=True, disabled=[code])  # selection sent at Finish wins
+    assert "Writing check" not in (paper / "r1/email.txt").read_text()
+    assert _call(paper, "check_items", round=1, disabled=[])["items"] == []  # frozen as sent
+
+
+def test_disabled_carried_rule_keeps_notes_and_is_not_fixed(paper):
+    code = "sentence_start"
+    found = [_check(code, "Writing check", [_place(paper, 1, 0, "minimise the sum")])]
+    _write(paper, 1, found)
+    cid = _call(paper, "check_items")["items"][0]["id"]
+    _call(paper, "finish", checks=True)
+    _call(paper, "ingest", source=str(FIXTURE / "v1"))
+    _write(paper, 2, found)
+    _call(paper, "check_items")
+    _call(paper, "check_note", id=cid, text="Please keep this explanation.")
+    with ledger.edit(paper) as lg:
+        lg["check_items"][cid]["rounds"]["2"]["student_note"] = {"text": "This is intentional."}
+    assert _call(paper, "check_items", disabled=[code])["items"] == []
+    restored = _call(paper, "check_items")["items"][0]
+    assert restored["id"] == cid and restored["state"] == "still"
+    assert restored["advisor_note"] == "Please keep this explanation."
+    assert restored["student_note"]["text"] == "This is intentional."
+    # A pending scan cannot resurrect a rule just switched off at Finish.
+    checks.path(paper, 2).unlink()
+    _call(paper, "finish", checks=True, disabled=[code])
+    lg = ledger.load(paper)
+    assert lg["check_items"][cid]["rounds"]["2"]["state"] is None
+    assert lg["rounds"][1]["checks_sent"] == lg["rounds"][1]["checks_fixed"] == 0
+    assert "Writing check" not in (paper / "r2/email.txt").read_text()
+    assert _call(paper, "check_items", round=1, disabled=[code])["items"][0]["id"] == cid
+
+
+def test_check_selection_validation_and_no_groups_at_finish(paper):
+    _write(paper, 1, _round1(paper))
+    _call(paper, "check_items")
+    for value in (None, "sentence_start", [1], ["not_a_rule"]):
+        for method in ("check_items", "finish"):
+            with pytest.raises(EngineError, match="disabled is a list of known check codes"):
+                _call(paper, method, checks=True, disabled=value)
+    assert not ledger.load(paper)["rounds"][0]["closed"]
+    _call(paper, "check_items", groups=[])
+    _call(paper, "finish", checks=True)
+    assert ledger.load(paper)["rounds"][0]["checks_sent"] == 0
+
+
 @needs_tex
 def test_a_replaced_round_keeps_its_numbering(paper):
     _write(paper, 1, _round1(paper)[:2])

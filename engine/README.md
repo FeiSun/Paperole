@@ -82,3 +82,39 @@ The rects are the phrase's boxes in that round's PDF. To find them for another p
 The same folder opens in Paperole Dev with `open -n "../mac/build/Paperole Dev.app" --args --paper ~/pc-demo`.
 `tests/test_e2e_rounds.py` runs the full EDITS.md scenario over RPC; with `PAPEROLE_E2E_OUT=<new folder>` it
 keeps the review folder.
+
+## Local writing checks (2026-11-02)
+
+The existing Checks pipeline also covers A1–A4, A6 and A7 from the writing-check shortlist:
+
+- `short_last_line`: a multi-line paragraph ending in one word/symbol. Explicit line breaks and a hyphenated
+  word's continuation are excluded.
+- `paragraph_break`: a single paragraph line on either side of a page or column break.
+- `heading_break`: a standalone heading with no following text, or only one line, before a page/column break.
+  Run-in headings and headings followed by a figure or table are excluded.
+- `split_phrase`: a reference name and number, or a number and a recognised time/frequency/storage unit, printed
+  on different lines. It checks the PDF, not whether the source uses `~`.
+- `draft_marker` (extended): literal `[Ref]`, `[??]` and `[citation needed]` in the PDF, including across lines.
+  Real citation/link labels and these placeholders inside code/math are excluded; existing TODO checks remain.
+- `sentence_start`: parser-marked inline math or a numeric citation at a clear sentence start, suggested as a
+  writing change. Textual author citations, ambiguous abbreviations and continuations after display math are skipped.
+
+Layout and sentence-start checks use mapped body text before the bibliography; layout checks exclude list items,
+except that `split_phrase` also checks them. Paragraph parts distinguish columns and full-width text. A7 uses the
+existing source-line-to-PDF mapping, so its mark can cover a line rather than just the symbol/citation. There is no
+AI, network request, new dependency or new finding group. The five new codes use Typesetting; placeholders
+stay in Submission. `CHECKS = 6` invalidates older caches. The existing A-id, Mark as OK, export and round lifecycle
+are reused. Tests: `tests/test_writing_checks.py` (geometry/exclusions and compiled one/two-column papers through
+export and a clean next round), plus the existing check regressions. Local development notes are in the repository's
+git-ignored `implementation-notes.md`.
+
+Settings > Reading > Writing checks has six individual checkboxes, enabled by default under the existing master
+and category switches. Draft markers controls the whole `draft_marker` rule, including TODO/TBD; `todo_note` is
+unchanged. Choices persist and travel with an export of settings. The raw checks cache stays shared; choices select
+the findings shown and sent, rather than changing that cache.
+
+The `check_items` and `finish` RPCs accept optional `disabled: [check_code, ...]` (omitted: all enabled for
+`check_items`; the round's saved choice for `finish`). Unknown codes/types are refused. `finish` also accepts
+`groups`, so an immediate Finish honours the latest settings even while a scan is pending. The round stores
+`check_disabled` alongside `check_groups`. Disabled items pause, keep their notes and are not marked fixed; switching
+a pending item back on keeps its id. Finished rounds show their recorded selection. No ledger schema change is needed.

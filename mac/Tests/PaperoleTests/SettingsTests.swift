@@ -230,4 +230,78 @@ final class ReadingSettingTests: XCTestCase {
         // the kinds under it, all on by default (a test run reads no saved choice)
         XCTAssertEqual(m.checkKinds, Set(ChecksModel.groups.map(\.id)))
     }
+
+    func testWritingRuleSwitchesAndParentControls() throws {
+        let m = makeModel()
+        m.checksOn = true
+        XCTAssertTrue(m.disabledCheckCodes.isEmpty)
+        let host = NSHostingView(rootView: SettingsView(model: m, tab: .reading))
+        let window = NSWindow(contentRect: NSRect(origin: .zero, size: host.fittingSize), styleMask: [.titled],
+                              backing: .buffered, defer: true)
+        window.isReleasedWhenClosed = false
+        windows.append(window)
+        window.contentView = host
+        host.layoutSubtreeIfNeeded()
+        func buttons(_ v: NSView) -> [NSButton] {
+            ((v as? NSButton).map { [$0] } ?? []) + v.subviews.flatMap(buttons)
+        }
+        func rule(_ code: String) throws -> NSButton {
+            // SwiftUI renders checkbox labels separately from its native buttons; follow the form's row order.
+            let controls = buttons(host)
+            let index = try XCTUnwrap(ChecksModel.writingRules.firstIndex { $0.code == code })
+            XCTAssertEqual(controls.count, ChecksModel.groups.count + ChecksModel.writingRules.count)
+            return controls[ChecksModel.groups.count + index]
+        }
+        func refresh() { RunLoop.current.run(until: Date().addingTimeInterval(0.05)); host.layoutSubtreeIfNeeded() }
+        for r in ChecksModel.writingRules {
+            XCTAssertEqual(try rule(r.code).state, .on)
+            XCTAssertTrue(try rule(r.code).isEnabled)
+        }
+        let button = try rule("sentence_start")
+        let point = button.convert(NSPoint(x: button.bounds.midX, y: button.bounds.midY), to: nil)
+        func event(_ type: NSEvent.EventType) -> NSEvent {
+            NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
+                               timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber,
+                               context: nil, eventNumber: 0, clickCount: 1, pressure: 1)!
+        }
+        let target = try XCTUnwrap(window.contentView?.superview?.hitTest(point))
+        NSApp.postEvent(event(.leftMouseUp), atStart: false)
+        target.mouseDown(with: event(.leftMouseDown))
+        target.mouseUp(with: event(.leftMouseUp))
+        refresh()
+        XCTAssertEqual(m.disabledCheckCodes, ["sentence_start"])
+        m.checkKinds.remove("typesetting")
+        refresh()
+        XCTAssertFalse(try rule("short_last_line").isEnabled)
+        XCTAssertTrue(try rule("draft_marker").isEnabled)
+        m.checkKinds.insert("typesetting")
+        refresh()
+        XCTAssertEqual(try rule("sentence_start").state, .off, "parent toggles keep the individual choice")
+        if let directory = ProcessInfo.processInfo.environment["PAPEROLE_SETTINGS_SHOTS"] {
+            for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+                host.appearance = NSAppearance(named: appearance)
+                refresh()
+                let rep = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                host.cacheDisplay(in: host.bounds, to: rep)
+                try XCTUnwrap(rep.representation(using: .png, properties: [:]))
+                    .write(to: URL(fileURLWithPath: directory).appendingPathComponent("writing-settings-\(name).png"))
+            }
+        }
+        m.checksOn = false
+        refresh()
+        XCTAssertTrue(ChecksModel.writingRules.allSatisfy { (try? rule($0.code).isEnabled) == false })
+    }
+
+    func testWritingChoicesInPortableSettings() throws {
+        let domain = "PaperoleTests.settings." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: domain))
+        defaults.setVolatileDomain([AppModel.disabledCheckCodesKey: ["sentence_start", "unknown"],
+                                    AppModel.checkKindsKey: ["typesetting"]], forName: UserDefaults.argumentDomain)
+        let saved = PortableSettings.current(defaults)
+        XCTAssertEqual(saved[AppModel.disabledCheckCodesKey] as? [String], ["sentence_start"])
+        XCTAssertEqual(saved[AppModel.checkKindsKey] as? [String], ["typesetting"])
+        XCTAssertEqual(PortableSettings.checkChoices([], key: AppModel.disabledCheckCodesKey), [])
+        XCTAssertNil(PortableSettings.checkChoices([1], key: AppModel.disabledCheckCodesKey))
+        XCTAssertTrue(PortableSettings.apply(saved, to: makeModel()).isEmpty, "a fixture run never writes settings")
+    }
 }

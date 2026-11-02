@@ -553,9 +553,18 @@ def finish(params, progress):
         rdir = paper / "r{}".format(n)
         if send:  # synced once more with checks.json when it is current (else as last synced); an item marked OK
             # before it was sent never goes out
+            groups = _check_groups(params) if "groups" in params else rnd.get("check_groups", list(checks.GROUPS))
+            disabled = _check_disabled(params) if "disabled" in params else rnd.get("check_disabled", [])
+            rnd["check_groups"] = groups
+            if disabled or "check_disabled" in rnd:
+                rnd["check_disabled"] = disabled
             found = checks.load(paper, n)
             if found is not None:
-                check_items.sync(lg, n, found["checks"], rnd.get("check_groups") or checks.GROUPS)
+                check_items.sync(lg, n, found["checks"], groups, disabled)
+            # A setting changed while checks were rebuilding: honour it even without a current cache.
+            for item in (lg.get("check_items") or {}).values():
+                if str(n) in item["rounds"] and (item["code"] in disabled or item["group"] not in groups):
+                    item["rounds"][str(n)]["state"] = None
             check_items.drop(lg, n, unsent=True)
         else:  # nothing goes out: the open items stay open for a later round
             check_items.drop(lg, n)
@@ -847,6 +856,13 @@ def _check_groups(params):
     return [g for g in checks.GROUPS if g in groups]
 
 
+def _check_disabled(params):
+    disabled = params.get("disabled", [])
+    if not isinstance(disabled, list) or not all(isinstance(c, str) and c in checks.CODES for c in disabled):
+        raise EngineError("disabled is a list of known check codes.")
+    return sorted(set(disabled))
+
+
 def check_items_(params, progress):
     """Round n's check items (default: the latest round; check_items.py), without state: {"round", "items", "closed":
     {"fixed", "ok"}}. For the latest round while open, its records are first synced with its checks.json under the
@@ -854,6 +870,7 @@ def check_items_(params, progress):
     first), which gives new items their ids; a closed or earlier round is read as recorded."""
     paper = _paper(params)
     groups = _check_groups(params)
+    disabled = _check_disabled(params)
     lg = ledger.load(paper)
     n = params.get("round")
     rnd = ledger.latest_round(lg) if n is None else next((r for r in lg["rounds"] if r["n"] == n), None)
@@ -869,9 +886,11 @@ def check_items_(params, progress):
         rnd = ledger.latest_round(lg)
         if rnd["n"] != found["round"] or rnd["closed"]:  # finished, or replaced, meanwhile: as recorded
             return check_items.views(lg, rnd["n"])
-        check_items.sync(lg, rnd["n"], found["checks"], groups)
+        check_items.sync(lg, rnd["n"], found["checks"], groups, disabled)
         if rnd.get("check_groups") != groups:  # finish syncs again with them
             rnd["check_groups"] = groups
+        if disabled or "check_disabled" in rnd:
+            rnd["check_disabled"] = disabled
         return check_items.views(lg, rnd["n"])
 
 

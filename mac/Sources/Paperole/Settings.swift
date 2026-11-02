@@ -236,17 +236,33 @@ struct ReadingSettings: View {
                     Text(SettingsView.checksTitle)
                     Text(SettingsView.checksDetail)
                 }
-                HStack(spacing: 14) {
+                HStack(spacing: 8) {
                     ForEach(ChecksModel.groups, id: \.id) { g in
                         Toggle(g.title, isOn: Binding(get: { model.checkKinds.contains(g.id) },
                                                       set: { on in
                                                           if on { model.checkKinds.insert(g.id) } else { model.checkKinds.remove(g.id) }
                                                       }))
                         .toggleStyle(.checkbox)
+                        .fixedSize()
                     }
                 }
                 .disabled(!model.checksOn)
             }
+            Section("Writing checks") {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(ChecksModel.writingRules, id: \.code) { rule in
+                        Toggle(rule.title, isOn: Binding(get: { !model.disabledCheckCodes.contains(rule.code) },
+                                                         set: { on in
+                                                             if on { model.disabledCheckCodes.remove(rule.code) }
+                                                             else { model.disabledCheckCodes.insert(rule.code) }
+                                                         }))
+                        .toggleStyle(.checkbox)
+                        .help(rule.help)
+                        .disabled(!model.checkKinds.contains(rule.group))
+                    }
+                }
+            }
+            .disabled(!model.checksOn)
             Section("Look up the references") {
                 ForEach(RefSource.allCases, id: \.rawValue) { s in
                     Toggle(isOn: Binding(get: { model.lookUp.contains(s) },
@@ -260,8 +276,7 @@ struct ReadingSettings: View {
             .disabled(!model.checksOn)
         }
         .formStyle(.grouped)
-        .scrollDisabled(true)
-        .frame(width: SettingsView.width, height: 360)
+        .frame(width: SettingsView.width, height: 540)
     }
 }
 

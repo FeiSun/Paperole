@@ -5,7 +5,8 @@ PDF: references ("??" and "[?]", a label defined twice, a float never referenced
 after it), the bibliography (one work under two keys, capitals the style lowered, an entry without a year or a venue,
 the list written two ways or with a TeX leftover, and from the look-ups the app stores in refs.json a preprint
 published since, a work no source finds, a record that differs), consistency (one word spelt two ways, one kind of
-reference written two ways), typesetting (overfull lines, straight quotes in the source, a doubled word) and the
+reference written two ways), typesetting (overfull lines, straight quotes, doubled words, short paragraph endings,
+paragraph/heading breaks, split reference/unit pairs and sentence-leading citations or inline math) and the
 submission (Type 3 or unembedded fonts, draft markers, \\todo notes, coloured text and, for a paper meant to be
 anonymous, what names its authors). From the link table (links.json),
 prose.json's blocks, the build's .aux, .bbl, .log and synctex, the .bib, the source and the PDF's words, fonts, colours
@@ -35,8 +36,9 @@ from . import anchor, comments, links, project, prose, refs, texdiff
 # stored in checks.json, with prose.PARSER and links.LINKS (the blocks and the table it reads); other values: stale
 # (2: biblatex's citations and .bib, places in reading order, a range of references covers its middle floats, an
 # item's label before a sentence, the parts TeX skips, review anonymous only for the venues that mean it, …;
-# 3: a \todo only when the PDF prints it; 4: each check's key; 5: the references' format and online checks, refs.json)
-CHECKS = 5
+# 3: a \todo only when the PDF prints it; 4: each check's key; 5: the references' format and online checks, refs.json;
+# 6: paragraph/heading breaks, short endings, split pairs, sentence starts and more printed placeholders)
+CHECKS = 6
 SCHEMA = 1
 GROUPS = ("references", "bibliography", "consistency", "typesetting", "submission")
 OVERFULL = 1.0  # points: an overfull line at most this much too wide is not reported
@@ -55,6 +57,8 @@ CODES = {"undefined_ref": "references", "undefined_cite": "references", "label_t
          "no_record": "bibliography", "record_differs": "bibliography", "spelling": "consistency",
          "ref_style": "consistency",
          "overfull": "typesetting", "straight_quotes": "typesetting", "doubled_word": "typesetting",
+         "short_last_line": "typesetting", "paragraph_break": "typesetting", "heading_break": "typesetting",
+         "split_phrase": "typesetting", "sentence_start": "typesetting",
          "type3_font": "submission", "unembedded_font": "submission", "draft_marker": "submission",
          "todo_note": "submission", "coloured_text": "submission", "pdf_author": "submission",
          "author_block": "submission", "acknowledgements": "submission", "personal_url": "submission"}
@@ -154,6 +158,10 @@ PAR_END = re.compile(r"\n[ \t]*\n|\\(?:begin\s*\{document\}|(?:sub)*section|chap
 
 # submission
 MARKER = re.compile(r"\W*(TODO|FIXME|XXX|TBD|TBA)\W*")
+PLACEHOLDER_TEXT = re.compile(r"\[(?:ref|\?\?|citation\s+needed)\]", re.I)
+# Explicit units only; no guessing whether an arbitrary letter is a unit or a variable.
+UNITS = set("ns µs μs ms s Hz kHz MHz GHz B kB KB MB GB TB KiB MiB GiB TiB".split())
+QUANTITY = re.compile(r"[+−-]?\d+(?:[.,]\d+)*(?:[eE][+−-]?\d+)?")
 TODO = re.compile(r"\\(todo|missingfigure)(?![A-Za-z@])\*?")
 # the paper's own \todo or \missingfigure, and one defined to print nothing: a mandatory argument, a body of tokens
 # that print nothing ({}, \relax, \ignorespaces, \unskip, {{}}, \iffalse#1\fi)
@@ -687,6 +695,11 @@ class _Paper:
     def body_words(self):
         """block_words of the text before the references (paragraphs, items, headings)."""
         return self.block_words(("paragraph", "item", "heading"), self.refs_start)
+
+    @functools.cached_property
+    def text_lines(self):
+        """The body's visual lines, shared by the layout checks; inline math may have separate PDF line ids."""
+        return {k: _text_lines(seq, self.parts(self.blocks[k])) for k, seq in self.body_words}
 
     @functools.cached_property
     def label_sites(self):
@@ -2129,6 +2142,170 @@ def doubled_word(p):
     return out
 
 
+def _same_column(a, b):
+    overlap = min(a[1][1], b[1][1]) - max(a[1][0], b[1][0])
+    return a[0] == b[0] and overlap >= 0.5 * min(a[1][1] - a[1][0], b[1][1] - b[1][0])
+
+
+def _text_lines(seq, parts):
+    """(page, horizontal extent, rect, words), using mapped paragraph parts, also for full-width text."""
+    out = []
+    for page, _, w in seq:
+        part = next((r for pg, r in parts if pg == page and r[0] - 1 <= (w[0] + w[2]) / 2 <= r[2] + 1
+                     and r[1] - 1 <= (w[1] + w[3]) / 2 <= r[3] + 1), None)
+        if part is None:
+            continue
+        line = (page, (part[0], part[2]), list(w[:4]), [w])
+        last = out[-1] if out else None
+        if last and _same_column(last, line) and w[0] >= last[3][-1][0] - 1 \
+                and last[2][1] - 1 <= (w[1] + w[3]) / 2 <= last[2][3] + 1:
+            r = last[2]
+            r[:] = [min(r[0], w[0]), min(r[1], w[1]), max(r[2], w[2]), max(r[3], w[3])]
+            last[3].append(w)
+        else:
+            out.append(line)
+    return out
+
+
+def _line_place(line):
+    return _place(line[0], [line[2]], comments.join_words(line[3]))
+
+
+def short_last_line(p):
+    """A multi-line body paragraph ending in one PDF word/symbol, not the tail of a hyphenated word."""
+    out = []
+    for k, lines in p.text_lines.items():
+        b = p.blocks[k]
+        if b["kind"] != "paragraph" or len(lines) < 2 or len(lines[-1][3]) != 1:
+            continue
+        if lines[-2][3][-1][4].endswith(("-", "‐")):
+            continue
+        source = (p.text(b["file"]) or "")[b["start"]:b["end"]]
+        if re.search(r"\\(?:\\|newline\b|linebreak\b|centerline\b)", source):
+            continue  # a deliberately set last line
+        word = lines[-1][3][0][4]
+        out.append(_check("short_last_line", "Short last line · {}".format(_q(word)),
+                          "The paragraph's last line contains only {}.".format(_q(word)),
+                          "Consider rewording this paragraph so its last line is not a single word or symbol.",
+                          [_line_place(lines[-1])], per_round=True))
+    return out
+
+
+def paragraph_break(p):
+    """One line of the same body paragraph left on either side of a page or column break."""
+    out = []
+    for k, lines in p.text_lines.items():
+        if p.blocks[k]["kind"] != "paragraph":
+            continue
+        runs = []
+        for line in lines:
+            if not runs or not _same_column(runs[-1][-1], line):
+                runs.append([])
+            runs[-1].append(line)
+        for before, after in zip(runs, runs[1:]):
+            if len(before) != 1 and len(after) != 1:
+                continue
+            if before[-1][0] == after[0][0] and after[0][2][1] > before[-1][2][1] + 1:
+                continue  # an indentation change farther down the same page, not a column break
+            kind = "page" if before[-1][0] != after[0][0] else "column"
+            side = "on both sides of" if len(before) == len(after) == 1 else "before" if len(before) == 1 else "after"
+            out.append(_check("paragraph_break", "Single paragraph line {} a {} break".format(side, kind),
+                              "This paragraph leaves only one line {} the {} break.".format(side, kind),
+                              "Keep at least two lines of this paragraph together on each side of the {} break."
+                              .format(kind), [_line_place(before[-1]), _line_place(after[0])], per_round=True))
+    return out
+
+
+def heading_break(p):
+    """A standalone heading separated from its next paragraph, or followed by only its first line."""
+    out = []
+    for k, lines in p.text_lines.items():
+        b = p.blocks[k]
+        body = p.text_lines.get(k + 1)
+        if b["kind"] != "heading" or (b.get("level") or 1) >= 4 or not lines or not body \
+                or p.blocks[k + 1]["kind"] != "paragraph":
+            continue
+        head, first = lines[-1], body[0]
+        together = _same_column(head, first)
+        if not together and head[0] == first[0] and first[2][1] > head[2][3]:
+            continue  # indented text below a short heading
+        if head[0] == first[0] and head[2][1] <= (first[2][1] + first[2][3]) / 2 <= head[2][3] \
+                and first[2][0] <= head[2][2] + 2 * (head[2][3] - head[2][1]):
+            continue  # run-in headings, including a template's run-in subsection
+        if together and len(body) == 1 and k + 2 < len(p.blocks) and p.blocks[k + 2]["kind"] == "paragraph":
+            body = body + p.text_lines.get(k + 2, [])
+        following = sum(_same_column(line, head) for line in body)
+        if together and (following != 1 or len(body) == 1):
+            continue
+        count = "only one line of text" if together else "no text"
+        kind = "page" if head[0] != body[following][0] else "column"
+        out.append(_check("heading_break", "Heading before a {} break · {}".format(kind, b["text"]),
+                          "This heading has {} before the {} break.".format(count, kind),
+                          "Keep this heading with at least two lines of the text that follows it.",
+                          [_line_place(head), _line_place(first)], per_round=True))
+    return out
+
+
+def split_phrase(p):
+    """A reference name and number, or a number and an explicit unit, split across visual lines."""
+    out = []
+    for k, lines in p.text_lines.items():
+        if p.blocks[k]["kind"] not in ("paragraph", "item"):
+            continue
+        for before, after in zip(lines, lines[1:]):
+            a, b = before[3][-1], after[3][0]
+            name, number = a[4], b[4]
+            reference = name.lower() in REF_NAMES and NUMBER.fullmatch(number)
+            unit = QUANTITY.fullmatch(name) and number.rstrip(".,;:!?)") in UNITS
+            if not reference and not unit:
+                continue
+            phrase = "{} {}".format(name, number.rstrip(".,;:!?"))
+            out.append(_check("split_phrase", "Split across lines · {}".format(_q(phrase)),
+                              "{} and {} are on different lines.".format(_q(name), _q(number)),
+                              "Keep {} on one line with a nonbreaking space (~ in LaTeX).".format(_q(phrase)),
+                              [_place(before[0], [a[:4]], name), _place(after[0], [b[:4]], number)], per_round=True))
+    return out
+
+
+def sentence_start(p):
+    """A clear sentence start marked by the prose parser as inline math or a numeric citation."""
+    out = []
+    for k, b in enumerate(p.blocks[:p.refs_start]):
+        if b["kind"] != "paragraph" or not p.parts(b):
+            continue
+        text = b["text"]
+        for a, z, kind, *rest in b.get("marks", ()):
+            if kind not in ("math", "cite") or not re.match(r"[,;:]?\s+[A-Za-z]", text[z:]):
+                continue
+            if kind == "cite" and not re.match(r"\[\s*\d", text[a:z]):
+                continue  # textual/author-year citations already name their authors
+            prefix = text[:a].rstrip().rstrip('“‘"(').rstrip()
+            if prefix:
+                prev = prefix.split()[-1].rstrip('”’")')
+                if not prev.endswith((".", "?", "!")) or prev.lower() in ABBREVIATIONS | {"etc.", "dr.", "prof."} \
+                        or re.fullmatch(r"(?:[A-Za-z]|\d+)\.|(?:[A-Za-z]+\.){2,}", prev) or prev.endswith(".."):
+                    continue
+            elif k and p.blocks[k - 1]["kind"] == "math":
+                continue  # a paragraph block after a display may continue the same sentence
+            span = next((m for m in b["map"] if m[0] <= a < m[0] + m[1]), None)
+            if span is None:
+                continue
+            d, n, s, m, *atomic = span
+            pos = s + (a - d if n == m and not atomic else 0)
+            place = p.source_place(b["file"], pos)
+            if not place:
+                continue
+            place["text"] = comments.join_words([w for _, w in p.words_in(place["page"], place["rects"])])
+            noun = "a numeric citation" if kind == "cite" else "inline math"
+            note = "Name the authors before the citation." if kind == "cite" else \
+                   "Introduce the quantity in words before its symbol."
+            out.append(_check("sentence_start", "Sentence starts with {}".format(noun),
+                              "{} starts a sentence ({}:{}).".format(_q(text[a:z]), b["file"],
+                                                                    p.line_of(b["file"], pos)),
+                              note, [place], per_round=True))
+    return out
+
+
 # --- submission ------------------------------------------------------------------------------------------------
 
 def _fonts(p):
@@ -2182,9 +2359,9 @@ def unembedded_font(p):
 
 
 def draft_marker(p):
-    """A PDF word TODO, FIXME, XXX, TBD or TBA (case as written) in a block of the body (not the references)."""
+    """Printed draft markers, plus literal [Ref], [??] and [citation needed] outside code and math."""
     out = []
-    for _, seq in p.block_words(("title", "heading", "paragraph", "item", "figure", "table", "code", "picture",
+    for k, seq in p.block_words(("title", "heading", "paragraph", "item", "figure", "table", "code", "picture",
                                  "math")):
         for page, _, w in seq:
             m = MARKER.fullmatch(w[4])
@@ -2193,6 +2370,24 @@ def draft_marker(p):
                                   "The PDF prints {} on p.{}: a draft marker.".format(_q(m.group(1)), page + 1),
                                   "A draft marker ({}) is left in the text here.".format(_q(m.group(1))),
                                   [_place(page, [w[:4]], w[4])], per_round=True))
+        if p.blocks[k]["kind"] in ("code", "math", "picture"):
+            continue
+        text = " ".join(w[4] for _, _, w in seq)
+        for m in PLACEHOLDER_TEXT.finditer(text):
+            at, words = 0, {}
+            for page, _, w in seq:
+                end = at + len(w[4])
+                if at < m.end() and end > m.start():
+                    words.setdefault(page, []).append(w)
+                at = end + 1
+            if any(_covered(p.links, page, w) for page, ws in words.items() for w in ws):
+                continue  # a printed citation/reference label, not a literal placeholder
+            shown = m.group()
+            places = [_place(page, anchor._line_rects(ws), comments.join_words(ws)) for page, ws in words.items()]
+            out.append(_check("draft_marker", "{} left in".format(_q(shown)),
+                              "The PDF prints {}: a draft placeholder.".format(_q(shown)),
+                              "Replace this draft placeholder ({}) with the intended text or citation.".format(shown),
+                              places, per_round=True))
     return out
 
 
@@ -2563,7 +2758,9 @@ RUNS = [("undefined_ref", undefined_ref), ("undefined_cite", undefined_cite), ("
         ("leftovers", leftovers), ("field_mix", field_mix), ("page_dash", page_dash), ("arxiv_forms", arxiv_forms),
         ("published_preprint", published_preprint), ("no_record", no_record), ("record_differs", record_differs),
         ("spelling", spelling), ("ref_style", ref_style), ("overfull", overfull),
-        ("straight_quotes", straight_quotes), ("doubled_word", doubled_word), ("type3_font", type3_font),
+        ("straight_quotes", straight_quotes), ("doubled_word", doubled_word), ("short_last_line", short_last_line),
+        ("paragraph_break", paragraph_break), ("heading_break", heading_break), ("split_phrase", split_phrase),
+        ("sentence_start", sentence_start), ("type3_font", type3_font),
         ("unembedded_font", unembedded_font), ("draft_marker", draft_marker), ("todo_note", todo_note),
         ("coloured_text", coloured_text), ("pdf_author", pdf_author), ("author_block", author_block),
         ("acknowledgements", acknowledgements), ("personal_url", personal_url)]

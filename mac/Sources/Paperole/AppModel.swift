@@ -499,11 +499,18 @@ final class AppModel: ObservableObject {
         didSet {
             guard checkKinds != oldValue else { return }
             if fixtureURL == nil { Prefs.set(Array(checkKinds).sorted(), Self.checkKindsKey) }
-            checksAsked = nil
-            requestChecks()
+            checkSelectionChanged()
         }
     }
     static let checkKindsKey = "checkKinds"
+    @Published var disabledCheckCodes: Set<String> {
+        didSet {
+            guard disabledCheckCodes != oldValue else { return }
+            if fixtureURL == nil { Prefs.set(Array(disabledCheckCodes).sorted(), Self.disabledCheckCodesKey) }
+            checkSelectionChanged()
+        }
+    }
+    static let disabledCheckCodesKey = "disabledCheckCodes"
     /// Settings › Reading › Look up the references (design/pdf-reader/PLAN.md P1.3): Semantic Scholar and Google
     /// Scholar, each off by default, kept in the app's defaults (never by a test run). Off drops its queue.
     @Published var lookUp: Set<RefSource> {
@@ -702,6 +709,7 @@ final class AppModel: ObservableObject {
     private var readingRequested: Set<String> = []  // paper|round|created whose paragraphs were asked for
     private var linksKey: String?  // paper|round|created whose link table was asked for (`requestLinks`)
     private var checksAsked: String?  // paper|round|created whose checks were asked for (`requestChecks`)
+    private var checksRequest = 0  // also distinguishes successive choices for the same round
     /// The checks are built by an engine of their own, so a long paper's checks never hold the window's requests (the
     /// engine answers one request at a time); it writes only the round's checks.json, a cache.
     private lazy var checksEngine = EngineClient()
@@ -737,6 +745,7 @@ final class AppModel: ObservableObject {
         readingMarksOn = options.reading ?? (options.fixture == nil ? Prefs.bool(Self.readingMarksKey) : nil) ?? false
         checksOn = options.checks ?? (options.fixture == nil ? Prefs.bool(Self.checksKey) : nil) ?? false
         checkKinds = Set(Prefs.strings(Self.checkKindsKey) ?? ChecksModel.groups.map(\.id))
+        disabledCheckCodes = Set((options.fixture == nil ? Prefs.strings(Self.disabledCheckCodesKey) : nil) ?? [])
         lookUp = options.lookUp
             ?? Set((options.fixture == nil ? Prefs.strings(Self.lookUpKey) : nil)?.compactMap(RefSource.init(rawValue:)) ?? [])
         refs = LaunchOptions.unitTest || options.fixture != nil ? RefLookup(cacheURL: nil, fetchers: [:]) : RefLookup.shared
@@ -2078,7 +2087,8 @@ final class AppModel: ObservableObject {
         guard let paper = selectedPath, let n = round?.n, canFinish else { return }
         finishPreview.finishing = true
         finishPreview.error = nil
-        call("finish", ["paper": paper, "checks": checksOn], quiet: true, then: { reply in
+        call("finish", ["paper": paper, "checks": checksOn, "groups": Array(checkKinds).sorted(),
+                        "disabled": Array(disabledCheckCodes).sorted()], quiet: true, then: { reply in
             self.finishPreview.finishing = false
             self.draftStore.save(paper: paper, round: n, drafts: [:])
             let card = RoundCardAsk(stats: self.roundStats(reply.state), justFinished: true, finalPdf: reply.state.round?.finalPdf)
@@ -2996,6 +3006,12 @@ final class AppModel: ObservableObject {
 
     // MARK: Checks (UX.md §39; design/pdf-reader/PLAN.md P1.5)
 
+    private func checkSelectionChanged() {
+        checksAsked = nil
+        if roundIsOpen { checks.clear(); checksMarksChanged() }
+        requestChecks()
+    }
+
     /// The shown round's paper|round|created, when it has a PDF: what the checks are for.
     private var checksRoundKey: String? {
         selectedPath.flatMap { path in
@@ -3029,6 +3045,8 @@ final class AppModel: ObservableObject {
         if checks.key != nil && checks.key != key { checks.clear() }
         guard key != checksAsked else { return }
         checksAsked = key
+        checksRequest += 1
+        let request = checksRequest
         guard let key, fixtureURL == nil, !LaunchOptions.unitTest, let path = selectedPath, let n = round?.n,
               let json = try? JSONSerialization.data(withJSONObject: ["paper": path, "round": n]) else { return }
         let open = roundIsOpen
@@ -3037,20 +3055,24 @@ final class AppModel: ObservableObject {
         if !(checks.key == key && checks.phase == .ready) { checks.ask(key) }
         let pages = round?.build.pages
         let kinds = ChecksModel.groups.map(\.id).filter(checkKinds.contains)
+        let disabled = disabledCheckCodes
         let built = checksEngine.send("checks", params: json)
         Task {
             let reply = try? makeDecoder().decode(ChecksReply.self, from: try await checksEngine.result(built))
-            guard checksAsked == key, checksOn else { return }
+            guard checksAsked == key, checksRequest == request, checksOn else { return }
             guard reply?.round == n, let list = reply?.checks else { return checks.show(nil, round: n, key: key, pages: pages) }
             var items: [Check]? = nil
-            if let params = try? JSONSerialization.data(withJSONObject: ["paper": path, "round": n, "groups": kinds]) {
+            if let params = try? JSONSerialization.data(withJSONObject: ["paper": path, "round": n, "groups": kinds,
+                                                                        "disabled": Array(disabled).sorted()]) {
                 let asked = engine.send("check_items", params: params)
                 let r = try? makeDecoder().decode(CheckItemsReply.self, from: try await engine.result(asked))
                 items = r?.round == n ? r?.items : nil
             }
-            guard checksAsked == key, checksOn else { return }
+            guard checksAsked == key, checksRequest == request, checksOn else { return }
             // a finished round shows what went out with it (nothing, when it was finished with Checks off)
-            checks.show(items ?? (open ? list.filter { kinds.contains($0.group) } : []), round: n, key: key, pages: pages)
+            let shown = items ?? (open ? list : [])
+            checks.show(open ? shown.filter { kinds.contains($0.group) && !disabled.contains($0.code) } : shown,
+                        round: n, key: key, pages: pages)
             checksMarksChanged()
             requestReferences()
             if open && !checksToasted.contains(key) {  // said for the round being reviewed, not one looked back at

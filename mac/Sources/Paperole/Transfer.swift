@@ -126,11 +126,21 @@ enum DataPlaces {
 enum PortableSettings {
     static let keys = [AppModel.readingMarksKey, AppModel.checksKey, AppModel.foldPartsKey, AppModel.openAtLaunchKey, TagModel.suggestKey,
                        "showChangedWords", AppModel.mapAsTableKey, ListGrouping.key, AppIconModel.styleKey]
+    static let listKeys = [AppModel.checkKindsKey, AppModel.disabledCheckCodesKey]
+
+    static func checkChoices(_ value: Any?, key: String) -> [String]? {
+        guard let values = value as? [String] else { return nil }
+        let known = key == AppModel.checkKindsKey ? ChecksModel.groups.map(\.id) : ChecksModel.writingRules.map(\.code)
+        return Array(Set(values).intersection(known)).sorted()
+    }
 
     static func current(_ defaults: UserDefaults = .standard) -> [String: Any] {
         var out: [String: Any] = [:]
         for k in keys {
             if let v = defaults.object(forKey: k), v is String || v is NSNumber { out[k] = v }
+        }
+        for k in listKeys {
+            if let v = checkChoices(defaults.object(forKey: k), key: k) { out[k] = v }
         }
         return out
     }
@@ -143,6 +153,13 @@ enum PortableSettings {
             guard let v = s[k], v is String || v is NSNumber else { continue }
             UserDefaults.standard.set(v, forKey: k)
             used.append(k)
+        }
+        for k in listKeys {
+            guard let v = checkChoices(s[k], key: k) else { continue }
+            UserDefaults.standard.set(v, forKey: k)
+            used.append(k)
+            if k == AppModel.checkKindsKey { app.checkKinds = Set(v) }
+            else { app.disabledCheckCodes = Set(v) }
         }
         if let v = s[AppModel.readingMarksKey] as? Bool { app.readingMarksOn = v }
         if let v = s[AppModel.checksKey] as? Bool { app.checksOn = v }

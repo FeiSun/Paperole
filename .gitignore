@@ -52,4 +52,5 @@ __pycache__/
 *.p12
 *.key
 /.claude/settings.local.json
+/.claude/worktrees/
 .DS_Store
