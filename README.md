@@ -29,7 +29,7 @@
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/hero-dark.png">
-  <img src="docs/images/hero-light.png" width="900" alt="The review window: a student's round-2 PDF with comment marks, and on the right the card for comment R1-02 showing the original sentence, the student's note from main.tex, the revised sentence with the changed words underlined, and the Resolve, Follow up and Keep as is buttons">
+  <img src="docs/images/hero-light.png" width="900" alt="The review window: the contents on the left, a student's round-2 PDF with comment marks and the column of marks beside the scroller, and on the right the card for comment R1-02 showing the round-1 sentence, the student's note from main.tex, the revised sentence with the changed words underlined, and the Resolve, Follow up and Keep as is buttons">
 </picture>
 
 </div>
@@ -83,12 +83,12 @@ The icon comes in light and dark; **App icon** in Settings › General picks one
 
 1. **The student sends you the full source**, as a folder or a .zip.
 2. **Paperole takes a read-only snapshot and compiles it** with latexmk.
-3. **You comment on the PDF.** SyncTeX ties each comment to the .tex, and each gets an id such as `R1-03`.
-4. **Finish Round** writes `final.pdf`, with your comments in the margins, and you send it to the student.
+3. **You comment on the PDF.** SyncTeX ties each comment to the .tex, and each gets an id such as `R1-03`. If you turn on **Checks**, Paperole also lists slips of its own, such as bibliography entries cut to "et al.", each with an id such as `A2-01`.
+4. **Finish Round** writes `final.pdf`, with your comments (and the checks you didn't mark OK) in the margins, and you send it to the student.
 5. **In the next round, Paperole compares the two sources**, moves each open comment to its new place, and attaches the edits under it.
 6. **You answer each comment** with **Resolve**, **Follow up** or **Keep as is**, add new ones, and finish the round again.
 
-Only you close a comment; nothing is ever marked done for you. If a student wants to explain an edit, they can leave a LaTeX comment next to it that starts with the comment's id. It doesn't print, and Paperole shows it on the card:
+Only you close a comment; nothing is ever marked done for you. (A check is different: one that is no longer found closes itself as fixed.) If a student wants to explain an edit, they can leave a LaTeX comment next to it that starts with the comment's id. It doesn't print, and Paperole shows it on the card:
 
 ```latex
 At the 1.3B scale, the gain on HumanEval is 3.7 points. % R1-02 3.7 is right; 4.1 came from an earlier run, sorry.
@@ -99,28 +99,38 @@ At the 1.3B scale, the gain on HumanEval is 3.7 points. % R1-02 3.7 is right; 4.
 **Reviewing**
 - Select text and a small toolbar appears: six colours, highlight, underline or strikeout, and **Comment**.
 - ⌥-drag (or press B, then drag) to box a figure, table or equation; ⌥-click to place a note.
-- Click a mark to open its card. On a new comment's mark, a small toolbar also appears: change its colour or kind, edit the note, or delete it. The colour dot on a card changes colour and kind too. ⌘Z undoes.
-- **Find in Paper** (⌘F) searches the PDF as you type, ignoring case and accents. Return and Shift-Return step through the matches, and you can comment on a match like any selection.
-- **Jump to…** (⌘K) finds a comment, an edit, a section or a round.
-- **Focus** (F) hides the sidebar, enlarges the page and shows one card beside it.
+- Right-click for what fits the spot: on a selection **Comment…**, **Strike Out** and **Replace With…**; on a carried comment's mark **Resolve**, **Follow Up…** and **Keep as Is**; on a link **Go to p.N**; on the page **Add Note Here** and **Draw a Box**.
+- Click a mark to open its card. On a new comment's mark, a small toolbar also appears: change its colour or kind, edit the note, or delete it. ⌘Z undoes.
+- A click on a reference to a figure, table, equation or citation previews it in place: the target as printed, with **Go to ›**. A preview can be kept open in a small window of its own.
+- A column of marks beside the scroller shows what waits on you and where: comments to check, unasked edits and checks the student answered (while you find, the matches). Rest the pointer on one to see its rows; click to go there.
+- **Back** in the status line (or ⌘[) returns to where you were reading before a jump. Click "p.4 of 12" to go to a page, and ⌘C copies a quote with the lines joined and the line numbers dropped.
+- **Find in Paper** (⌘F) searches the PDF as you type, ignoring case and accents. **Jump to…** (⌘K) finds a comment, an edit, a section, a page or a round.
+- **Focus** (F) hides the sidebar, enlarges the page and shows one card beside it. Zoom from 50% to 400% (⌘+, ⌘−, ⌘0, Fit Width ⌘9).
 
 **Across rounds**
 - Each open comment follows the source diff to its new place. If the diff can't place it, Paperole looks for the comment's last known text in the new source, first exactly, then approximately (a box can also be found by its `\label`). A comment that still can't be placed is listed as *Not found*, never hidden, and a weak match is labelled "position uncertain".
 - The diff works word by word. It ignores re-wrapped lines and edits inside `%` comments, and it notices moved text.
 - A card reads like a conversation, one turn per round. Each turn shows the sentence as that round's PDF printed it, with the changed words underlined. Figures, tables and equations appear as crops of each round's PDF.
-- The **Changes** tab lists every edit since the last round. You go through the ones no comment asked for: **Mark Checked** or **Comment on it…**.
-- Earlier rounds open read-only from the round menu. **Reopen in Round N** brings back a comment you closed in an earlier round.
+- The **Changes** tab lists every edit since the last round. The **unasked edits**, the ones no comment asked for, come first, each with the sentence before and after: answer each with **Mark Checked** or **Comment on it…**.
+- Earlier rounds open read-only from the round menu, at the place you were reading. **Reopen in Round N** brings back a comment you closed in an earlier round.
+
+**Checks** (off by default; Settings › Reading)
+- Each round's PDF is checked for slips every draft should avoid, in five kinds you can pick: references, bibliography, consistency, typesetting and submission. Examples: a float placed far from its first citation, an author list cut to "et al.", an undefined reference, an overfull line.
+- The checks sit in a **Checks** tab beside the comments, with slate marks on the page. Each gets an id such as `A2-01` and goes to the student with your comments, unless you **Mark as OK**. You can also answer with **My Comment…** or **Follow Up…**.
+- The student replies with a `% A2-01` note, as for a comment. A check no longer found in the next round closes itself as fixed.
+- **Look up the references** has two switches, both off by default. **Semantic Scholar** finds a cited preprint that has since been published, a work with no record, or a year, title or first author that differs. **Google Scholar** adds citation counts. These are the only parts of Paperole that go online; see [Your data](#your-data).
 
 **Finishing a round**
-- One sheet shows what goes to the student, what is still to check, any follow-ups not yet sent, and the round's card so far.
-- **Finish Round** writes `final.pdf` and closes the round. You send `final.pdf` yourself; Paperole never sends mail. It does write a draft email, `email.txt`, which you can copy from the toolbar's **final.pdf** menu.
-- The sheet then turns into the **round's card**: how much you wrote, the topics by tag, where your marks fell on the pages, how earlier comments were answered, and a fact or two. **Copy Image** and **Export Image…** save it as a PNG 1080 pixels wide; the paper's title and the student's name appear only if you tick them. **Round N Summary…** in the round menu shows the card again later.
-- `final.pdf` starts with summary pages: how to reply, the to-do ids, comments by status, and edits nobody asked for. Then comes the paper with wider margins, your marks and notes drawn into the page itself rather than added as PDF annotations, and an outline that links to each comment.
+- One sheet shows what goes to the student, what is still to check (comments, unasked edits and checks the student answered), any follow-ups not yet sent, and the round's card so far.
+- **Finish Round** writes `final.pdf` and closes the round. You send `final.pdf` yourself; Paperole never sends mail. It also writes a draft email, `email.txt`, which you can copy from the toolbar's **final.pdf** menu.
+- The sheet then turns into the **round's card**: how much you wrote, the topics by tag, where your pen went on the pages, how earlier comments were answered, and a fact or two. **Copy Image** and **Export Image…** save it as a PNG 1080 pixels wide; the paper's title and the student's name appear only if you tick them. **Round N Summary…** in the round menu shows the card again later.
+- `final.pdf` starts with summary pages: how to reply, the to-do ids, comments by status, the automatic checks and edits nobody asked for. Then comes the paper with wider margins, your marks and notes drawn into the page itself rather than added as PDF annotations, and an outline that links to each comment.
 
 **The overview**
-- **All Students** shows this week's rounds, a timeline of the year and a card for each student. **Your Move** lists the papers waiting on you.
-- Each paper has a **paper map**: its rounds by section, where comments and edits fall, and where each comment went from round to round.
-- Each student has a page with their papers, where your comments on them land, and how many days each round trip took, theirs and yours.
+- **All Students** has two views. **Board** sorts the papers into three lanes, *Your move*, *With students* and *Finished*, above a timeline of the year's rounds, your time and the student's. **Students** lists them by student. **Your Move** lists only the papers waiting on you.
+- Each paper has a **paper map**: its pages, its rounds by section, where comments and edits fall, where each comment went from round to round, and the topics per round. A switch at the top right (or Settings › Overview) shows the same as a table.
+- Each student has a page: what waits on you, their papers, and tiles for where your comments land by section, how fast comments close, the topics, each round trip's days (theirs and yours), and what their first drafts tend to need.
+- **Help** (⌘?) explains each page, and a tip appears the first time you meet something new.
 
 **Writing tags**
 - Ten built-in tags (Grammar, Wording, Clarity, Logic & claims, Evidence & citations, Structure, Figures & tables, Math & notation, Format & LaTeX, Well done), plus your own.
@@ -133,14 +143,30 @@ At the 1.3B scale, the gain on HumanEval is 3.7 points. % R1-02 3.7 is right; 4.
     <td width="50%">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/overview-dark.png">
-        <img src="docs/images/overview-light.png" alt="All Students: one paper waits on you, a timeline of rounds in 2026, and cards for three students">
+        <img src="docs/images/overview-light.png" alt="All Students as a Board: two papers under Your move, one under With students, and below them a timeline of each paper's rounds from August to today">
       </picture>
       <p align="center"><sub>All Students: what waits on you</sub></p>
     </td>
     <td width="50%">
       <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/paper-map-dark.png">
+        <img src="docs/images/paper-map-light.png" alt="The paper map: the round's page thumbnails with their comments, rounds 1 and 2 by section joined across rounds, and a table of topics with the section each is mostly in">
+      </picture>
+      <p align="center"><sub>The paper map</sub></p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/student-dark.png">
+        <img src="docs/images/student-light.png" alt="A student's page: the paper waiting on you, turnaround per round for you and the student, and tiles for comments by section, closing, topics and first drafts">
+      </picture>
+      <p align="center"><sub>A student's page</sub></p>
+    </td>
+    <td width="50%">
+      <picture>
         <source media="(prefers-color-scheme: dark)" srcset="docs/images/changes-dark.png">
-        <img src="docs/images/changes-light.png" alt="The Changes tab: an edit no comment asked for, with the round-1 sentence (412k struck out) above the round-2 sentence (386k), and Mark Checked and Comment on it buttons">
+        <img src="docs/images/changes-light.png" alt="The Changes tab: an unasked edit in the Setup section, with the round-1 sentence (412k struck out) above the round-2 sentence (386k), and Mark Checked and Comment on it buttons">
       </picture>
       <p align="center"><sub>Changes: an edit nobody asked for</sub></p>
     </td>
@@ -148,34 +174,33 @@ At the 1.3B scale, the gain on HumanEval is 3.7 points. % R1-02 3.7 is right; 4.
   <tr>
     <td width="50%">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/images/paper-map-dark.png">
-        <img src="docs/images/paper-map-light.png" alt="The paper map: page thumbnails, rounds by sections with comments and edits, and a table of topics per round">
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/checks-dark.png">
+        <img src="docs/images/checks-light.png" alt="The Checks tab: check A2-01, Algorithm 1 two pages after its first citation, with Mark as OK and My Comment buttons, and two bibliography checks below; Algorithm 1 is outlined in slate on the page">
       </picture>
-      <p align="center"><sub>The paper map</sub></p>
+      <p align="center"><sub>Checks: slips Paperole finds itself</sub></p>
     </td>
     <td width="50%">
       <picture>
-        <source media="(prefers-color-scheme: dark)" srcset="docs/images/export-dark.png">
-        <img src="docs/images/export-light.png" alt="The Export Papers sheet with three papers ticked under their students">
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/round-card-dark.png">
+        <img src="docs/images/round-card-light.png" alt="The Round 1 Summary card: 199 words of comments, 14 new, 6 of 8 pages with a mark, the comments by tag, a strip of the pages showing where each mark fell, and the busiest page">
       </picture>
-      <p align="center"><sub>Export: one checked .zip</sub></p>
+      <p align="center"><sub>The round's card</sub></p>
     </td>
   </tr>
 </table>
 
-<sub>The screenshots show synthetic demo papers from <a href="samples/promo-demo/ISSUES.md"><code>samples/promo-demo</code></a>; the people are made up.</sub>
+<sub>The screenshots show synthetic demo papers from <a href="samples/promo-demo/ISSUES.md"><code>samples/promo-demo</code></a>; the papers, their numbers and the people are made up.</sub>
 
 ## Limitations
 
 - **Mac only, advisor only.** There is no student app or web page, and students reply only through `% R1-03` notes. There is no second reviewer, no sync, and no iPad, Windows or Linux version.
-- **It needs a local TeX Live** at `/Library/TeX/texbin` (the path is hard-coded). LaTeX runs with `-no-shell-escape`, so packages that need shell escape, such as minted, won't build.
+- **It needs a local TeX Live** at `/Library/TeX/texbin` (the path is hard-coded). LaTeX runs without shell escape. A paper that needs it, for minted for example, fails to build, and the build's details offer **Build Again with Shell Escape…** (or **Turn On Shell Escape…**) for that paper alone.
 - **Tested templates:** acmart (sigconf, acmsmall), ACL, ICLR, ICML 2026 (submission and accepted) and NeurIPS 2026 (submission and final), each over three synthetic rounds; all 253 carried comments ended up in the right state. IEEE, LNCS, Elsevier and REVTeX are untested.
 - **Only pdflatex has been tried for real.** xelatex and lualatex are wired in but untested. A `% !TEX program = …` line picks them, and xelatex is also picked for papers that use fontspec, xeCJK, polyglossia or unicode-math.
 - **Known rough edges**:
-  - formulas and figures quoted in the email come out garbled;
+  - formulas and figures quoted in `email.txt` come out garbled;
   - widened `final.pdf` pages print at about 75%;
   - a carried box may not fit a resized figure or equation;
-  - a drag that starts on a citation link selects nothing;
   - a student note can pick up an unrelated edit within three lines;
   - Increase Contrast is not supported;
   - pages with `/Rotate` are not supported.
@@ -239,14 +264,14 @@ You get Maya Chen's paper with round 2 open, Leo Park's with round 3 open, and S
 
 1. When the revision arrives, click **New Round…** and choose the new folder or .zip.
 2. On the **Comments** tab, the carried comments wait under **To check**. Each card shows what you wrote, what the student did, and the changed words underlined. Click **Resolve** or **Keep as is**, or type in the card's field and click **Follow up**. The panel moves on to the next card, and ⌘Z undoes an answer.
-3. On the **Changes** tab, go through the edits no comment asked for.
+3. On the **Changes** tab, go through the unasked edits. With Checks on, the **Checks** tab lists what Paperole found: **Mark as OK** whatever is fine, and the rest goes to the student.
 4. Add new comments, then click **Finish Round…** again. The first pages of `final.pdf` list the follow-ups, the comments still open, the new comments and the closed ones.
 
-Keys are optional: V resolves, W keeps as is, R jumps to the follow-up field, J and K move between cards, and ⌘F finds words in the PDF. The full keyboard map is in [mac/UX.md](mac/UX.md) §9.
+Keys are optional: V resolves, W keeps as is, R jumps to the follow-up field, J and K move between cards, ⌘F finds words in the PDF, and ⌘? opens Help. The full keyboard map is in [mac/UX.md](mac/UX.md) §9.
 
 ## Your data
 
-- **Local only.** No account, no sync, no uploads, no mail. Paperole has no network code.
+- **Local only.** No account, no sync, no uploads, no mail. The one exception is optional and off by default: under **Look up the references** (Settings › Reading, with Checks on), **Semantic Scholar** and **Google Scholar** are separate switches. Each sends the cited works' titles (and, to Semantic Scholar, their arXiv ids or DOIs). The paper and your comments never leave your Mac. Links you open from the PDF, and the system's Look Up, go out as they would in any app.
 - **The student's folder is read once**, into a read-only snapshot, and never written to.
 - **The engine is the only writer** of the ledger and of every PDF. Writes are atomic, and each finished round gets a SHA-256 manifest.
 - **Ledger history.** Earlier versions of the ledger are kept in `.history/`: one at each new round, each Finish and each Reopen, and more as you work. **Put Back an Earlier Ledger…** in a paper's context menu restores one as a new version.
@@ -382,7 +407,7 @@ All launch arguments and script items are listed in [mac/README.md](mac/README.m
 
 | Document | What it covers | Language |
 |---|---|---|
-| [mac/UX.md](mac/UX.md) | The app's interaction spec, §1–§34 | English |
+| [mac/UX.md](mac/UX.md) | The app's interaction spec, §1–§42 | English |
 | [mac/README.md](mac/README.md) | Building, launch arguments, debug hooks, the engine path | English |
 | [engine/CONTRACT.md](engine/CONTRACT.md) | Review folder, ledger, CLI/RPC methods, state JSON, final PDF and email | English |
 | [engine/README.md](engine/README.md) | Engine setup, CLI reference, a three-round walk-through | English |
