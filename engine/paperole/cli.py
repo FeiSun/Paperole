@@ -28,6 +28,15 @@ def _name(value):
     return tid.strip(), name
 
 
+def _json_file(value):
+    """A JSON file's contents (ref-results' results)."""
+    try:
+        with open(value, encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError) as e:
+        raise argparse.ArgumentTypeError("cannot read {} as JSON: {}".format(value, e))
+
+
 def _key_page(value):
     try:
         rnd, page = (int(v) for v in value.split(":"))
@@ -138,6 +147,16 @@ def _parser():
                                       "typesetting and submission")
     p.add_argument("paper")
     p.add_argument("--round", type=int, help="an earlier round")
+    p = sub.add_parser("references", help="print a round's cited entries (rN/refs.json) and the look-ups' results "
+                                          "stored for them")
+    p.add_argument("paper")
+    p.add_argument("--round", type=int, help="an earlier round")
+    p = sub.add_parser("ref-results", help="store one source's look-ups for a round's cited entries (its checks are "
+                                           "built again)")
+    p.add_argument("paper")
+    p.add_argument("round", type=int)
+    p.add_argument("source", help="semantic_scholar or google_scholar")
+    p.add_argument("results", type=_json_file, help="a JSON file: {key: result}")
     p = sub.add_parser("check-ok", help="mark a check OK (its key, from checks): the paper is fine there")
     p.add_argument("paper")
     p.add_argument("key")
@@ -286,6 +305,8 @@ def main(argv=None):
         "prose": lambda: ("prose", {"round": args.round, "state": not args.no_state}),
         "links": lambda: ("links", {"round": args.round}),
         "checks": lambda: ("checks", {"round": args.round}),
+        "references": lambda: ("references", {"round": args.round}),
+        "ref-results": lambda: ("ref_results", {"round": args.round, "source": args.source, "results": args.results}),
         "check-ok": lambda: ("check_ok", {"key": args.key, "ok": not args.clear}),
         "check-items": lambda: ("check_items", {"round": args.round, "groups": args.groups}),
         "check-note": lambda: ("check_note", {"id": args.id, "text": args.text}),

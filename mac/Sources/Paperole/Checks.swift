@@ -251,6 +251,8 @@ final class ChecksModel: ObservableObject {
     /// out.
     func show(_ checks: [Check]?, round: Int, key: String, pages: Int?) {
         guard let checks else { return clear() }
+        // the same round built again (the look-ups' results came): the row chosen stays chosen, by its id
+        let keep = self.key == key ? current.flatMap { list.indices.contains($0) ? list[$0].id : nil } : nil
         self.key = key
         self.round = round
         cursor = nil
@@ -263,6 +265,7 @@ final class ChecksModel: ObservableObject {
             if let pages, pages > 0 { c.places = c.places.filter { $0.page < pages } }
             return c
         }
+        if let keep { current = list.firstIndex { $0.id == keep } }
         phase = .ready
         version += 1
     }

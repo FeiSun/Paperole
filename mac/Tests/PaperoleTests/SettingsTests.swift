@@ -218,9 +218,10 @@ final class ReadingSettingTests: XCTestCase {
         host.layoutSubtreeIfNeeded()
         func find<T: NSView>(_ type: T.Type, in v: NSView) -> [T] { ((v as? T).map { [$0] } ?? []) + v.subviews.flatMap { find(type, in: $0) } }
         let switches = find(NSSwitch.self, in: host)
-        XCTAssertEqual(switches.count, 2, "reading marks, then Checks")
+        XCTAssertEqual(switches.count, 4, "reading marks, Checks, then the two look-ups")
         XCTAssertFalse(m.checksOn)
-        XCTAssertEqual(switches.map(\.state), [.off, .off])
+        XCTAssertEqual(switches.map(\.state), [.off, .off, .off, .off])
+        XCTAssertEqual(m.lookUp, [], "the look-ups off by default")
         switches[1].performClick(nil)
         XCTAssertTrue(m.checksOn)
         XCTAssertFalse(m.readingMarksOn)

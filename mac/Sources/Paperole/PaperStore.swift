@@ -113,7 +113,8 @@ enum PaperStore {
 /// --drafts <folder> (where unsent drafts are kept instead of Application Support; a --background run without it keeps
 /// them in a temporary folder of its own),
 /// --reading on|off (Settings' "Mark changed paragraphs to read" for this run, never saved; UX.md §18),
-/// --checks on|off (Settings' Checks for this run, never saved; UX.md §39),
+/// --checks on|off (Settings' Checks for this run, never saved; UX.md §39), --lookup s2,scholar|off (the reference
+/// look-ups for this run, never saved),
 /// --fold on|off (Settings' "Fold the appendix and long reference lists" for this run, never saved; UX.md §21),
 /// --tags <file> (the writing tags' catalogue for this run instead of Application Support's; UX.md §24),
 /// --icon-style automatic|light|dark (Settings › General's app icon style for this run: a test run, which reads and
@@ -163,6 +164,8 @@ struct LaunchOptions {
     var reading: Bool?
     /// --checks on|off: the sidebar's Checks on or off for this run, whatever the user's setting, which it never changes.
     var checks: Bool?
+    /// --lookup s2,scholar|off: the look-ups on for this run (P1.3), whatever the user's settings, which it never changes.
+    var lookUp: Set<RefSource>?
     /// --level overview|review: the level a paper given at launch opens at (Review when not given).
     var level: Level?
     /// --overview-fixture: an `overview` reply (OVERVIEW-v2 §5.2) read instead of the engine's.
@@ -208,6 +211,11 @@ struct LaunchOptions {
             case "--focus": o.focus = true
             case "--reading": o.reading = value.map { $0 != "off" }; i += 1
             case "--checks": o.checks = value.map { $0 != "off" }; i += 1
+            case "--lookup":
+                o.lookUp = Set((value ?? "").split(separator: ",").compactMap {
+                    $0 == "s2" ? RefSource.semanticScholar : $0 == "scholar" ? RefSource.googleScholar : nil
+                })
+                i += 1
             case "--level": o.level = value.flatMap(Level.init(rawValue:)); i += 1
             case "--overview-fixture": o.overviewFixture = value; i += 1
             case "--cache": o.cache = value; i += 1

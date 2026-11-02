@@ -504,6 +504,24 @@ final class AppModel: ObservableObject {
         }
     }
     static let checkKindsKey = "checkKinds"
+    /// Settings › Reading › Look up the references (design/pdf-reader/PLAN.md P1.3): Semantic Scholar and Google
+    /// Scholar, each off by default, kept in the app's defaults (never by a test run). Off drops its queue.
+    @Published var lookUp: Set<RefSource> {
+        didSet {
+            guard lookUp != oldValue else { return }
+            if fixtureURL == nil && options.lookUp == nil { Prefs.set(lookUp.map(\.rawValue).sorted(), Self.lookUpKey) }
+            for s in oldValue.subtracting(lookUp) { refs.stop(s) }
+            requestReferences()
+        }
+    }
+    static let lookUpKey = "lookUp"
+    /// The look-ups' queues (one for the app; a test's own).
+    let refs: RefLookup
+    /// The shown round's cited entries and what the sources found for them, by key (the engine's `references`).
+    @Published private(set) var refEntries: [String: RefEntry] = [:]
+    @Published private(set) var refResults: [String: [RefSource: RefResult]] = [:]
+    private var refsAsked: String?
+    private var refWatch: AnyCancellable?
     /// Settings › Overview (VISUAL v3 §5, §7): a long appendix (and a References list over four pages) folds into one
     /// block on the paper map and the small maps. On by default; kept in the app's defaults, never by a test run (a
     /// fixture run reads none; `--fold on|off` sets it for a run). The paper map on screen observes only the overview,
@@ -719,6 +737,9 @@ final class AppModel: ObservableObject {
         readingMarksOn = options.reading ?? (options.fixture == nil ? Prefs.bool(Self.readingMarksKey) : nil) ?? false
         checksOn = options.checks ?? (options.fixture == nil ? Prefs.bool(Self.checksKey) : nil) ?? false
         checkKinds = Set(Prefs.strings(Self.checkKindsKey) ?? ChecksModel.groups.map(\.id))
+        lookUp = options.lookUp
+            ?? Set((options.fixture == nil ? Prefs.strings(Self.lookUpKey) : nil)?.compactMap(RefSource.init(rawValue:)) ?? [])
+        refs = LaunchOptions.unitTest || options.fixture != nil ? RefLookup(cacheURL: nil, fetchers: [:]) : RefLookup.shared
         foldParts = options.fold ?? (options.fixture == nil ? Prefs.bool(Self.foldPartsKey) : nil) ?? true
         openAtLaunch = (options.fixture == nil ? Prefs.string(Self.openAtLaunchKey).flatMap(OpenAtLaunch.init(rawValue:)) : nil) ?? .lastPlace
         // a fixture run, --no-list or a unit test shows its own papers only: the list is not read (a unit test's model
@@ -825,6 +846,7 @@ final class AppModel: ObservableObject {
             }
         }
         placeWatchers = watchPlace()
+        watchLookUps()
         // a change's Show all goes with its card (UX.md §3, §16): another change expanded, or none, folds the blocks the
         // old one showed whole (@Published sends in willSet: `changes.expanded` is still the old one)
         changeFold = changes.$expanded.sink { [weak self] new in
@@ -2988,6 +3010,8 @@ final class AppModel: ObservableObject {
         if !checksOn {
             checksAsked = nil
             checks.clear()
+            for s in RefSource.allCases { refs.stop(s) }  // nothing more is sent while Checks is off
+            refsAsked = nil
             if tab == .checks { tab = .comments }
         }
         requestChecks()
@@ -3009,7 +3033,8 @@ final class AppModel: ObservableObject {
               let json = try? JSONSerialization.data(withJSONObject: ["paper": path, "round": n]) else { return }
         let open = roundIsOpen
         checks.roundOpen = open
-        checks.ask(key)
+        // the same round asked again (the look-ups' results): what is shown stays until the new list comes
+        if !(checks.key == key && checks.phase == .ready) { checks.ask(key) }
         let pages = round?.build.pages
         let kinds = ChecksModel.groups.map(\.id).filter(checkKinds.contains)
         let built = checksEngine.send("checks", params: json)
@@ -3027,6 +3052,7 @@ final class AppModel: ObservableObject {
             // a finished round shows what went out with it (nothing, when it was finished with Checks off)
             checks.show(items ?? (open ? list.filter { kinds.contains($0.group) } : []), round: n, key: key, pages: pages)
             checksMarksChanged()
+            requestReferences()
             if open && !checksToasted.contains(key) {  // said for the round being reviewed, not one looked back at
                 checksToasted.insert(key)
                 let k = checks.sent
@@ -3066,6 +3092,83 @@ final class AppModel: ObservableObject {
         checkClicked(i)
     }
 
+    // MARK: Looking the references up (design/pdf-reader/PLAN.md P1.3; RefLookup.swift)
+
+    /// The shown round's cited entries and the results the engine keeps (`references`, on the checks' engine), once per
+    /// round shown while Checks and a look-up are on; then the sources on look up what is not known yet (`RefLookup`).
+    func requestReferences() {
+        // the sources in the key: one turned on later asks again (those on already skip what they have)
+        let key = checksOn && !lookUp.isEmpty ? checksRoundKey.map { $0 + "|" + lookUp.map(\.rawValue).sorted().joined(separator: ",") } : nil
+        guard key != refsAsked else { return }
+        refsAsked = key
+        refEntries = [:]
+        refResults = [:]
+        guard let key, fixtureURL == nil, !LaunchOptions.unitTest, let path = selectedPath, let n = round?.n,
+              let json = try? JSONSerialization.data(withJSONObject: ["paper": path, "round": n]) else { return }
+        let sources = RefSource.allCases.filter(lookUp.contains)
+        let sent = checksEngine.send("references", params: json)
+        Task {
+            guard let reply = try? makeDecoder().decode(ReferencesReply.self, from: try await checksEngine.result(sent)),
+                  refsAsked == key, reply.round == n, let entries = reply.entries else { return }
+            showReferences(entries, reply.results ?? [:])
+            refs.start(paper: path, round: n, entries: entries, stored: reply.results ?? [:], sources: sources)
+        }
+    }
+
+    /// The shown round's entries and results (tests set them).
+    func showReferences(_ entries: [RefEntry], _ results: [String: [String: RefResult]]) {
+        refEntries = Dictionary(entries.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
+        var by: [String: [RefSource: RefResult]] = [:]
+        for (s, rs) in results { if let src = RefSource(rawValue: s) { for (k, r) in rs { by[k, default: [:]][src] = r } } }
+        refResults = by
+    }
+
+    /// What a citation's preview shows of the look-ups (nil while none is on, or the entry is not known).
+    func refShown(_ key: String?) -> RefShown? {
+        guard let key, !lookUp.isEmpty, let e = refEntries[key] else { return nil }
+        return RefShown(entry: e, results: refResults[key] ?? [:], on: RefSource.allCases.filter(lookUp.contains))
+    }
+
+    /// A citation's preview opened: Google Scholar looks its entry up next.
+    func refPreviewOpened(_ key: String?) {
+        guard let key, let path = selectedPath, let n = round?.n else { return }
+        refs.prefer(paper: path, round: n, key: key)
+    }
+
+    /// The look-ups' hooks: results go to the engine (`ref_results`, on the checks' engine), and the shown round's
+    /// checks are built again with them; the Checks tab's line follows the queues; the end is said once.
+    private func watchLookUps() {
+        refs.store = { [weak self] paper, round, source, results in
+            guard let self, let json = try? JSONSerialization.data(withJSONObject: [
+                "paper": paper, "round": round, "source": source.rawValue,
+                "results": results.mapValues(\.json)] as [String: Any]) else { return }
+            let sent = self.checksEngine.send("ref_results", params: json)
+            Task {
+                guard (try? await self.checksEngine.result(sent)) != nil, paper == self.selectedPath, round == self.round?.n else { return }
+                self.checksAsked = nil  // built again with the results; the selection, the toast and the look-ups kept
+                self.requestChecks()
+            }
+        }
+        refs.finished = { [weak self] paper, round in
+            guard let self, !LaunchOptions.unitTest else { return }
+            let here = paper == self.selectedPath && round == self.round?.n
+            if here { self.showPanelToast("References looked up") }
+            if !NSApp.isActive && !LaunchOptions.background { Notify.post("References looked up", body: (self.papers.first { $0.path == paper }?.title ?? "") + " · Round \(round)") }
+        }
+        refs.arrived = { [weak self] paper, round, key, source, result in
+            guard let self, paper == self.selectedPath, round == self.round?.n else { return }
+            self.refResults[key, default: [:]][source] = result  // shown at once; the checks follow the batch
+            self.pdf.refreshPreview(key: key)
+        }
+        refWatch = refs.objectWillChange.sink { [weak self] in
+            DispatchQueue.main.async {
+                guard let self, let path = self.selectedPath, let n = self.round?.n else { return }
+                let line = self.refs.line(paper: path, round: n)
+                if self.checks.progress != line { self.checks.progress = line }
+            }
+        }
+    }
+
     /// The checks' marks on the page follow their list (`ChecksModel.version`): the PDF view is told to draw them again.
     @Published private(set) var checkMarksVersion = 0
     private func checksMarksChanged() { checkMarksVersion = checks.version }
@@ -3084,6 +3187,12 @@ final class AppModel: ObservableObject {
     var checkMarks: [Check] {
         guard checksOn, checksShown else { return [] }
         return checks.list.filter { $0.id != nil && !$0.closed }
+    }
+
+    /// The checks the student answered in the open round shown (To check): their rings beside the scroller.
+    var checksToCheck: [Check] {
+        guard checksOn, checksShown, roundIsOpen else { return [] }
+        return checks.members(.toCheck).map { checks.list[$0] }
     }
 
     /// The id of the check selected on the Checks tab, outlined on the page, and the place it went to last.

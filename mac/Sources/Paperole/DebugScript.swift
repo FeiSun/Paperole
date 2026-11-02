@@ -184,6 +184,8 @@ import SwiftUI
 ///                               showClosed, showStudent, items: the page's rows in order ("group: <group> <n>",
 ///                               "kind: …", "message: …", "check <i>"), current, cursor: [check, place], sent, marks
 ///                               (the ids marked on the page), selected (the check outlined there)}
+///   refs                        the reference look-ups: {on, entries (keys), results: {key: {source: {found, citations,
+///                               published, title}}}, line (the Checks tab's), queued: {source: n}, blocked}
 ///   checkok <i> [off]           Mark as OK the i-th check (off: Not OK), as its button: the checks result 0.5 s later
 ///   checkokfold                 Closed this round's Show / Hide: the checks result
 ///   checkmark <id>              a click on check <id>'s mark on the page: the checks result
@@ -721,6 +723,17 @@ final class DebugScript {
             }
         case "checks":  // the panel's Checks tab (UX.md §39)
             next(0) { [weak self] in self?.checksResult() }
+        case "refs":  // the reference look-ups (UX.md §39 "Looking the references up")
+            next(0) { [weak self] in
+                guard let m = self?.model else { return [:] }
+                let rs = m.refResults.mapValues { by in
+                    Dictionary(uniqueKeysWithValues: by.map { ($0.key.rawValue, ["found": $0.value.found, "citations": nul($0.value.citations),
+                                                                                  "published": nul($0.value.published), "title": nul($0.value.title)] as [String: Any]) })
+                }
+                return ["on": m.lookUp.map(\.rawValue).sorted(), "entries": m.refEntries.keys.sorted(), "results": rs,
+                        "line": nul(m.checks.progress), "queued": Dictionary(uniqueKeysWithValues: m.refs.queued.map { ($0.key.rawValue, $0.value.count) }),
+                        "blocked": m.refs.blocked] as [String: Any]
+            }
         case "checkok":  // `checkok <i> [off]`: Mark as OK (or Not OK), as the row's button
             let words = rest.split(separator: " ").map(String.init)
             model?.markCheck(Int(words.first ?? "") ?? -1, words.count < 2 || words[1] != "off")

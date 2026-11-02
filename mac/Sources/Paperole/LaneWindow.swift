@@ -22,6 +22,8 @@ struct LaneRow: Equatable, Identifiable {
         case edits(ChangeModel, count: Int)
         /// A find match: its number, the matches' count and its line, cut so the match stays in view.
         case match(Int, of: Int, line: LaneMatchLine)
+        /// An automatic check the student answered (design/checks-ui): your move, as a comment to check.
+        case check(Check)
     }
 
     var kind: Kind
@@ -46,6 +48,8 @@ struct LaneRow: Equatable, Identifiable {
                 + (ch.checked ? " ✓" : "") + page + " | " + String(ch.excerpt.characters)
         case .match(let i, let n, let l):
             return "\(i + 1) of \(n)" + page + " | " + l.before + "[" + l.match + "]" + l.after
+        case .check(let c):
+            return "○ \(c.id ?? "") " + c.stateWord + (c.studentNote != nil ? " 💬" : "") + page + " | " + c.text
         }
     }
 }
@@ -92,7 +96,7 @@ struct LaneRows: Equatable {
     /// matches in page order.
     static func make(_ members: [Int], items: [ScrollerMark], ys: [CGFloat], pointer: CGFloat?, currentMatch: Int?,
                      card: (String) -> CardModel?, change: (String) -> ChangeModel?, edits: (String) -> Int,
-                     line: (Int) -> LaneMatchLine) -> LaneRows {
+                     line: (Int) -> LaneMatchLine, check: (String) -> Check? = { _ in nil }) -> LaneRows {
         var out = LaneRows()
         var rows: [LaneRow] = []
         var rest: [(target: ScrollerMark.Target, page: Int)] = []
@@ -115,6 +119,9 @@ struct LaneRows: Equatable {
             let comments = members.filter { items[$0].kind == .toCheck }
             let listed = Set(comments.compactMap { if case .comment(let id) = items[$0].target { return id } else { return nil } })
             for i in comments {
+                if case .check(let id) = items[i].target, let c = check(id) {
+                    rows.append(LaneRow(kind: .check(c), target: items[i].target, page: items[i].page))
+                }
                 guard case .comment(let id) = items[i].target, let c = card(id) else { continue }
                 rows.append(LaneRow(kind: .comment(c, edits: edits(id)), target: items[i].target, page: items[i].page))
             }
@@ -271,6 +278,7 @@ struct LaneRowView: View {
         case .comment(let c, _): return c.color.fill
         case .unasked(let ch), .edits(let ch, _): return ch.barColor
         case .match: return nil
+        case .check: return Palette.checkBar
         }
     }
 
@@ -309,6 +317,13 @@ struct LaneRowView: View {
             if ch.checked { Image(systemName: "checkmark").font(.system(size: 10, weight: .semibold)).foregroundStyle(Ink.secondary) }
         case .match(let i, let n, _):
             Text("\(i + 1) of \(n)").font(.system(size: 12)).monospacedDigit().foregroundStyle(Ink.secondary)
+        case .check(let c):
+            HStack(spacing: 4) {
+                Image(systemName: "circle").font(.system(size: 9.5, weight: .semibold)).foregroundStyle(Color(nsColor: Palette.toCheck))
+                Text(c.id ?? "").font(.system(size: 11, weight: .medium)).monospacedDigit().foregroundStyle(Ink.label2)
+            }
+            Text(c.stateWord).font(.system(size: 12)).foregroundStyle(Ink.secondary)
+            if c.studentNote != nil { StudentNoteSign() }
         }
     }
 
@@ -324,6 +339,8 @@ struct LaneRowView: View {
             Text(ch.excerpt).font(.system(size: 13, design: .serif))
         case .match(_, _, let l):
             (Text(l.before) + Text(l.match).fontWeight(.semibold) + Text(l.after)).font(.system(size: 13, design: .serif))
+        case .check(let c):
+            Text(c.text).font(.system(size: 13))
         }
     }
 }

@@ -281,7 +281,11 @@ def _line(slots, needle, nth=0):
     return text.count("\n", 0, pos) + 1
 
 
-ALL = set(checks.CODES)
+# the references' format and look-up checks are tests/test_refs.py's: five entries are too few to compare, and the
+# defect paper has no look-ups' results
+REFS = {"venue_forms", "venue_style", "author_names", "author_case", "title_case", "etal_by_hand", "leftovers",
+        "field_mix", "page_dash", "arxiv_forms", "published_preprint", "no_record", "record_differs"}
+ALL = set(checks.CODES) - REFS
 NO_BIB = {"lowered_caps", "no_year", "no_venue", "pdf_author"}  # need a .bib (or hyperref's pdfauthor)
 
 
@@ -450,12 +454,15 @@ def test_the_promo_demo_rounds(tmp_path):
         assert time.monotonic() - start < 2.0
         assert "spelling" not in by and "ref_style" not in by and "personal_url" not in by
         assert [c["text"] for c in by["float_far"]] == ["Algorithm 1 · 2 pages after its first citation"]  # a true fact
+        # true too: two author lists cut to "and others" while austin2021 prints its eleven
+        assert [c["key"] for c in by["etal_by_hand"]] == ["etal_by_hand|chen2021evaluating",
+                                                          "etal_by_hand|roziere2023code"]
         if n == 1:
             type3, = by["type3_font"]
             assert type3["text"] == "Type 3 font · DejaVuSans" and [p["page"] for p in type3["places"]] == [5]
             assert type3["places"][0]["rects"] and "Q1" in _words(paper, type3["places"][0], 1)
         else:
-            assert set(by) == {"float_far"}
+            assert set(by) == {"float_far", "etal_by_hand"}
 
 
 def test_the_cache(defect, copy, monkeypatch, capsys):
@@ -927,7 +934,11 @@ def test_a_draft_switch_and_inline_notes(tmp_path):
 
 def test_biblatex_two_columns_and_what_tex_skips(columns):
     by = _by_code(_checks(columns))
-    assert set(by) == {"undefined_cite", "label_twice", "same_work", "no_year", "no_venue", "spelling", "overfull"}
+    assert set(by) == {"undefined_cite", "label_twice", "same_work", "no_year", "no_venue", "spelling", "overfull",
+                       "title_case", "leftovers"}
+    # biblatex prints the titles as written (3 in title case, smith2019b's in sentence case) and noyear's empty date "()"
+    assert [c["text"] for c in by["title_case"]] == ["Titles: 3 in title case, 1 in sentence case"]
+    assert [c["key"] for c in by["leftovers"]] == ["leftovers|noyear|()"]
     # biblatex: the .aux's \abx@aux@cite and \addbibresource's .bib; an undefined key prints itself, in bold
     cite, = by["undefined_cite"]
     assert cite["text"] == "Undefined citation nobody2020" and [p["text"] for p in cite["places"]] == ["nobody2020"]

@@ -349,7 +349,7 @@ def _final_round1(paper, found):
         assert "{} · new · automatic check".format(cid) in words
     assert "Please fix: “minimise” 1× · “minimize” 1×." in words  # the note, not also the detail
     assert "Found: “minimise” 1× · “minimize” 1×." not in words
-    assert "Found by Paperole and it may be wrong: fix it, or reply" in words
+    assert "Fix it, or reply" in words and "Found by Paperole" not in words  # the summary says it may be wrong
     assert "A1-03" not in " ".join(_words(p) for p in final)  # marked OK before it was sent
     toc = final.get_toc()
     assert [1, "Automatic checks (4)", 1] in toc and [2, "A1-01 · new · p.1", k + 1] in toc

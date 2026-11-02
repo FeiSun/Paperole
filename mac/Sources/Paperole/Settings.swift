@@ -247,10 +247,21 @@ struct ReadingSettings: View {
                 }
                 .disabled(!model.checksOn)
             }
+            Section("Look up the references") {
+                ForEach(RefSource.allCases, id: \.rawValue) { s in
+                    Toggle(isOn: Binding(get: { model.lookUp.contains(s) },
+                                         set: { on in if on { model.lookUp.insert(s) } else { model.lookUp.remove(s) } })) {
+                        Text(s.name)
+                        Text(s == .semanticScholar ? "Sends each cited title. Finds published versions and works with no record."
+                             : "Sends each cited title, one a minute. Adds its citation counts.")
+                    }
+                }
+            }
+            .disabled(!model.checksOn)
         }
         .formStyle(.grouped)
         .scrollDisabled(true)
-        .frame(width: SettingsView.width, height: 220)
+        .frame(width: SettingsView.width, height: 360)
     }
 }
 

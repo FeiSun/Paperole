@@ -1102,3 +1102,52 @@ Checks to the student, 2026-11-01 (`design/checks-ui/PROPOSAL.md`, `design/check
   - CLI: `check-items P [--round N] [--groups a,b]`, `check-note P ID [TEXT]`; `finish` and `email-preview` take `--checks`.
   - Review fixes (2026-11-01): a view's `ok` holds only when its key was marked in round n or before (an earlier round never shows a later Mark as OK). A check known by its place that matches an item closed as OK in an earlier round (same code, its place's words or text) makes no new item, so the student is not sent again a slip whose reason the advisor accepted. `round.checks_fixed` (ledger and state, like `checks_sent`): how many were closed as fixed in the round, for the round card.
   - Tests: `tests/test_check_items.py` (16), and an identical final.pdf and email for a finish without checks (checked against the code before).
+
+References, 2026-11-01 (`design/pdf-reader/PLAN.md` P1.3 as rewritten that day; the advisor: check that each cited work is real, cited right, cited in its published form, and that the list is written one way; the program only points at problems, the student fetches any official BibTeX by hand; online look-ups only with their settings on, Google Scholar slowly in the background). Adds to the amendments "Checks" and "Checks to the student"; ledger schema stays 1.
+- **Entries** (`refs.py`, new): the cited entries (as `checks._Paper` finds them for `same_work`, `no_year`: the .aux's citations, the .bib and .bbl, each entry's box in the PDF from the link table, else its bibitem block), each `{"key", "label" (as printed, "[12]" or "Dosovitskiy et al., 2021"), "type" (bib type or null), "title", "authors" [as written in the .bib, "Last, First" or "First Last"], "year", "venue" (journal | booktitle | howpublished … as written), "arxiv" (the id from eprint with archivePrefix arXiv, a journal or note "arXiv preprint arXiv:…", "CoRR abs/…", or an arxiv.org url), "doi", "pages", "url", "preprint" (Paperlib's rule: venue empty, or containing arxiv, biorxiv, medrxiv, chemrxiv, openreview, corr), "printed" (the entry's PDF words joined, as the PDF shows it), "place" (page, rects, text)}`. Without a .bib the fields come from the .bbl's blocks where they can be told, else null.
+- **Format checks** (group bibliography; judged from what the PDF prints, so a style that makes a field uniform reports nothing; a minority is reported only when the entries compared are 4 or more and the minority is at most a third; places: the minority's entries; idents in brackets, stable while the slip is):
+  - `venue_forms` "One venue written 3 ways · NeurIPS · NIPS · Advances in Neural Information Processing Systems" (venues folded: case, years, ordinals "34th", "Proceedings of (the)", "In", punctuation; a small alias table `VENUES` of the common CS and ML venues joins their short and long names; ident: the venue's folded name). `venue_style` "Venues: 9 short, 14 in full" (a venue printed as its short name, an all-capitals token of 2–8 letters, possibly with a year, against one printed in words; ident "venues").
+  - `author_names` "Authors: 12 entries with full first names, 5 with initials" (an entry whose first names are all initials against one whose are all words; ident "first names"); `author_case` "Author name in lower case · kaiming he · [14]" (a printed name all in lower case; ident: bib key).
+  - `title_case` "Titles: 14 in title case, 4 in sentence case" (printed titles: the PDF's words of the .bib title; title case when most words of four letters or more begin with a capital, sentence case when none after the first does save acronyms and names the .bib protects; ident "titles").
+  - `etal_by_hand` "Author list cut to “et al.” · [12]" (a .bib author field ending in "and others", while every other entry of more than three authors prints them all; ident: bib key).
+  - `leftovers` "Stray “{” · [8]" (printed `{`, `}`, `\`, "..", ", ,", "()" or a spacing accent ¨ ´ ` ˆ ˜ ¸ alone; ident: key and the leftover).
+  - `field_mix` "DOI on 6 of 31 entries" or "Pages missing on 4 of 18 conference papers" (per type, inproceedings and article apart, for doi, pages, url, publisher, volume, number; a field prints when its value's words are in the entry's printed words; ident: type and field).
+  - `page_dash` "Page ranges: 12 with a dash, 3 with a hyphen" (printed ranges `\d+–\d+` against `\d+-\d+`; ident "pages").
+  - `arxiv_forms` "arXiv written two ways · arXiv:2010.11929 · CoRR abs/2010.11929" (ident "arxiv").
+- **`references`** (new RPC; paper, round?) → `{"round": n, "entries": [Entry…], "results": {"<source>": {"<key>": Result}}}` without state, read only: the entries (built with the round's checks, kept in `rN/refs.json` with the results) and the results stored for them.
+- **`ref_results`** (new RPC; paper, round, source: "semantic_scholar" | "google_scholar", results: {key: Result}) → `{"stored": k}`: writes them into `rN/refs.json` (a cache outside the round's checksums, atomically; merged by key, a later result replacing an earlier; any round, open or closed), so the round's checks are stale and built again. Result: `{"found": bool, "title", "year", "venue", "authors": [first author first], "citations": int | null, "url", "doi", "arxiv", "record" (the source's id of the work), "published": venue | null (the venue when the work is not a preprint), "closest": {"title", "year", "authors"} | null (when not found)}`. Unknown keys are refused: "A result for reference x, which round 2 does not cite.".
+- **Online checks** (group bibliography, built from `refs.json`'s results only, nothing fetched by the engine):
+  - `published_preprint` "[12] arXiv preprint · published at ICLR 2021" (a preprint entry whose Semantic Scholar result has `published`; note "Cite the published version (ICLR 2021)."; ident: bib key).
+  - `no_record` "[19] · no record" (every source looked up found nothing, Semantic Scholar at least; detail the closest match "Closest: <title> · <year> · <first author>", note "Check that this work exists and that its title is right."; ident: bib key).
+  - `record_differs` "[7] · year 2020, published 2021" (and "title differs", "first author differs": titles compared after folding case, TeX, accents and punctuation; the year by more than one, except a preprint's; the first author's last name; ident: key and what differs).
+  - `same_work` also when two keys have one `record`.
+- **Tests**: `tests/test_refs.py` (synthetic papers compiled in the test): the entries' fields from a .bib (arXiv forms, DOI, preprint), each format check positive and negative (a style that hides a field reports nothing), the RPCs, results merged and refused, the online checks from stored results, checks rebuilt when results change.
+- **As built** (2026-11-01; decisions where the above was silent):
+  - The alias table is `refs.VENUES` (`checks.VENUES` already names each type's venue field). The format and online checks live in checks.py.
+  - The minority rule applies to every "written several ways" check, `venue_forms` included (that venue's printed entries); `author_case`, `etal_by_hand` and `leftovers` are per entry. Texts say "two ways" for 2.
+  - `venue_forms`: venues are joined only through `VENUES` (with "long name (SHORT)"), a workshop is not its conference, preprint venues are skipped. NIPS (before 2018) against NeurIPS is reported, as asked.
+  - `venue_style`: short is one word, all capitals of 2–8 letters or a `VENUES` short name; full is three words or more.
+  - `author_names` is judged per author: an entry mixing the two forms is not counted. A .bib name is read as printed in initials only with "J." beside its last name.
+  - `title_case` needs two words of four letters or more, not counting the first, a subtitle's first or a word with an inner capital.
+  - `etal_by_hand` needs another entry of more than three authors that prints them all.
+  - `leftovers`: url words are skipped; an accent is alone only when its glyph overlaps no letter, so TeX's `\"o` extracted as "Sch¨olkopf" is not reported.
+  - `field_mix`: the type's noun ("conference papers", "journal articles"); `conference` is inproceedings; preprints are left out; volume and number for articles only.
+  - `page_dash`: BibTeX styles turn "-" into "–", so it fires on lists written by hand.
+  - `arxiv_forms` tells three forms apart ("arXiv:…", "CoRR abs/…", an arxiv.org url alone).
+  - `published` is used as given; the app puts the year in it. The text names the server ("arXiv preprint", "bioRxiv preprint"), else "preprint".
+  - `record_differs` uses Semantic Scholar's found result only, and the year rule literally (more than one apart).
+  - `same_work` by record is skipped when the keys already share a title.
+  - Entries:
+    - only cited keys with a .bib entry or bibitem;
+    - authors without "others"; year a string (biblatex `date` as fallback); venue the first of journal, journaltitle, booktitle, howpublished, school, institution, publisher;
+    - arXiv ids without their version; text in NFC;
+    - without a .bib, the fields come from the bibitem's blocks.
+  - checks.json's `"refs"` is the digest of the results it was built from (`CHECKS` 5), so after `ref_results` `check_items` refuses until `checks` builds again (the app asks `checks` first); identical results keep it current.
+  - `ref_results` builds the entries first when refs.json has none and validates `found` only; an empty map stores nothing. An error building the entries leaves them empty and the other checks run.
+  - The final.pdf box's last line is now "Fix it, or reply % A2-03 with why it is right." (the header says "automatic check"; the summary's intro keeps the disclaimer).
+  - Review fixes (2026-11-01):
+    - an entry is a preprint only when its venue names a server or it has an arXiv id (an empty venue alone made a hand-written list's plain "In ICLR 2021", or a @misc page, a preprint);
+    - `published_preprint` is left out when the entry already prints that venue;
+    - `no_record` is left out for a misc / online / software / dataset entry with a url;
+    - `venue_style` compares conference papers only (short conference names beside journals in full is one usual style).
+  - Tests: `tests/test_refs.py` (11).

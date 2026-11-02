@@ -159,6 +159,9 @@ struct LinkPreview: Equatable {
     /// The clicked entry's words, for Copy Reference.
     var reference: String?
     var canComment = false
+    /// A citation's look-ups (P1.3): its entry's key, and what the sources found (nil while none is on).
+    var refKey: String?
+    var refs: RefShown?
 
     var canGo: Bool { !entries.isEmpty }
     /// Copy Reference only for words found in the entry's box: an empty copy would wipe the clipboard.
@@ -233,8 +236,86 @@ struct PreviewActions {
     func copyReference() { controller?.copyReference() }
     func open() { controller?.openPreviewURL() }
     func copyLink() { controller?.copyPreviewURL() }
+    func openURL(_ u: URL) { controller?.openRefURL(u) }
     func comment() { controller?.commentOnPreviewLink() }
     func drag(_ t: CGSize, ended: Bool) { controller?.dragPreview(t, ended: ended) }
+}
+
+/// A citation's look-ups under its preview (P1.3; design/pdf-reader mockup): after a hairline, each source on with its
+/// mark and its count, side by side (a click opens the source's page; hover names it); "—" while not looked up; a
+/// preprint published since on a line of its own; when no source has a record, that and the closest match, with no
+/// counts (a count of 0 would read as a work nobody cites).
+struct RefRow: View {
+    let shown: RefShown
+    var open: (URL) -> Void = { _ in }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Rectangle().fill(Color(nsColor: Palette.rule)).frame(height: 1)
+            if shown.noRecord {
+                HStack(spacing: 5) {
+                    StatusRing(fill: 0, color: Color(nsColor: Palette.toCheck)).frame(width: 8, height: 8)
+                    Text("No record on " + shown.counts.map(\.source.name).joined(separator: " or ")).foregroundStyle(Ink.label2)
+                }
+                if let c = shown.closest {
+                    Text("Closest: " + c).foregroundStyle(.secondary).lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                }
+            } else {
+                HStack(spacing: 16) {
+                    ForEach(shown.counts, id: \.source.rawValue) { c in
+                        HStack(spacing: 5) {
+                            SourceMark(source: c.source)
+                            switch c.count {
+                            case .pending: Text("—").foregroundStyle(.tertiary)
+                            case .none: Text("No record").foregroundStyle(.secondary)
+                            case .cited(let n, let url):
+                                if let url {
+                                    Button(n.map { RoundStats.grouped($0) } ?? "—") { open(url) }.buttonStyle(.plain).monospacedDigit()
+                                } else {
+                                    Text(n.map { RoundStats.grouped($0) } ?? "—").monospacedDigit()
+                                }
+                            }
+                        }
+                        .help(c.source.name + (c.count == .pending ? ": not looked up yet" : ""))
+                    }
+                }
+                if let p = shown.published {
+                    HStack(spacing: 5) {
+                        StatusRing(fill: 0, color: Color(nsColor: Palette.toCheck)).frame(width: 8, height: 8)
+                        if let url = p.url {
+                            Button("Published at \(p.venue) ›") { open(url) }.buttonStyle(LinkStyle())
+                        } else {
+                            Text("Published at \(p.venue)").foregroundStyle(Ink.label2)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// A source's mark beside its count: its own logo (`SourceLogos`), else a drawn stand-in in its blue.
+struct SourceMark: View {
+    let source: RefSource
+
+    var body: some View {
+        if let logo = source == .semanticScholar ? SourceLogos.semanticScholar : SourceLogos.googleScholar {
+            Image(nsImage: logo).resizable().interpolation(.high).frame(width: 14, height: 14)
+        } else {
+            drawn
+        }
+    }
+
+    @ViewBuilder private var drawn: some View {
+        switch source {
+        case .semanticScholar:
+            Text("S2").font(.system(size: 8, weight: .bold)).foregroundStyle(.white)
+                .frame(width: 14, height: 14).background(RoundedRectangle(cornerRadius: 3).fill(Color(nsColor: NSColor(hex: 0x1857B6))))
+        case .googleScholar:
+            Image(systemName: "graduationcap.fill").font(.system(size: 11)).foregroundStyle(Color(nsColor: NSColor(hex: 0x4285F4)))
+                .frame(width: 14, height: 14)
+        }
+    }
 }
 
 /// The reference preview over the PDF (PLAN §4.2): its title, the pin and Go to ›, the target as printed, and what
@@ -280,13 +361,16 @@ struct LinkPreviewView: View {
     @ViewBuilder private var footer: some View {
         switch preview.kind {
         case "cite":
-            HStack(alignment: .top, spacing: 4) {
-                if !preview.cited.isEmpty {
-                    Text("Cited \(preview.count)×:").foregroundStyle(.secondary)
-                    pages
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .top, spacing: 4) {
+                    if !preview.cited.isEmpty {
+                        Text("Cited \(preview.count)×:").foregroundStyle(.secondary)
+                        pages
+                    }
+                    Spacer(minLength: 12)
+                    if preview.canCopy { Button("Copy Reference") { actions.copyReference() }.buttonStyle(LinkStyle()) }
                 }
-                Spacer(minLength: 12)
-                if preview.canCopy { Button("Copy Reference") { actions.copyReference() }.buttonStyle(LinkStyle()) }
+                if let r = preview.refs { RefRow(shown: r, open: actions.openURL) }
             }
         case "url":
             VStack(alignment: .leading, spacing: 4) {

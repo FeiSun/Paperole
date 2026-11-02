@@ -10,7 +10,7 @@ struct ScrollerMark: Equatable {
         static func < (a: Kind, b: Kind) -> Bool { a.rawValue < b.rawValue }
     }
 
-    enum Target: Equatable, Hashable { case comment(String), change(String), find(Int) }
+    enum Target: Equatable, Hashable { case comment(String), change(String), find(Int), check(String) }
 
     var kind: Kind
     var fraction: Double  // 0 the paper's top, 1 its foot
@@ -184,6 +184,7 @@ enum StripLayout {
         switch t {
         case .comment(let id): return "c:" + id
         case .change(let id): return "e:" + id
+        case .check(let id): return "a:" + id
         case .find(let i): return "f:\(i)"
         }
     }

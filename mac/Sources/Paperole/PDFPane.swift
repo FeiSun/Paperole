@@ -1500,6 +1500,12 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
                     add(ScrollerMark(kind: .toCheck, fraction: 0, target: .comment(c.id), page: page,
                                      label: cards[c.id]?.accessibility ?? c.id), top(c.rects))
                 }
+                // the checks the student answered: your move too (design/checks-ui), at their first place with rects
+                for c in model.checksToCheck {
+                    guard let id = c.id, let p = c.places.first(where: { !$0.rects.isEmpty }) else { continue }
+                    add(ScrollerMark(kind: .toCheck, fraction: 0, target: .check(id), page: p.page,
+                                     label: "\(id), still found, the student answered: " + c.text), top(p.rects))
+                }
             }
         }
         let wasFind = strip.find, old = laneHover.shown.map { shownTargets($0) }
@@ -1529,6 +1535,9 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             model.tab = .changes
             model.select(.change(id), scroll: .centre, step: .lookUp)
         case .find(let i): find.goTo(i)
+        case .check(let id):
+            model.checkMarkClicked(id)
+            if let i = model.checks.index(of: id) { model.checkClicked(i) }  // its place, a step of Back, the flash
         }
     }
 
@@ -1679,6 +1688,10 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             pv.reference = PDFMenus.collapsed(pg.selection(for: r)?.string ?? "")
         }
         pv.canComment = link != nil && model.roundIsOpen && !model.busy && model.toolbar.reanchor == nil
+        if main.kind == "cite" {
+            pv.refKey = main.key
+            pv.refs = model.refShown(main.key)
+        }
         return pv
     }
 
@@ -1737,6 +1750,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         hideToolbar()
         hideMarkBar()
         let above = layout(&pv, line: line)
+        if !refreshing { model?.refPreviewOpened(pv.refKey) }  // Google Scholar: this one next
         let host = FloatView.holding(LinkPreviewView(preview: pv, actions: PreviewActions(controller: self),
                                                      maxWidth: PreviewLayout.maxWidth(view: v.bounds.width)))
         v.addSubview(host)
@@ -1816,6 +1830,27 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         AppModel.clipboard.clearContents()
         AppModel.clipboard.setString(s, forType: .string)
     }
+
+    /// A look-up's link in a citation's preview (a source's page, a published version): http and https only, in the
+    /// browser; a test run (--background) only notes it.
+    private(set) var openedRefURL: URL?
+    func openRefURL(_ u: URL) {
+        guard ["http", "https"].contains(u.scheme?.lowercased() ?? "") else { return }
+        openedRefURL = u
+        closePreview()
+        if !LaunchOptions.background { NSWorkspace.shared.open(u) }
+    }
+
+    /// A look-up's result came for an entry: the open preview of a citation of it is shown again with it.
+    func refreshPreview(key: String) {
+        guard let p = preview, p.content.refKey == key, let l = p.content.link else { return }
+        refreshing = true
+        showPreview(l)
+        refreshing = false
+    }
+
+    /// `showPreview` called by `refreshPreview`: the same entry, no new preference.
+    private var refreshing = false
 
     func openPreviewURL() {
         guard let u = preview?.content.url else { return }
@@ -3371,7 +3406,8 @@ extension PDFController {
         for ch in all { for l in ch.links { edits[l.id, default: 0] += 1 } }
         return LaneRows.make(strip.layout.groups[g].members, items: strip.items, ys: strip.layout.ys, pointer: pointer ?? laneHover.pointer?.y,
                              currentMatch: strip.find ? find.index : nil, card: { cards[$0] }, change: { changes[$0] },
-                             edits: { edits[$0] ?? 0 }, line: { [weak self] in self?.find.matchLine($0) ?? LaneMatchLine() })
+                             edits: { edits[$0] ?? 0 }, line: { [weak self] in self?.find.matchLine($0) ?? LaneMatchLine() },
+                             check: { [weak self] id in self?.model?.checksToCheck.first { $0.id == id } })
     }
 
     /// On a grown run, the match nearest the pointer: the one a click opens.
@@ -3555,7 +3591,7 @@ extension PDFController {
             updateLaneHalo()
             selectedChangeID = nil
             goMark(t)
-        case .find:
+        case .find, .check:
             goMark(t)
         }
         updateLaneHalo()

@@ -1319,7 +1319,52 @@ This replaces "nothing reaches the student unless you comment" above.
     - the round card's line.
   - `ChecksTests` brought to the new groups and words.
 
-**Not built**: rings for checks the student answered in the column beside the scroller (§42); the checks listed in Jump; a sort or filter of the rows; checks of an earlier round compared with the shown round's; the reference look-ups' progress line (`ChecksModel.progress`, for P1.3) has no source yet.
+**Looking the references up** (2026-11-01; `design/pdf-reader/PLAN.md` P1.3; engine/CONTRACT.md amendment "References"; `RefLookup.swift`).
+- **Settings › Reading › Look up the references** (`AppModel.lookUp`, key `lookUp`, off by default, never saved by a test run; disabled while Checks is off):
+  - Semantic Scholar: "Sends each cited title. Finds published versions and works with no record."
+  - Google Scholar: "Sends each cited title, one a minute. Adds its citation counts."
+  - Turning one off drops its queue.
+- **The request** (`requestReferences`): once per round shown, after its checks, the checks' engine gives the cited entries and the results it keeps (`references`). The sources on look up what it has no result for:
+  - a fresh result in the app's cache (`references.json` in the app's caches folder, across papers and rounds; 30 days, 7 for a preprint not yet published) goes to the engine at once;
+  - the others are queued (`RefLookup`, one queue a source for the app).
+- **Semantic Scholar** (`SemanticScholar`, the keyless public API):
+  - It asks by arXiv id, else DOI, else title (`search/match`). A preprint whose record has no venue is searched by title once more, for a published record of its own.
+  - One request every 3 s. "Too many requests" waits as the service says (Retry-After, else 4 s doubling, five tries); when it keeps refusing (its keyless pool is shared and often full), the entry stays first and the queue rests 2 min ("waiting for its limit" in the line); one that cannot be reached gives no result ("—", never "No record").
+  - A title match that is another work is no record, with that work as the closest.
+- **Google Scholar** (`GoogleScholar`): the results page in a WebKit view of the app's own (its cookies; nothing disguised).
+  - It reads the first result's title, "Cited by" count and year.
+  - At most one search a minute and 60 a day (kept in the defaults, `scholarDay`). A citation's preview moves its entry first (`prefer`).
+  - A CAPTCHA stops every request and shows the page in a small window titled "Google Scholar · answer its check to go on" (never in a test run). Once a results page loads there, the look-ups go on.
+- **Review fixes** (2026-11-01):
+  - **The queues:** a job is taken out of its queue by itself, so a preview that moved another first is never lost; a request coming back for a source turned off meanwhile is dropped; a fresh cached result is used before going to the network.
+  - **Turning off:** a source turned off (or Checks) stops at once, gives the engine what it found and ends without the toast; turning a second source on asks again (the sources are in the request's key).
+  - **Google Scholar:**
+    - it only searches titles;
+    - a page that does not load (a 45 s watchdog, a web process that died) or is not a results page gives no result, never "No record";
+    - its day's cap ends its queue for the day (the round asks again when opened another day);
+    - closing the CAPTCHA's window drops its queue; the window comes to the front without taking the keyboard;
+    - a test run's WebKit data stays in memory.
+  - **Results** are shown in the preview as soon as they come; the engine gets a source's results when its queue for the round ends (one build of the checks). No toast when nothing was found (offline).
+- **Results**:
+  - A source's results go to the engine when its queue for the round ends (`ref_results`, on the checks' engine). The shown round's checks are then built again: the row chosen stays chosen, the tab's list stays until the new one comes, and the toast is not said again.
+  - While look-ups run, the Checks tab's sentence gains "Looking up references · Semantic Scholar 12 of 34 · Google Scholar 3 of 34, about 31 min" ("waiting for you to answer its check" while blocked).
+  - At the end: the panel's toast "References looked up"; a system notification when Paperole is not the front app (asked for once; never in a test run).
+- **The citation's preview** (§37; `LinkPreview.refs`, `RefRow`): under "Cited 3×", after a hairline:
+  - Each source on: its logo (`SourceMark`, `SourceLogos`: the sites' icons, downloaded 2026-11-02 with the advisor's OK, kept as PNG data in the source; a drawn stand-in if one cannot be read) and its count in full. A click opens the source's page; hover names it. "—" while not looked up; "No record" for one source.
+  - When no source has a record: the vermilion ring, "No record on Semantic Scholar or Google Scholar", and "Closest: <title> · <year> · <author>". No counts.
+  - A cited preprint published since: the ring and "Published at ICLR 2021 ›" (the publisher's page by its DOI, else the Semantic Scholar page).
+  - An open preview is shown again when a result for its entry comes (`refreshPreview`). A link opens in the browser (http and https; a test run only notes it, `openedRefURL`).
+- **The column beside the scroller** (§42): a check the student answered is a vermilion ring like a comment to check (`ScrollerMark.Target.check`, `AppModel.checksToCheck`). Its row in the window reads "○ A2-05 still found" with the note sign and its words. A click shows its card and goes to its place.
+- **Checked** (2026-11-01): `RefLookupTests`:
+  - titles folded and compared;
+  - the preview's states;
+  - the queues: stored results left, a cached one given at once, a preview moving its entry first, the batches, the line, a source turned off;
+  - Semantic Scholar's JSON read;
+  - the column's check row.
+  
+  `ReadingSettingTests`: the four switches.
+
+**Not built**: the checks listed in Jump; a sort or filter of the rows; checks of an earlier round compared with the shown round's.
 
 ## 40. UI v4 (2026-10-31)
 

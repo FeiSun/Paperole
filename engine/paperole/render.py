@@ -20,13 +20,13 @@ NOTE_EXAMPLE = "% R1-03 your note"  # a student's note (notes.py)
 REPLY_RULE = ("No need to list what you fixed. To explain a change, or why you left something as it is, add a comment "
               "line next to it in the .tex: {}.".format(NOTE_EXAMPLE))
 # check items that go out with the round (check_items.py; amendment "Checks to the student"): the program's look, one
-# slate that is none of the comments' six colours, a square chip, and the student told it may be wrong
+# slate that is none of the comments' six colours, a square chip, and the student told (in the summary) it may be wrong
 CHECK_FILL, CHECK_INK, CHECK_OPACITY = "#6E8092", "#4E5D6C", 0.30
 CHECK_BOX, CHECK_CHIP = (CHECK_INK, "#FFFFFF", CHECK_INK), (CHECK_INK, CHECK_INK, "#FFFFFF")  # (mark, fill, text)
 CHECK_LABELS = {"new": "new", "still": "still open"}
 CHECK_SIGNS = {"new": "new", "still": "open"}  # their _glyph: + and the ring
 CHECK_EXAMPLE = "% {} for an automatic check"
-CHECK_RULE = "Found by Paperole and it may be wrong: fix it, or reply % {} with why it is right."
+CHECK_RULE = "Fix it, or reply % {} with why it is right."  # the box's header names it an automatic check
 CHECK_INTRO = "Paperole found these, not me, and it can be wrong. Fix each, or reply with % {} why it is right."
 CHECK_KEY = "an automatic check, found by Paperole, not by me"
 CHECK_GROUPS = {"references": "References", "bibliography": "Bibliography", "consistency": "Consistency",
@@ -363,8 +363,8 @@ def _comment_item(c, n, snippets, sz=SIZE):
 
 def _check_item(v, sz=SIZE):
     """A check item's margin box {"rows", "inside", "ey", "h"} (v: its view, check_items.view): headed "A2-03 · new ·
-    automatic check" in slate, its note (else its detail), the advisor's follow-up ("Me: …") and a muted last line that it
-    may be wrong; every text whole."""
+    automatic check" in slate, its note (else its detail), the advisor's follow-up ("Me: …") and a muted last line, fix
+    it or reply (CHECK_RULE); every text whole."""
     head = "{} · {} · automatic check".format(v["id"], CHECK_LABELS[v["state"]])
     rows = [_row(_wrap(head, BOX_W - 20, sz["head"], "b"), sz["head"], "b", CHECK_INK,
                  glyph=CHECK_SIGNS[v["state"]], lead=sz["head"] + 3.2)]

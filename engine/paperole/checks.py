@@ -2,15 +2,18 @@
 
 Rules every draft should meet, found by the engine instead of the eye, each a fact with its places in the round's build
 PDF: references ("??" and "[?]", a label defined twice, a float never referenced, before its first reference or far
-after it), the bibliography (one work under two keys, capitals the style lowered, an entry without a year or a venue),
-consistency (one word spelt two ways, one kind of reference written two ways), typesetting (overfull lines, straight
-quotes in the source, a doubled word) and the submission (Type 3 or unembedded fonts, draft markers, \\todo notes,
-coloured text and, for a paper meant to be anonymous, what names its authors). From the link table (links.json),
+after it), the bibliography (one work under two keys, capitals the style lowered, an entry without a year or a venue,
+the list written two ways or with a TeX leftover, and from the look-ups the app stores in refs.json a preprint
+published since, a work no source finds, a record that differs), consistency (one word spelt two ways, one kind of
+reference written two ways), typesetting (overfull lines, straight quotes in the source, a doubled word) and the
+submission (Type 3 or unembedded fonts, draft markers, \\todo notes, coloured text and, for a paper meant to be
+anonymous, what names its authors). From the link table (links.json),
 prose.json's blocks, the build's .aux, .bbl, .log and synctex, the .bib, the source and the PDF's words, fonts, colours
-and metadata; no network, nothing judged: a check states only what it found. `build` writes rN/checks.json, a cache
-outside the round's checksums, as links.json is, and only when the app asks (the checks RPC, while the advisor has
-Checks on); a file with another CHECKS, prose.PARSER or links.LINKS is stale, and so is one built without the link
-table once the round has one. Building never fails a request
+and metadata, and refs.json's results; no network, nothing judged: a check states only what it found. `build` writes
+rN/checks.json, a cache outside the round's checksums, as links.json is, and only when the app asks (the checks RPC,
+while the advisor has Checks on), with the cited entries in rN/refs.json (refs.py); a file with another CHECKS,
+prose.PARSER or links.LINKS is stale, and so is one built without the link table once the round has one, or with other
+results than refs.json holds. Building never fails a request
 (build_quietly), and a check that fails is left out alone.
 """
 import bisect
@@ -27,13 +30,13 @@ from pathlib import Path
 
 import pymupdf
 
-from . import anchor, comments, links, project, prose, texdiff
+from . import anchor, comments, links, project, prose, refs, texdiff
 
 # stored in checks.json, with prose.PARSER and links.LINKS (the blocks and the table it reads); other values: stale
 # (2: biblatex's citations and .bib, places in reading order, a range of references covers its middle floats, an
 # item's label before a sentence, the parts TeX skips, review anonymous only for the venues that mean it, …;
-# 3: a \todo only when the PDF prints it; 4: each check's key)
-CHECKS = 4
+# 3: a \todo only when the PDF prints it; 4: each check's key; 5: the references' format and online checks, refs.json)
+CHECKS = 5
 SCHEMA = 1
 GROUPS = ("references", "bibliography", "consistency", "typesetting", "submission")
 OVERFULL = 1.0  # points: an overfull line at most this much too wide is not reported
@@ -45,7 +48,12 @@ EXCERPT = 5  # words of a run of coloured text in its row
 CODES = {"undefined_ref": "references", "undefined_cite": "references", "label_twice": "references",
          "float_unreferenced": "references", "float_before": "references", "float_far": "references",
          "same_work": "bibliography", "lowered_caps": "bibliography", "no_year": "bibliography",
-         "no_venue": "bibliography", "spelling": "consistency", "ref_style": "consistency",
+         "no_venue": "bibliography", "venue_forms": "bibliography", "venue_style": "bibliography",
+         "author_names": "bibliography", "author_case": "bibliography", "title_case": "bibliography",
+         "etal_by_hand": "bibliography", "leftovers": "bibliography", "field_mix": "bibliography",
+         "page_dash": "bibliography", "arxiv_forms": "bibliography", "published_preprint": "bibliography",
+         "no_record": "bibliography", "record_differs": "bibliography", "spelling": "consistency",
+         "ref_style": "consistency",
          "overfull": "typesetting", "straight_quotes": "typesetting", "doubled_word": "typesetting",
          "type3_font": "submission", "unembedded_font": "submission", "draft_marker": "submission",
          "todo_note": "submission", "coloured_text": "submission", "pdf_author": "submission",
@@ -84,6 +92,21 @@ VENUES = {"article": ("journal", "journaltitle"), "inproceedings": ("booktitle",
 VENUE_NAMES = {"journal": "a journal", "booktitle": "a booktitle", "publisher": "a publisher", "school": "a school",
                "institution": "an institution"}
 WORD = re.compile(r"[A-Za-z][A-Za-z0-9]*")
+# the references' format: a way of writing them is compared over FEW entries or more, and reported for a minority of at
+# most MINORITY of them
+FEW = 4
+MINORITY = 1 / 3
+TOKEN = re.compile(r"[^\W_]+(?:['’‐-][^\W_]+)*")  # a printed word: "Pre-training", "Schölkopf", "16x16"
+PARTICLES = set("von van der den de del della di da du dos das le la ten ter bin al el".split())
+LEFTOVER = re.compile(r"[{}\\]|(?<!\.)\.\.(?!\.)|,\s*,|\(\s*\)")
+LEFTOVER_SHOWN = {"{": "{", "}": "}", "\\": "\\", ".": "..", ",": ", ,", "(": "()"}  # by the leftover's first character
+ACCENTS = "¨´`ˆ˜¸"  # spacing accents: one printed alone, over or under no letter, is a leftover
+FIELDS = {"doi": "DOI", "pages": "pages", "url": "URL", "publisher": "publisher", "volume": "volume", "number": "number"}
+FIELD_TYPES = {"inproceedings": "inproceedings", "conference": "inproceedings", "article": "article"}
+TYPE_NOUNS = {"inproceedings": "conference papers", "article": "journal articles"}
+# the fields compared per type: a conference paper's volume or number is its proceedings' (NeurIPS has one, ICLR none)
+TYPE_FIELDS = {"inproceedings": ("doi", "pages", "url", "publisher"), "article": tuple(FIELDS)}
+ARXIV_FORMS = {"CoRR": "CoRR abs/{}", "arXiv": "arXiv:{}", "url": "arxiv.org/abs/{}"}
 
 # consistency
 BRITISH = {"modelling": "modeling", "modelled": "modeled", "labelled": "labeled", "labelling": "labeling",
@@ -185,7 +208,8 @@ def path(paper, n):
 
 def load(paper, n):
     """Round n's checks.json when it exists and is current (cached by path, modification time and size), else None.
-    One built without a link table is stale once the round has one."""
+    One built without a link table is stale once the round has one, and one built from other results than refs.json
+    holds (or once refs.json has no entries) is stale too (refs.state)."""
     p = path(paper, n)
     try:
         st = p.stat()
@@ -195,7 +219,7 @@ def load(paper, n):
     current = isinstance(data, dict) and data.get("schema") == SCHEMA and data.get("version") == CHECKS \
         and data.get("parser") == prose.PARSER and data.get("links") == links.LINKS \
         and isinstance(data.get("table"), bool) and isinstance(data.get("checks"), list) \
-        and (data["table"] or links.load(paper, n) is None)
+        and (data["table"] or links.load(paper, n) is None) and data.get("refs") == refs.state(paper, n)
     return data if current else None
 
 
@@ -209,26 +233,37 @@ def _load(p, mtime, size):
 
 def build(paper, lg, n, data, table):
     """Build round n's checks.json from its build and prose data (prose.json's) and link table (links.json's, or None:
-    the checks that need it find less) and return it."""
+    the checks that need it find less) and refs.json's results, write the cited entries into refs.json (refs.keep),
+    and return it. checks.json's "refs" is the digest of the results the checks read."""
     paper = Path(paper)
     p = _Paper(paper, lg, n, data, table)
     found = []
+    try:
+        p.entries
+    except Exception as e:  # the cited entries cannot be told: none, and the checks that read them find nothing
+        _failed("references", e)
+        p.entries = []
     for code, run in RUNS:
         try:
             found += run(p)
         except Exception as e:  # that check is left out alone
-            print("checks: {} failed: {}".format(code, "".join(traceback.format_exception_only(type(e), e)).strip()),
-                  file=sys.stderr)
-            traceback.print_exc(file=sys.stderr)
+            _failed(code, e)
     found.sort(key=_order)
     _keys(found, n)
-    out = {"schema": SCHEMA, "version": CHECKS, "parser": prose.PARSER, "links": links.LINKS, "table": table is not None,
-           "round": n, "checks": found}
+    refs.keep(paper, n, p.entries)
+    out = {"schema": SCHEMA, "version": CHECKS, "parser": prose.PARSER, "links": links.LINKS,
+           "table": table is not None, "round": n, "refs": refs.digest(p.results), "checks": found}
     target = path(paper, n)
     tmp = target.with_name("checks.json.{}.tmp".format(os.getpid()))  # two engine processes may build it at once
     tmp.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     os.replace(tmp, target)
     return out
+
+
+def _failed(code, e):
+    print("checks: {} failed: {}".format(code, "".join(traceback.format_exception_only(type(e), e)).strip()),
+          file=sys.stderr)
+    traceback.print_exc(file=sys.stderr)
 
 
 _FAILED = set()  # the builds that failed in this process (_attempt)
@@ -349,7 +384,7 @@ class _Paper:
         self.stamp = anchor._stamp(self.pdf)
         self.doc = anchor._doc(self.stamp)
         self.pages = self.doc.page_count
-        self._texts, self._indexed, self._dicts, self._norms = {}, {}, {}, {}
+        self._texts, self._indexed, self._dicts, self._norms, self._chars, self._entry_words = {}, {}, {}, {}, {}, {}
 
     # -- sources
 
@@ -781,6 +816,55 @@ class _Paper:
         parts = self.parts(self.blocks[k]) if k is not None else []
         return tuple(parts[0]) if parts else None
 
+    def entry_parts(self, key):
+        """[(page, rect)] of an entry in the references list: its link target's parts, else its bibitem block's."""
+        t = next((t for t in self.targets if t["kind"] == "cite" and t["key"] == key and t.get("parts")), None)
+        if t:
+            return [(page, r) for page, r in t["parts"]]
+        k = self.bibitems.get(key, (None,))[0]
+        return [(page, r) for page, r in self.parts(self.blocks[k])] if k is not None else []
+
+    def entry_words(self, key):
+        """[(page, word)] of an entry's PDF words (entry_parts), in reading order."""
+        if key not in self._entry_words:
+            self._entry_words[key] = [(page, w) for page, r in self.entry_parts(key)
+                                      for _, w in self.words_in(page, [r])]
+        return self._entry_words[key]
+
+    @functools.cached_property
+    def entries(self):
+        """The cited entries (refs.entries), as refs.json keeps them."""
+        return refs.entries(self)
+
+    @functools.cached_property
+    def results(self):
+        """The online look-ups' results stored for the round: {source: {key: Result}} (refs.json's)."""
+        return refs.results(self.paper, self.n)
+
+    def result(self, source, key):
+        """A source's result for an entry, or None."""
+        r = (self.results.get(source) or {}).get(key)
+        return r if isinstance(r, dict) else None
+
+    def detached(self, page, rect):
+        """The spacing accents (ACCENTS) the PDF prints in a rect alone: over or under no letter beside it (TeX's
+        \\accent sets one over its letter, so OT1's ö reads as "¨o" with the two glyphs in one place)."""
+        if page not in self._chars:
+            self._chars[page] = [[(c["c"], c["bbox"]) for s in line["spans"] for c in s["chars"]]
+                                 for b in self.doc[page].get_text("rawdict", flags=pymupdf.TEXTFLAGS_TEXT)["blocks"]
+                                 for line in b.get("lines", ())]
+        out = []
+        for line in self._chars[page]:
+            for k, (c, b) in enumerate(line):
+                if c not in ACCENTS or not (rect[0] - 1 <= (b[0] + b[2]) / 2 <= rect[2] + 1 and
+                                            rect[1] - 1 <= (b[1] + b[3]) / 2 <= rect[3] + 1):
+                    continue
+                half = max(b[2] - b[0], 0.2) / 2
+                if not any(line[j][0].isalpha() and min(b[2], line[j][1][2]) - max(b[0], line[j][1][0]) >= half
+                           for j in (k - 1, k + 1) if 0 <= j < len(line)):
+                    out.append(c)
+        return out
+
     def title(self, key):
         """An entry's title: its .bib title, else the first \\newblock of its bibitem (TeX)."""
         if key in self.bib:
@@ -1120,32 +1204,57 @@ def _entry(p, code, key, text, detail, note, rects=None, place_text=None, ident=
 
 
 def same_work(p):
-    """One work under two keys: two cited entries whose titles are the same, letters and digits only."""
+    """One work under two keys: two cited entries whose titles are the same, letters and digits only, or that one
+    source's look-up found as one record (refs.json's results: an arXiv entry and its published one)."""
     groups = {}
     for key in p.cited:
         title = p.title(key)
         n = _norm(_plain_tex(title)) if title else ""
         if len(n) >= 10:
             groups.setdefault(n, []).append(key)
-    out = []
+    out, seen = [], []
     for n, keys in groups.items():
         if len(keys) < 2:
             continue
-        labels = [p.cite_label(k) for k in keys]
         title = _plain_tex(p.title(keys[0]))
-        places = []
-        for k in keys:
-            at = p.entry_place(k)
-            if at:
-                places.append(_place(at[0], [at[1]], p.cite_label(k)))
-        out.append(_check("same_work", "Same work {} · {}".format(
-                              "twice" if len(keys) == 2 else "{}×".format(len(keys)), " · ".join(labels)),
-                          "The entries {} have the same title, {}: the references list one work {}."
-                          .format(" and ".join(keys), _q(title), "twice" if len(keys) == 2 else
-                                  "{} times".format(len(keys))),
-                          "The references list {} more than once ({}); cite one entry.".format(
-                              _q(title), " and ".join(labels)), _sorted(p, places), ident=" ".join(sorted(keys))))
+        seen.append(set(keys))
+        out.append(_same(p, keys, "The entries {} have the same title, {}: the references list one work {}.".format(
+            " and ".join(keys), _q(title), "twice" if len(keys) == 2 else "{} times".format(len(keys))), title))
+    for source, name in refs.SOURCES.items():
+        records = {}
+        for key in p.cited:
+            r = p.result(source, key)
+            record = r.get("record") if r and r.get("found") is True else None
+            if isinstance(record, (str, int)) and str(record):
+                records.setdefault(str(record), []).append(key)
+        for record, keys in records.items():
+            if len(keys) < 2 or any(set(keys) <= s for s in seen):
+                continue
+            seen.append(set(keys))
+            title = _text(p.result(source, keys[0]).get("title")) or _plain_tex(p.title(keys[0]) or keys[0])
+            out.append(_same(p, keys, "{} finds the entries {} as one work, {}: the references list it {}.".format(
+                name, " and ".join(keys), _q(title), "twice" if len(keys) == 2 else "{} times".format(len(keys))),
+                title))
     return out
+
+
+def _same(p, keys, detail, title):
+    """A same_work check of the keys of one work."""
+    labels = [p.cite_label(k) for k in keys]
+    places = []
+    for k in keys:
+        at = p.entry_place(k)
+        if at:
+            places.append(_place(at[0], [at[1]], p.cite_label(k)))
+    return _check("same_work", "Same work {} · {}".format(
+                      "twice" if len(keys) == 2 else "{}×".format(len(keys)), " · ".join(labels)), detail,
+                  "The references list {} more than once ({}); cite one entry.".format(_q(title), " and ".join(labels)),
+                  _sorted(p, places), ident=" ".join(sorted(keys)))
+
+
+def _text(v):
+    """A result's text field, stripped, or None (not a string, or empty)."""
+    return v.strip() if isinstance(v, str) and v.strip() else None
 
 
 def _lowered(title):
@@ -1222,6 +1331,464 @@ def no_venue(p):
         out.append(_entry(p, "no_venue", key, "No venue · {}".format(label),
                           "The .bib entry {} is an @{} without {}.".format(key, typ, wanted),
                           "Reference {} does not say where it appeared.".format(label), place_text=label))
+    return out
+
+
+# --- the references' format (refs.py's entries: what the PDF prints, so a style that makes a field uniform reports
+# nothing) -------------------------------------------------------------------------------------------------------
+
+def _minority(ways):
+    """The ways of writing that are a clear minority ({way: [entries]}): every way but the most frequent (the first of
+    equals), when the entries compared are FEW or more and those at most MINORITY of them; else None."""
+    total = sum(len(es) for es in ways.values())
+    if sum(1 for es in ways.values() if es) < 2 or total < FEW:
+        return None
+    top = max(ways, key=lambda w: len(ways[w]))
+    rest = {w: es for w, es in ways.items() if w != top and es}
+    return rest if sum(len(es) for es in rest.values()) <= total * MINORITY else None
+
+
+def _entries(p, code, es, text, detail, note, ident):
+    """A check of several entries, each its place in the references list (its printed label the place's text)."""
+    places = []
+    for e in es:
+        at = p.entry_place(e["key"])
+        if at:
+            places.append(_place(at[0], [at[1]], e["label"]))
+    return _check(code, text, detail, note, _sorted(p, places), ident=ident)
+
+
+def _ways(k):
+    return "two ways" if k == 2 else "{} ways".format(k)
+
+
+def _and(items):
+    items = list(items)
+    return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " and " + items[-1] if items else ""
+
+
+def _bib_printed(p):
+    """The entries with a .bib entry whose PDF words are found."""
+    return [e for e in p.entries if e["key"] in p.bib and e["printed"]]
+
+
+def _venue(e):
+    """An entry's venue when the PDF prints it and it is not a preprint's, else None."""
+    v = e["venue"]
+    return v if v and not e["preprint"] and _norm(v) and _norm(v) in _norm(e["printed"]) else None
+
+
+def _shown_venue(v):
+    """A venue as a check names it: without its years."""
+    return " ".join(re.sub(r"\b(?:19|20)\d{2}\b|'\d{2}\b", " ", v).split()).strip(" ,;:") or v
+
+
+def venue_forms(p):
+    """One venue written several ways: printed venues whose folded forms differ (case, years, ordinals, "Proceedings
+    of", "In" and punctuation aside) but name one venue (refs.VENUES joins short and long names)."""
+    venues = {}
+    for e in p.entries:
+        v = _venue(e)
+        folded = refs.fold_venue(v) if v else ""
+        if folded:
+            venues.setdefault(refs.venue_name(folded), {}).setdefault(folded, []).append(e)
+    out = []
+    for name, ways in venues.items():
+        minority = _minority(ways)
+        if not minority:
+            continue
+        order = sorted(ways, key=lambda w: -len(ways[w]))
+        shown = [_q(_shown_venue(ways[w][0]["venue"])) for w in order]
+        out.append(_entries(p, "venue_forms", [e for w in order if w in minority for e in ways[w]],
+                            "One venue written {} · {}".format(_ways(len(ways)), " · ".join(s[1:-1] for s in shown)),
+                            "The references write one venue {}: {}.".format(_ways(len(ways)), _and(
+                                "{} ({}×)".format(s, len(ways[w])) for s, w in zip(shown, order))),
+                            "The references name one venue {} ({}); write it one way.".format(
+                                _ways(len(ways)), _and(shown)), name.lower()))
+    return out
+
+
+def venue_style(p):
+    """Venues printed as short names ("ICLR", "NeurIPS 2021") beside venues printed in words."""
+    forms = {"short": [], "full": []}
+    # conference papers only: short conference names beside journals in full is one usual style (review 2026-11-01)
+    for e in p.entries:
+        if (e.get("type") or "").lower() not in ("inproceedings", "conference"):
+            continue
+        v = _venue(e)
+        form = refs.venue_form(v) if v else None
+        if form:
+            forms[form].append(e)
+    minority = _minority(forms)
+    if not minority:
+        return []
+    s, f = len(forms["short"]), len(forms["full"])
+    return [_entries(p, "venue_style", next(iter(minority.values())), "Venues: {} short, {} in full".format(s, f),
+                     "{} entries print their venue's short name ({}) and {} its full name ({}).".format(
+                         s, _q(_shown_venue(forms["short"][0]["venue"])), f,
+                         _q(_shown_venue(forms["full"][0]["venue"]))),
+                     "The references give {} venues as short names and {} in full; write them one way.".format(s, f),
+                     "venues")]
+
+
+def _name_kind(words):
+    """"initials" when every first name is initials ("A.", "J.-P."), "full" when every one is a word, else None."""
+    if all(re.fullmatch(r"(?:[^\W\d_][.‐-]*)+", w) and not re.search(r"[^\W\d_]{2}", w) for w in words):
+        return "initials"
+    return "full" if all("." not in w and sum(c.isalpha() for c in w) >= 2 for w in words) else None
+
+
+def _first_names(p, e):
+    """How an entry prints its authors' first names: "full", "initials", or None (mixed, none, or not found)."""
+    raw = [w.strip(",;:") for w in e["printed"].split()]
+    norms = [_norm(w) for w in raw]
+    kinds = set()
+    for name in refs.names(p.bib[e["key"]][1].get("author", "")):
+        first, last = refs.name_parts(name) if name.lower() != "others" else ("", "")
+        words = p.ctx.plain(first).split()
+        kind = _name_kind(words) if words else None
+        if kind == "full" and not all(_norm(w) in norms for w in words):  # the style may print initials: beside the
+            # last name ("J. Smith", "Smith, J.")
+            at = [k for k, n in enumerate(norms) if n and n == _norm((p.ctx.plain(last).split() or [""])[-1])]
+            kind = "initials" if any(k and raw[k - 1] == words[-1][0] + "." or k + 1 < len(raw) and
+                                     raw[k + 1] == words[0][0] + "." for k in at) else None
+        if words and kind is None:
+            return None
+        kinds |= {kind} if kind else set()
+    return kinds.pop() if len(kinds) == 1 else None
+
+
+def author_names(p):
+    """Entries printing their authors' first names in full beside entries printing initials."""
+    forms = {"full": [], "initials": []}
+    for e in _bib_printed(p):
+        form = _first_names(p, e)
+        if form:
+            forms[form].append(e)
+    minority = _minority(forms)
+    if not minority:
+        return []
+    f, i = len(forms["full"]), len(forms["initials"])
+    return [_entries(p, "author_names", next(iter(minority.values())),
+                     "Authors: {} entries with full first names, {} with initials".format(f, i),
+                     "{} entries print their authors' first names in full and {} as initials.".format(f, i),
+                     "The references give first names in full in {} entries and as initials in {}; write them one "
+                     "way.".format(f, i), "first names")]
+
+
+def author_case(p):
+    """An author's name printed all in lower case ("kaiming he"); one per entry."""
+    out = []
+    for e in _bib_printed(p):
+        words = p.entry_words(e["key"])
+        printed = [re.sub(r"^\W+|\W+$", "", w[4]) for _, w in words]
+        for name in refs.names(p.bib[e["key"]][1].get("author", "")):
+            plain = " ".join(p.ctx.plain(name).split())
+            parts = re.findall(r"[^\W\d_]+", plain)
+            last = re.findall(r"[^\W\d_]+", p.ctx.plain(refs.name_parts(name)[1]))
+            if not parts or not last or not all(w.islower() for w in parts) or all(w in PARTICLES for w in parts) \
+                    or last[-1] not in printed:  # the last name printed so: no style changes a name's case
+                continue
+            k = printed.index(last[-1])
+            rects = [w[:4] for j, (page, w) in enumerate(words) if page == words[k][0] and
+                     abs(j - k) < len(parts) and printed[j] in parts]
+            out.append(_entry(p, "author_case", e["key"],
+                              "Author name in lower case · {} · {}".format(plain, e["label"]),
+                              "The .bib entry {} writes the author {} in lower case, and the references print it so."
+                              .format(e["key"], _q(plain)),
+                              "Reference {} prints the author {} in lower case.".format(e["label"], _q(plain)),
+                              rects, plain))
+            break
+    return out
+
+
+def _title_words(title, printed):
+    """[(title word, printed word)] of a title found in an entry's printed words (case aside; a word a line's end
+    breaks is joined again), or None."""
+    want, have = TOKEN.findall(title or ""), TOKEN.findall(printed)
+    keys, norms = [_norm(w) for w in want], [_norm(w) for w in have]
+    for i in range(len(have)) if want else ():
+        j, out = i, []
+        for w, k in zip(want, keys):
+            if j < len(have) and norms[j] == k:
+                out.append((w, have[j]))
+                j += 1
+            elif j + 1 < len(have) and norms[j] + norms[j + 1] == k:
+                out.append((w, have[j]))
+                j += 2
+            else:
+                break
+        if len(out) == len(want):
+            return out
+    return None
+
+
+def _title_style(p, e):
+    """How an entry prints its title: "title" (most words of four letters or more begin with a capital), "sentence"
+    (none after the first does but names the .bib protects), else None; the first word, a subtitle's, and a word with a
+    capital inside (an acronym) do not count, and two must."""
+    tex = p.bib[e["key"]][1].get("title")
+    found = _title_words(e["title"], e["printed"]) if tex else None
+    if not found:
+        return None
+    flat, depth = [], 0
+    for c in tex:
+        depth += (c == "{") - (c == "}")
+        flat.append(c if depth > 0 and c not in "{}" else " ")
+    protected = {_norm(w) for w in TOKEN.findall(_plain_tex("".join(flat)))}
+    starts = {k for k, m in enumerate(TOKEN.finditer(e["title"])) if k == 0 or
+              re.search(r"[:?!.]\s*$", e["title"][:m.start()])}
+    words = [(w, shown) for k, (w, shown) in enumerate(found) if k not in starts and
+             sum(c.isalpha() for c in w) >= 4 and not any(c.isupper() for c in w[1:])]
+    if len(words) < 2:
+        return None
+    caps = [w for w, shown in words if shown[:1].isupper()]
+    if 2 * len(caps) > len(words):
+        return "title"
+    return "sentence" if all(_norm(w) in protected for w in caps) else None
+
+
+def title_case(p):
+    """Titles printed in title case beside titles printed in sentence case (the PDF's words of the .bib titles)."""
+    forms = {"title": [], "sentence": []}
+    for e in _bib_printed(p):
+        form = _title_style(p, e)
+        if form:
+            forms[form].append(e)
+    minority = _minority(forms)
+    if not minority:
+        return []
+    t, s = len(forms["title"]), len(forms["sentence"])
+    return [_entries(p, "title_case", next(iter(minority.values())),
+                     "Titles: {} in title case, {} in sentence case".format(t, s),
+                     "{} entries print their titles in title case and {} in sentence case.".format(t, s),
+                     "The references give {} titles in title case and {} in sentence case; write them one way."
+                     .format(t, s), "titles")]
+
+
+def etal_by_hand(p):
+    """A .bib author list cut to "and others" while every other entry of more than three authors prints them all."""
+    cut, full = [], []
+    for e in _bib_printed(p):
+        written = refs.names(p.bib[e["key"]][1].get("author", ""))
+        if written and written[-1].lower() == "others":
+            cut.append(e)
+        elif len(written) > 3:
+            full.append((e, written))
+    if not cut or not full or not all(_norm(p.ctx.plain(refs.name_parts(n)[1])) in _norm(e["printed"])
+                                      for e, written in full for n in written):
+        return []
+    return [_entry(p, "etal_by_hand", e["key"], "Author list cut to “et al.” · {}".format(e["label"]),
+                   "The .bib entry {} ends its authors with “and others”, while every other entry of more than three "
+                   "authors prints them all.".format(e["key"]),
+                   "Reference {} cuts its authors to “et al.”; list them all, as the other references do.".format(
+                       e["label"]), place_text=e["label"]) for e in cut]
+
+
+def leftovers(p):
+    """TeX the PDF prints in an entry: a "{", "}" or "\\", "..", ", ,", "()" or a spacing accent alone (a URL's words
+    aside); one per entry and leftover, each word holding it a place."""
+    out = []
+    for e in p.entries:
+        found = {}
+        words = [(page, w) for page, w in p.entry_words(e["key"]) if not re.search(r"https?:|www\.|/", w[4])]
+        text, starts = "", []
+        for page, w in words:
+            starts.append(len(text))
+            text += w[4] + " "
+        for m in LEFTOVER.finditer(text):
+            at = [k for k, s in enumerate(starts) if s < m.end() and m.start() < s + len(words[k][1][4])]
+            found.setdefault(LEFTOVER_SHOWN[m.group()[0]], []).extend(words[k] for k in at)
+        for page, w in words:
+            if any(c in ACCENTS for c in w[4]):
+                for c in p.detached(page, w[:4]):
+                    found.setdefault(c, []).append((page, w))
+        for shown, at in found.items():
+            places = [_place(page, [w[:4]], w[4]) for page, w in dict.fromkeys((page, w) for page, w in at)]
+            out.append(_check("leftovers", "Stray {} · {}".format(_q(shown), e["label"]),
+                              "The printed entry of {} holds {} ({}), a leftover of its .bib entry.".format(
+                                  e["key"], _q(shown), _pages(places)),
+                              "Reference {} prints a stray {}; fix its .bib entry.".format(e["label"], _q(shown)),
+                              places, ident="{}|{}".format(e["key"], shown)))
+    return out
+
+
+def _prints(p, e, field):
+    """Whether an entry's PDF words hold a .bib field's value: its words, or (8 letters and digits or more) its
+    letters and digits run together (a URL or DOI broken across lines)."""
+    raw = p.bib[e["key"]][1].get(field, "").strip()
+    value = raw if field in ("url", "doi") else p.ctx.plain(raw)
+    words = [_norm(w) for w in re.findall(r"[^\W_]+", value)]
+    if not raw or not any(words):
+        return False
+    printed = {_norm(w) for w in re.findall(r"[^\W_]+", e["printed"])}
+    return all(w in printed for w in words if w) or len(_norm(value)) >= 8 and _norm(value) in _norm(e["printed"])
+
+
+def field_mix(p):
+    """A field most conference papers (or journal articles) print and a few lack, or the reverse: DOI, pages, URL,
+    publisher, and an article's volume and number (TYPE_FIELDS; preprints aside)."""
+    out = []
+    for typ, noun in TYPE_NOUNS.items():
+        es = [e for e in _bib_printed(p) if FIELD_TYPES.get(e["type"]) == typ and not e["preprint"]]
+        for field in TYPE_FIELDS[typ]:
+            name = FIELDS[field]
+            ways = {"has": [], "lacks": []}
+            for e in es:
+                ways["has" if _prints(p, e, field) else "lacks"].append(e)
+            minority = _minority(ways)
+            if not minority:
+                continue
+            has, lacks, shown = len(ways["has"]), len(ways["lacks"]), name[0].upper() + name[1:]
+            if "has" in minority:
+                text = "{} on {} of {} {}".format(shown, has, len(es), noun)
+                detail = "{} of {} {} print their {}; the other {} do not.".format(has, len(es), noun, name, lacks)
+            else:
+                text = "{} missing on {} of {} {}".format(shown, lacks, len(es), noun)
+                detail = "{} of {} {} print no {}; the other {} do.".format(lacks, len(es), noun, name, has)
+            out.append(_entries(p, "field_mix", next(iter(minority.values())), text, detail,
+                                "Give all the {} their {}, or none.".format(noun, name), "{}|{}".format(typ, field)))
+    return out
+
+
+def page_dash(p):
+    """Page ranges printed with a dash beside ranges printed with a hyphen (the entry's pages found in its words)."""
+    ways = {"dash": [], "hyphen": []}
+    for e in p.entries:
+        numbers = re.findall(r"\d+", e["pages"] or "")
+        m = re.search(r"(?<!\d){}\s*([-‐–])\s*{}(?!\d)".format(numbers[0], numbers[-1]), e["printed"]) \
+            if len(numbers) >= 2 else None
+        if m:
+            ways["dash" if m.group(1) == "–" else "hyphen"].append(e)
+    minority = _minority(ways)
+    if not minority:
+        return []
+    d, h = len(ways["dash"]), len(ways["hyphen"])
+    return [_entries(p, "page_dash", next(iter(minority.values())),
+                     "Page ranges: {} with a dash, {} with a hyphen".format(d, h),
+                     "{} entries print their page range with a dash (–) and {} with a hyphen (-).".format(d, h),
+                     "The references print {} page ranges with a dash and {} with a hyphen; write them one way (“--” "
+                     "in the .bib gives the dash).".format(d, h), "pages")]
+
+
+def _arxiv_form(e):
+    """How an entry prints its arXiv id: "CoRR" ("CoRR, abs/…"), "arXiv" ("arXiv:…"), "url" (arxiv.org/… only), or
+    None."""
+    t = e["printed"]
+    if re.search(r"\bCoRR\b", t) and "abs/" in t:
+        return "CoRR"
+    if re.search(r"arXiv:\s*\S", t, re.I):
+        return "arXiv"
+    return "url" if re.search(r"arxiv\.org/", t, re.I) else None
+
+
+def arxiv_forms(p):
+    """arXiv ids printed in two ways or more: arXiv:2010.11929, CoRR abs/2010.11929, an arxiv.org URL alone."""
+    ways = {}
+    for e in p.entries:
+        form = _arxiv_form(e) if e["arxiv"] else None
+        if form:
+            ways.setdefault(form, []).append(e)
+    minority = _minority(ways)
+    if not minority:
+        return []
+    order = sorted(ways, key=lambda w: -len(ways[w]))
+    shown = [ARXIV_FORMS[w].format(ways[w][0]["arxiv"]) for w in order]
+    return [_entries(p, "arxiv_forms", [e for w in order if w in minority for e in ways[w]],
+                     "arXiv written {} · {}".format(_ways(len(ways)), " · ".join(shown)),
+                     "The references print arXiv ids {}: {}.".format(_ways(len(ways)), _and(
+                         "{} ({}×)".format(_q(s), len(ways[w])) for s, w in zip(shown, order))),
+                     "The references give arXiv ids {} ({}); write them one way.".format(
+                         _ways(len(ways)), _and(_q(s) for s in shown)), "arxiv")]
+
+
+# --- the references' look-ups (refs.json's results, stored by the app; the engine fetches nothing) ---------------
+
+def _year(v):
+    m = re.search(r"\b(\d{4})\b", str(v)) if isinstance(v, (str, int)) else None
+    return int(m.group(1)) if m else None
+
+
+def _last_name(name):
+    """The last word of a name's last name ("Dosovitskiy, Alexey", "Laurens van der Maaten"), letters only."""
+    last = refs.name_parts(name)[1].split() if isinstance(name, str) and name.strip() else []
+    return _norm(last[-1]) if last else ""
+
+
+def published_preprint(p):
+    """A preprint entry (refs.PREPRINT) whose Semantic Scholar record was published at a venue."""
+    out = []
+    for e in p.entries:
+        r = p.result("semantic_scholar", e["key"])
+        venue = _text(r.get("published")) if r and r.get("found") is True else None
+        if not e["preprint"] or not venue:
+            continue
+        if refs.fold_venue(venue) and refs.fold_venue(venue) in refs.fold_venue(e["printed"] or ""):
+            continue  # the entry prints that venue already
+        what = "{} preprint".format(refs.server(e)) if refs.server(e) else "preprint"
+        out.append(_entry(p, "published_preprint", e["key"], "{} {} · published at {}".format(e["label"], what, venue),
+                          "Semantic Scholar's record of {} was published at {}; the entry cites the {}.".format(
+                              _q(e["title"] or e["key"]), venue, what),
+                          "Cite the published version ({}).".format(venue), place_text=e["label"]))
+    return out
+
+
+def no_record(p):
+    """An entry that every source looked up for it found nothing for, Semantic Scholar at least; the closest match in
+    the detail."""
+    out = []
+    for e in p.entries:
+        found = {s: p.result(s, e["key"]) for s in refs.SOURCES}
+        found = {s: r for s, r in found.items() if r}
+        if "semantic_scholar" not in found or any(r.get("found") is not False for r in found.values()):
+            continue
+        if (e.get("type") or "").lower() in ("misc", "online", "software", "dataset", "electronic", "www") and e["url"]:
+            continue  # a web page, a repository or a dataset: no paper to find
+        closest = next((r["closest"] for r in found.values() if isinstance(r.get("closest"), dict)), None)
+        detail = "{} {} no record of {}.".format(_and(refs.SOURCES[s] for s in found), "finds" if len(found) == 1
+                                                 else "find", _q(e["title"] or e["key"]))
+        if closest:
+            authors = closest.get("authors") if isinstance(closest.get("authors"), list) else []
+            shown = [str(v) for v in (_text(closest.get("title")), closest.get("year"),
+                                      authors[0] if authors else None) if isinstance(v, (str, int)) and str(v)]
+            detail += " Closest: {}.".format(" · ".join(shown)) if shown else ""
+        out.append(_entry(p, "no_record", e["key"], "{} · no record".format(e["label"]), detail,
+                          "Check that this work exists and that its title is right.", place_text=e["label"]))
+    return out
+
+
+def record_differs(p):
+    """An entry whose year (by more than one, a preprint's aside), title (case, TeX, accents and punctuation aside) or
+    first author's last name differs from its Semantic Scholar record; one check each."""
+    out = []
+    for e in p.entries:
+        r = p.result("semantic_scholar", e["key"])
+        if not r or r.get("found") is not True:
+            continue
+        label, title = e["label"], _q(e["title"] or e["key"])
+        year, published = _year(e["year"]), _year(r.get("year"))
+        if year and published and not e["preprint"] and abs(year - published) > 1:
+            out.append(_entry(p, "record_differs", e["key"],
+                              "{} · year {}, published {}".format(label, year, published),
+                              "The entry gives {} the year {}; Semantic Scholar's record has {}.".format(
+                                  title, year, published),
+                              "Reference {} gives the year {}; the work was published in {}.".format(
+                                  label, year, published), place_text=label, ident="{}|year".format(e["key"])))
+        named = _text(r.get("title"))
+        if named and e["title"] and _norm(named.replace("&", "and")) != _norm(e["title"].replace("&", "and")):
+            out.append(_entry(p, "record_differs", e["key"], "{} · title differs".format(label),
+                              "The entry's title, {}, is not Semantic Scholar's, {}.".format(title, _q(named)),
+                              "Check the title of reference {}: the published work has {}.".format(label, _q(named)),
+                              place_text=label, ident="{}|title".format(e["key"])))
+        authors = r.get("authors") if isinstance(r.get("authors"), list) else []
+        first = authors[0] if authors and isinstance(authors[0], str) else None
+        if first and e["authors"] and _last_name(first) and _last_name(e["authors"][0]) \
+                and _last_name(first) != _last_name(e["authors"][0]):
+            out.append(_entry(p, "record_differs", e["key"], "{} · first author differs".format(label),
+                              "The entry's first author is {}; Semantic Scholar's record has {}.".format(
+                                  _q(e["authors"][0]), _q(first)),
+                              "Check the authors of reference {}: the published work's first author is {}.".format(
+                                  label, _q(first)), place_text=label, ident="{}|first author".format(e["key"])))
     return out
 
 
@@ -1991,6 +2558,10 @@ def personal_url(p):
 RUNS = [("undefined_ref", undefined_ref), ("undefined_cite", undefined_cite), ("label_twice", label_twice),
         ("float_unreferenced", float_unreferenced), ("float_before", float_before), ("float_far", float_far),
         ("same_work", same_work), ("lowered_caps", lowered_caps), ("no_year", no_year), ("no_venue", no_venue),
+        ("venue_forms", venue_forms), ("venue_style", venue_style), ("author_names", author_names),
+        ("author_case", author_case), ("title_case", title_case), ("etal_by_hand", etal_by_hand),
+        ("leftovers", leftovers), ("field_mix", field_mix), ("page_dash", page_dash), ("arxiv_forms", arxiv_forms),
+        ("published_preprint", published_preprint), ("no_record", no_record), ("record_differs", record_differs),
         ("spelling", spelling), ("ref_style", ref_style), ("overfull", overfull),
         ("straight_quotes", straight_quotes), ("doubled_word", doubled_word), ("type3_font", type3_font),
         ("unembedded_font", unembedded_font), ("draft_marker", draft_marker), ("todo_note", todo_note),

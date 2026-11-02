@@ -13,7 +13,7 @@ import traceback
 from pathlib import Path
 
 from . import EngineError, analysis, anchor, archive, cards, check, check_items, checks, comments, disk, export, \
-    history, ledger, links, notes, overview, project, prose, render, state, tags, texdiff
+    history, ledger, links, notes, overview, project, prose, refs, render, state, tags, texdiff
 
 _REQUIRED = object()
 
@@ -765,20 +765,58 @@ def checks_(params, progress):
     paper = _paper(params)
     lg = ledger.load(paper)
     rnd = _built_round(paper, lg, params.get("round"))
-    found = checks.load(paper, rnd["n"])
-    if found is not None and not found["table"]:  # built without the table: try it again (once a process if it fails)
-        data = prose.load(paper, rnd["n"])
-        if data is not None and links.build_quietly(paper, lg, rnd["n"], data) is not None:
-            found = None
-    if found is None:
-        data = _prose_quietly(paper, rnd["n"], progress)
-        if data is not None:
-            table = links.load(paper, rnd["n"]) or links.build_quietly(paper, lg, rnd["n"], data)
-            found = checks.build_quietly(paper, lg, rnd["n"], data, table)
+    found = _checks_built(paper, lg, rnd["n"], progress)
     ok = lg.get("checks_ok") or {}
     return {"round": rnd["n"], "path": str(checks.path(paper, rnd["n"])) if found is not None else None,
             "checks": [dict(c, ok=c["key"] in ok) for c in found["checks"]]
             if found is not None else None}
+
+
+def _checks_built(paper, lg, n, progress):
+    """Round n's checks.json, built when missing or stale (after its prose.json and link table; again with the table
+    when built without it and the table can now be built), or None when it cannot be built."""
+    found = checks.load(paper, n)
+    if found is not None and not found["table"]:  # built without the table: try it again (once a process if it fails)
+        data = prose.load(paper, n)
+        if data is not None and links.build_quietly(paper, lg, n, data) is not None:
+            found = None
+    if found is None:
+        data = _prose_quietly(paper, n, progress)
+        if data is not None:
+            table = links.load(paper, n) or links.build_quietly(paper, lg, n, data)
+            found = checks.build_quietly(paper, lg, n, data, table)
+    return found
+
+
+def references(params, progress):
+    """Round n's cited entries (default: the latest round; refs.py, rN/refs.json; design/pdf-reader/PLAN.md P1.3) and
+    the online look-ups' results stored for them, read only and without state: {"round", "entries", "results":
+    {source: {key: Result}}}. The entries are built with the round's checks (built first when missing or stale, as the
+    checks RPC does); `entries` is null when the checks cannot be built."""
+    paper = _paper(params)
+    lg = ledger.load(paper)
+    n = _built_round(paper, lg, params.get("round"))["n"]
+    data = refs.load(paper, n) if _checks_built(paper, lg, n, progress) is not None else None
+    entries = data.get("entries") if data else None
+    keys = {e["key"] for e in entries or ()}
+    return {"round": n, "entries": entries,
+            "results": {s: {k: r for k, r in found.items() if k in keys} for s, found in data["results"].items()}
+            if entries is not None else {}}
+
+
+def ref_results(params, progress):
+    """Store one source's look-ups for round n's cited entries (refs.store: merged by key into rN/refs.json, any round,
+    open or closed), so the round's checks are stale and built again: {"stored": k}, without state. The entries are
+    built first when refs.json has none (as `references`); a key the round does not cite is refused."""
+    paper = _paper(params)
+    lg = ledger.load(paper)
+    n = _param(params, "round")
+    if not isinstance(n, int) or isinstance(n, bool):
+        raise EngineError("round is a round's number.")
+    n = _built_round(paper, lg, n)["n"]
+    if not isinstance((refs.load(paper, n) or {}).get("entries"), list):
+        _checks_built(paper, lg, n, progress)
+    return {"stored": refs.store(paper, n, _param(params, "source"), _param(params, "results"))}
 
 
 def check_ok(params, progress):
@@ -1244,6 +1282,7 @@ METHODS = {"new": new, "ingest": ingest, "comment": comment, "edit_comment": edi
            "delete_comment": delete_comment, "verdict": verdict, "import": import_, "finish": finish,
            "check_change": check_change, "state": state_, "summaries": summaries, "prose": prose_, "links": links_,
            "checks": checks_, "check_ok": check_ok, "check_items": check_items_, "check_note": check_note,
+           "references": references, "ref_results": ref_results,
            "follow": follow, "read": read,
            "email_preview": email_preview, "edit_paper": edit_paper, "overview": overview_, "tag": tag, "retag": retag,
            "revive": revive, "export_comments": export_comments, "adopt_facts": adopt_facts, "fork": fork,
