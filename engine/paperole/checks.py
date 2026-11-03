@@ -1,8 +1,8 @@
 """A round's checks (design/pdf-reader/PLAN.md §6.2 P1.5; CONTRACT.md amendment "Checks").
 
 Rules every draft should meet, found by the engine instead of the eye, each a fact with its places in the round's build
-PDF: references ("??" and "[?]", a label defined twice, a float never referenced, before its first reference or far
-after it), the bibliography (one work under two keys, capitals the style lowered, an entry without a year or a venue,
+PDF: references ("??" and "[?]", a label defined twice, a float never referenced or far from its first reference),
+the bibliography (one work under two keys, capitals the style lowered, an entry without a year or a venue,
 the list written two ways or with a TeX leftover, and from the look-ups the app stores in refs.json a preprint
 published since, a work no source finds, a record that differs), consistency (one word spelt two ways, one kind of
 reference written two ways), typesetting (overfull lines, straight quotes, doubled words, short paragraph endings,
@@ -37,12 +37,14 @@ from . import anchor, comments, links, project, prose, refs, texdiff
 # (2: biblatex's citations and .bib, places in reading order, a range of references covers its middle floats, an
 # item's label before a sentence, the parts TeX skips, review anonymous only for the venues that mean it, …;
 # 3: a \todo only when the PDF prints it; 4: each check's key; 5: the references' format and online checks, refs.json;
-# 6: paragraph/heading breaks, short endings, split pairs, sentence starts and more printed placeholders)
-CHECKS = 6
+# 6: paragraph/heading breaks, short endings, split pairs, sentence starts and more printed placeholders;
+# 7: floats before their first reference need the same two-page distance as those after it;
+# 8: bibliography marks follow text lines, including hanging first words and continuation parts)
+CHECKS = 8
 SCHEMA = 1
 GROUPS = ("references", "bibliography", "consistency", "typesetting", "submission")
 OVERFULL = 1.0  # points: an overfull line at most this much too wide is not reported
-FAR = 2  # pages: a float this many pages or more after its first reference is far from it
+FAR = 2  # pages: a float this many pages or more before/after its first reference is far from it
 LINK_HEIGHT = 5.0  # points: a link rect at least this high excuses the colour of the words in it (colorlinks)
 GREY = 24  # of 255: a colour whose channels lie at most this far apart is black or grey
 EXCERPT = 5  # words of a run of coloured text in its row
@@ -837,6 +839,26 @@ class _Paper:
         k = self.bibitems.get(key, (None,))[0]
         return [(page, r) for page, r in self.parts(self.blocks[k])] if k is not None else []
 
+    def entry_places(self, key, text=None):
+        """Text-selection geometry for a whole entry; keep first-line overhangs inside the same PDF line/column."""
+        parts = self.entry_parts(key)
+        if not parts:
+            at = self.entry_place(key)
+            parts = [at] if at else []
+        places = []
+        for page, r in parts:
+            words = dict(self.words_in(page, [r]))
+            if words:
+                first = next(iter(words.values()))
+                # The source/link box can start at the hanging indent and miss a short first name entirely.
+                # Recover only words on that PDF line, not a neighbouring entry or the other column.
+                for i, w in self.words_in(page, [[0, first[1], r[0], first[3]]]):
+                    if w[5:7] == first[5:7] and self.geometry(page, w)[1] == self.geometry(page, r)[1]:
+                        words[i] = w
+            rects = anchor._line_rects([w for _, w in sorted(words.items())])
+            places.append(_place(page, rects, text))  # no selectable words: a page-only place, not a filled block
+        return places
+
     def entry_words(self, key):
         """[(page, word)] of an entry's PDF words (entry_parts), in reading order."""
         if key not in self._entry_words:
@@ -1124,27 +1146,23 @@ def _float_pages(p, code):
             continue
         page, box = p.parts(p.blocks[k])[0]
         name, cited = "{} {}".format(noun, number), pages[0]
-        if code == "float_before" and not (page < cited and page > 0):  # a float on p.1 before it is cited: a teaser
-            continue
-        if code == "float_far" and page < cited + FAR:
-            continue
         gap = cited - page if code == "float_before" else page - cited
-        detail = "{} is on p.{}, {} {} {} the text first refers to it on p.{}.".format(
-            name, page + 1, gap, "page" if gap == 1 else "pages", "before" if code == "float_before" else "after",
-            cited + 1)
-        note = "{} appears on p.{}, {} its first reference on p.{}; place it {}.".format(
-            name, page + 1, "before" if code == "float_before" else "{} pages after".format(gap), cited + 1,
-            "after the paragraph that first cites it" if code == "float_before" else "nearer to that paragraph")
+        if gap < FAR or (code == "float_before" and page == 0):  # keep the first-page teaser exemption
+            continue
+        direction = "before" if code == "float_before" else "after"
+        detail = "{} is on p.{}, {} pages {} the text first refers to it on p.{}.".format(
+            name, page + 1, gap, direction, cited + 1)
+        note = "{} appears on p.{}, {} pages {} its first reference on p.{}; consider placing it nearer to " \
+               "that paragraph.".format(name, page + 1, gap, direction, cited + 1)
         places = [_place(page, [box], name), _place(first["page"], first["rects"], first["text"])]
-        text = "{} · before its first citation".format(name) if code == "float_before" else \
-            "{} · {} pages after its first citation".format(name, gap)  # the pages are the row's (its places)
+        text = "{} · {} pages {} its first citation".format(name, gap, direction)
         out.append(_check(code, text, detail, note, places, ident=labels[0] if labels else None,
                           per_round=not labels))  # its \label; a number alone is renumbered
     return out
 
 
 def float_before(p):
-    """A float on an earlier page than its first reference (PDF pages of the table's links), not on p.1."""
+    """A float FAR (2) or more pages before its first reference, not on p.1."""
     return _float_pages(p, "float_before")
 
 
@@ -1212,7 +1230,7 @@ def _bib_entries(text):
 def _entry(p, code, key, text, detail, note, rects=None, place_text=None, ident=None):
     """A check of one .bib entry, known by its key (its printed label is renumbered)."""
     at = p.entry_place(key)
-    places = [_place(at[0], rects or [at[1]], place_text)] if at else []
+    places = [_place(at[0], rects, place_text)] if at and rects else p.entry_places(key, place_text)
     return _check(code, text, detail, note, places, ident=ident or key)
 
 
@@ -1256,9 +1274,7 @@ def _same(p, keys, detail, title):
     labels = [p.cite_label(k) for k in keys]
     places = []
     for k in keys:
-        at = p.entry_place(k)
-        if at:
-            places.append(_place(at[0], [at[1]], p.cite_label(k)))
+        places.extend(p.entry_places(k, p.cite_label(k)))
     return _check("same_work", "Same work {} · {}".format(
                       "twice" if len(keys) == 2 else "{}×".format(len(keys)), " · ".join(labels)), detail,
                   "The references list {} more than once ({}); cite one entry.".format(_q(title), " and ".join(labels)),
@@ -1365,9 +1381,7 @@ def _entries(p, code, es, text, detail, note, ident):
     """A check of several entries, each its place in the references list (its printed label the place's text)."""
     places = []
     for e in es:
-        at = p.entry_place(e["key"])
-        if at:
-            places.append(_place(at[0], [at[1]], e["label"]))
+        places.extend(p.entry_places(e["key"], e["label"]))
     return _check(code, text, detail, note, _sorted(p, places), ident=ident)
 
 

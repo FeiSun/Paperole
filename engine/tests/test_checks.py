@@ -286,7 +286,8 @@ def _line(slots, needle, nth=0):
 REFS = {"venue_forms", "venue_style", "author_names", "author_case", "title_case", "etal_by_hand", "leftovers",
         "field_mix", "page_dash", "arxiv_forms", "published_preprint", "no_record", "record_differs"}
 # The other writing checks have their own fixture in test_writing_checks.py; this paper also has a short last line.
-ALL = set(checks.CODES) - REFS - {"paragraph_break", "heading_break", "split_phrase", "sentence_start"}
+# Its early figure is only one page before its citation: normal float placement, no float_before finding.
+ALL = set(checks.CODES) - REFS - {"paragraph_break", "heading_break", "split_phrase", "sentence_start", "float_before"}
 NO_BIB = {"lowered_caps", "no_year", "no_venue", "pdf_author"}  # need a .bib (or hyperref's pdfauthor)
 
 
@@ -340,9 +341,7 @@ def test_references(defect):
     unref, = by["float_unreferenced"]
     assert unref["text"] == "Figure 4 · not referenced" and unref["note"] == "Figure 4 is never referenced in the text."
     assert unref["places"][0]["page"] == 4 and "Figure 4:" in _words(defect, unref["places"][0])
-    before, = by["float_before"]
-    assert before["text"] == "Figure 2 · before its first citation"
-    assert [p["page"] for p in before["places"]] == [1, 2] and "Figure 2:" in _words(defect, before["places"][0])
+    assert "float_before" not in by  # Figure 2 on p.2, first cited on p.3: no warning
     far, = by["float_far"]
     assert far["text"] == "Figure 3 · 3 pages after its first citation"
     assert [p["page"] for p in far["places"]] == [4, 1] and _words(defect, far["places"][1]) == "3"
@@ -532,7 +531,7 @@ def test_checks_built_without_the_table_are_built_again_with_it(defect, copy, mo
     assert _by_code(_checks(paper)) == found  # current while the round has no table
     monkeypatch.undo()
     found = _by_code(_checks(paper))
-    assert "float_far" in found and "float_before" in found
+    assert "float_far" in found and "float_before" not in found
     assert checks.load(paper, 1)["table"] is True and links.load(paper, 1) is not None
 
 

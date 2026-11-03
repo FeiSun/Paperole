@@ -1151,3 +1151,14 @@ References, 2026-11-01 (`design/pdf-reader/PLAN.md` P1.3 as rewritten that day; 
     - `no_record` is left out for a misc / online / software / dataset entry with a url;
     - `venue_style` compares conference papers only (short conference names beside journals in full is one usual style).
   - Tests: `tests/test_refs.py` (11).
+
+
+Float distance reminders, 2026-11-03 (the advisor: placement before or after a citation is normal; flag only a large distance). Supersedes the distance/wording rule in the Checks amendment, without changing the finding shape or codes.
+- Both `float_before` and `float_far` require a page-number difference of at least `FAR` (2) from the first citation; same-page and one-page differences do not warn. Existing first-page teaser and appendix exemptions remain.
+- Both titles include the distance and direction, e.g. "Figure 3 · 2 pages before its first citation". The note suggests proximity, never mandates placement after the reference.
+- `CHECKS` 7 makes previous caches stale. Existing codes and label-based keys preserve item identity and Mark as OK; open rounds are rechecked, while completed rounds retain their recorded findings.
+
+
+Bibliography text highlights, 2026-11-03 (the advisor: use text-selection highlights; whole-entry coverage is sufficient).
+- Whole-entry bibliography findings use per-line PDF word rectangles, including hanging first-line prefixes and all continuation parts. Existing field/word-specific rectangles are retained. No text found means a page-only place, not a paragraph fill.
+- The Check/Place schemas are unchanged. The existing native marks and final.pdf renderer consume the same line rectangles; IDs, notes, rules, colours and completed-round records are unchanged. CHECKS 8 invalidates earlier caches for open-round recomputation.

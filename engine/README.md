@@ -103,7 +103,7 @@ Layout and sentence-start checks use mapped body text before the bibliography; l
 except that `split_phrase` also checks them. Paragraph parts distinguish columns and full-width text. A7 uses the
 existing source-line-to-PDF mapping, so its mark can cover a line rather than just the symbol/citation. There is no
 AI, network request, new dependency or new finding group. The five new codes use Typesetting; placeholders
-stay in Submission. `CHECKS = 6` invalidates older caches. The existing A-id, Mark as OK, export and round lifecycle
+stay in Submission. The checks version invalidates older caches. The existing A-id, Mark as OK, export and round lifecycle
 are reused. Tests: `tests/test_writing_checks.py` (geometry/exclusions and compiled one/two-column papers through
 export and a clean next round), plus the existing check regressions. Local development notes are in the repository's
 git-ignored `implementation-notes.md`.
@@ -113,8 +113,22 @@ and category switches. Draft markers controls the whole `draft_marker` rule, inc
 unchanged. Choices persist and travel with an export of settings. The raw checks cache stays shared; choices select
 the findings shown and sent, rather than changing that cache.
 
+Float placement (2026-11-03): figures, tables and algorithms on the same page as their first citation, or one page
+before/after it, produce no distance warning. Both directions now require a page-number difference of at least 2.
+The existing first-page teaser and appendix exemptions remain. Findings say how many pages before/after and suggest
+moving closer, without requiring a float to follow its citation. `CHECKS = 7` invalidates the old cache; unchanged
+`float_before`/`float_far` codes and label-based keys preserve IDs and Mark as OK. Open rounds are rechecked; finished
+rounds keep their recorded findings. Dev loads this engine from the checkout on restart; no native rebuild is needed.
+
 The `check_items` and `finish` RPCs accept optional `disabled: [check_code, ...]` (omitted: all enabled for
 `check_items`; the round's saved choice for `finish`). Unknown codes/types are refused. `finish` also accepts
 `groups`, so an immediate Finish honours the latest settings even while a scan is pending. The round stores
 `check_disabled` alongside `check_groups`. Disabled items pause, keep their notes and are not marked fixed; switching
 a pending item back on keeps its id. Finished rounds show their recorded selection. No ledger schema change is needed.
+
+Bibliography highlight geometry (2026-11-03): whole-entry findings now carry one rectangle per text line, rather
+than a filled paragraph box. Hanging first words are recovered on the same PDF line and column; continuation parts
+on other pages/columns are included. Existing word-specific findings remain precise. With no selectable words, the
+location is page-only. Both the app and final.pdf already render these rectangles as text highlights. CHECKS 8
+invalidates old caches; open rounds refresh their marks without changing IDs, while finished-round records remain
+as sent. No detector decisions, colours, reference metadata or native rendering code change.

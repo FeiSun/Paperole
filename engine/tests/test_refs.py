@@ -9,10 +9,11 @@ import shutil
 import subprocess
 import sys
 
+import pymupdf
 import pytest
 
 from conftest import Engine, quiet
-from paperole import api, checks, disk, prose, refs
+from paperole import api, checks, disk, prose, refs, render
 
 PATH = "/Library/TeX/texbin" + os.pathsep + os.environ.get("PATH", "")
 pytestmark = pytest.mark.skipif(not shutil.which("latexmk", path=PATH), reason="needs latexmk and synctex")
@@ -117,6 +118,28 @@ def mixed(tmp_path_factory):
 @pytest.fixture(scope="module")
 def hidden(tmp_path_factory):
     return _paper(tmp_path_factory.mktemp("hidden"), MIXED, "abbrv", hyperref=False)
+
+
+def test_whole_entry_line_highlights_reach_the_export(mixed, tmp_path):
+    paper = tmp_path / "paper"
+    shutil.copytree(mixed, paper)
+    found = api.checks_({"paper": str(paper)}, quiet)["checks"]
+    finding = next(c for c in found if c["code"] == "venue_forms")
+    place, = finding["places"]
+    assert len(place["rects"]) > 1
+    assert all(r[3] - r[1] < 16 for r in place["rects"])
+    api.check_items_({"paper": str(paper), "disabled": [c for c in checks.CODES if c != "venue_forms"]}, quiet)
+    state = api.finish({"paper": str(paper), "checks": True}, quiet)["state"]
+    final = paper / "r1/final.pdf"
+    with pymupdf.open(final) as doc:
+        page = doc[len(doc) - state["round"]["build"]["pages"] + place["page"]]
+        colour = render._rgb(render.CHECK_FILL)
+        marks = [d["rect"] for d in page.get_drawings() if d.get("fill")
+                 and all(abs(a - b) < 0.01 for a, b in zip(d["fill"], colour))]
+        assert len(marks) == len(place["rects"])
+        assert all(any(all(abs(a - b) < 0.02 for a, b in zip(r, drawn)) for drawn in marks) for r in place["rects"])
+    if os.environ.get("PAPEROLE_TEXT_MARKS_OUT"):
+        shutil.copyfile(final, os.path.join(os.environ["PAPEROLE_TEXT_MARKS_OUT"], "bibliography-highlights.pdf"))
 
 
 @pytest.fixture(scope="module")
