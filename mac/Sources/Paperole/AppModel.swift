@@ -527,6 +527,11 @@ final class AppModel: ObservableObject {
     /// The shown round's cited entries and what the sources found for them, by key (the engine's `references`).
     @Published private(set) var refEntries: [String: RefEntry] = [:]
     @Published private(set) var refResults: [String: [RefSource: RefResult]] = [:]
+    @Published private(set) var referencesLoading = false
+    @Published private(set) var referenceRoundKey: String?
+    @Published private(set) var referenceLoadError: String?
+    @Published private(set) var referenceStores: [UUID: String] = [:]
+    @Published private(set) var referenceStoreErrors: Set<String> = []
     private var refsAsked: String?
     private var refWatch: AnyCancellable?
     /// Settings › Overview (VISUAL v3 §5, §7): a long appendix (and a References list over four pages) folds into one
@@ -713,8 +718,6 @@ final class AppModel: ObservableObject {
     /// The checks are built by an engine of their own, so a long paper's checks never hold the window's requests (the
     /// engine answers one request at a time); it writes only the round's checks.json, a cache.
     private lazy var checksEngine = EngineClient()
-    /// The rounds whose "Checks done" was said this run (once a round).
-    private var checksToasted: Set<String> = []
     /// My Comment… on a check: its paper|round, its key and its page, marked OK once a comment is made on that page
     /// while the editor it opened is open (`commentEditorClosed` lets it go).
     private var checkComment: (round: String, key: String, page: Int)?
@@ -3038,8 +3041,8 @@ final class AppModel: ObservableObject {
     /// checks builds them (`checks`, seconds on a long paper), then the window's engine gives their items (`check_items`:
     /// in an open round it numbers them, A2-03, and finds which went out before and which are fixed). An error, an older
     /// engine's "Unknown method 'checks'." or no checks leaves the tab without them; an engine before check items shows
-    /// the checks without ids. A reply for another round than the one asked is dropped. "Checks done · 7 found" is
-    /// said once a round. A fixture run and `swift test` never ask: their checks are set (`setChecks`).
+    /// the checks without ids. A reply for another round than the one asked is dropped. Completion stays in the
+    /// status bar's activity panel. A fixture run and `swift test` never ask: their checks are set (`setChecks`).
     func requestChecks() {
         let key = checksOn ? checksRoundKey : nil
         if checks.key != nil && checks.key != key { checks.clear() }
@@ -3047,20 +3050,27 @@ final class AppModel: ObservableObject {
         checksAsked = key
         checksRequest += 1
         let request = checksRequest
+        let kinds = ChecksModel.groups.map(\.id).filter(checkKinds.contains)
+        let disabled = disabledCheckCodes
         guard let key, fixtureURL == nil, !LaunchOptions.unitTest, let path = selectedPath, let n = round?.n,
-              let json = try? JSONSerialization.data(withJSONObject: ["paper": path, "round": n]) else { return }
+              let json = try? JSONSerialization.data(withJSONObject: ["paper": path, "round": n, "groups": kinds,
+                                                                     "disabled": Array(disabled).sorted()]) else { return }
         let open = roundIsOpen
         checks.roundOpen = open
         // the same round asked again (the look-ups' results): what is shown stays until the new list comes
         if !(checks.key == key && checks.phase == .ready) { checks.ask(key) }
         let pages = round?.build.pages
-        let kinds = ChecksModel.groups.map(\.id).filter(checkKinds.contains)
-        let disabled = disabledCheckCodes
+        checks.refreshing = true
+        checks.reportError = nil
         let built = checksEngine.send("checks", params: json)
         Task {
             let reply = try? makeDecoder().decode(ChecksReply.self, from: try await checksEngine.result(built))
             guard checksAsked == key, checksRequest == request, checksOn else { return }
-            guard reply?.round == n, let list = reply?.checks else { return checks.show(nil, round: n, key: key, pages: pages) }
+            guard reply?.round == n, let list = reply?.checks else {
+                checks.show(nil, round: n, key: key, pages: pages)
+                checks.reportError = "Checks could not finish. The PDF or its source mapping may be unavailable."
+                return
+            }
             var items: [Check]? = nil
             if let params = try? JSONSerialization.data(withJSONObject: ["paper": path, "round": n, "groups": kinds,
                                                                         "disabled": Array(disabled).sorted()]) {
@@ -3073,13 +3083,12 @@ final class AppModel: ObservableObject {
             let shown = items ?? (open ? list : [])
             checks.show(open ? shown.filter { kinds.contains($0.group) && !disabled.contains($0.code) } : shown,
                         round: n, key: key, pages: pages)
+            checks.report = reply?.report
+            checks.scanFindings = list
+            checks.refreshing = false
+            if reply?.report == nil { checks.reportError = "This scan has no execution record. Its coverage is unknown." }
             checksMarksChanged()
             requestReferences()
-            if open && !checksToasted.contains(key) {  // said for the round being reviewed, not one looked back at
-                checksToasted.insert(key)
-                let k = checks.sent
-                showPanelToast(k == 0 ? "Checks done · nothing found" : "Checks done · \(k) found")
-            }
         }
     }
 
@@ -3090,6 +3099,7 @@ final class AppModel: ObservableObject {
         checksAsked = key
         checks.roundOpen = roundIsOpen
         checks.show(list, round: n, key: key, pages: round?.build.pages)
+        checks.scanFindings = list ?? []
         checksMarksChanged()
     }
 
@@ -3123,22 +3133,33 @@ final class AppModel: ObservableObject {
         let key = checksOn && !lookUp.isEmpty ? checksRoundKey.map { $0 + "|" + lookUp.map(\.rawValue).sorted().joined(separator: ",") } : nil
         guard key != refsAsked else { return }
         refsAsked = key
+        referencesLoading = false
+        referenceLoadError = nil
         refEntries = [:]
         refResults = [:]
         guard let key, fixtureURL == nil, !LaunchOptions.unitTest, let path = selectedPath, let n = round?.n,
               let json = try? JSONSerialization.data(withJSONObject: ["paper": path, "round": n]) else { return }
         let sources = RefSource.allCases.filter(lookUp.contains)
+        referenceRoundKey = RefLookup.roundKey(path, n)
+        referencesLoading = true
         let sent = checksEngine.send("references", params: json)
         Task {
-            guard let reply = try? makeDecoder().decode(ReferencesReply.self, from: try await checksEngine.result(sent)),
-                  refsAsked == key, reply.round == n, let entries = reply.entries else { return }
+            let reply = try? makeDecoder().decode(ReferencesReply.self, from: try await checksEngine.result(sent))
+            guard refsAsked == key, selectedPath == path, round?.n == n else { return }
+            referencesLoading = false
+            guard let reply, reply.round == n, let entries = reply.entries else {
+                referenceLoadError = "Reference records could not be loaded."
+                return
+            }
             showReferences(entries, reply.results ?? [:])
-            refs.start(paper: path, round: n, entries: entries, stored: reply.results ?? [:], sources: sources)
+            refs.start(paper: path, round: n, entries: entries, stored: reply.results ?? [:], sources: sources,
+                       recorded: reply.attempts ?? [:])
         }
     }
 
     /// The shown round's entries and results (tests set them).
     func showReferences(_ entries: [RefEntry], _ results: [String: [String: RefResult]]) {
+        referenceRoundKey = RefLookup.roundKey(selectedPath ?? "", round?.n ?? 0)
         refEntries = Dictionary(entries.map { ($0.key, $0) }, uniquingKeysWith: { a, _ in a })
         var by: [String: [RefSource: RefResult]] = [:]
         for (s, rs) in results { if let src = RefSource(rawValue: s) { for (k, r) in rs { by[k, default: [:]][src] = r } } }
@@ -3158,24 +3179,23 @@ final class AppModel: ObservableObject {
     }
 
     /// The look-ups' hooks: results go to the engine (`ref_results`, on the checks' engine), and the shown round's
-    /// checks are built again with them; the Checks tab's line follows the queues; the end is said once.
+    /// checks are built again with them; the Checks tab and activity panel follow the queues.
     private func watchLookUps() {
-        refs.store = { [weak self] paper, round, source, results in
+        refs.store = { [weak self] paper, round, source, results, attempts in
             guard let self, let json = try? JSONSerialization.data(withJSONObject: [
                 "paper": paper, "round": round, "source": source.rawValue,
-                "results": results.mapValues(\.json)] as [String: Any]) else { return }
+                "results": results.mapValues(\.json), "attempts": attempts.mapValues(\.json)] as [String: Any]) else { return }
+            let token = UUID(), key = RefLookup.roundKey(paper, round)
+            self.referenceStores[token] = key
             let sent = self.checksEngine.send("ref_results", params: json)
             Task {
-                guard (try? await self.checksEngine.result(sent)) != nil, paper == self.selectedPath, round == self.round?.n else { return }
-                self.checksAsked = nil  // built again with the results; the selection, the toast and the look-ups kept
+                let saved = (try? await self.checksEngine.result(sent)) != nil
+                self.referenceStores[token] = nil
+                if !saved { self.referenceStoreErrors.insert(key) }
+                guard saved, !results.isEmpty, paper == self.selectedPath, round == self.round?.n else { return }
+                self.checksAsked = nil  // built again with the results; the selection and look-ups kept
                 self.requestChecks()
             }
-        }
-        refs.finished = { [weak self] paper, round in
-            guard let self, !LaunchOptions.unitTest else { return }
-            let here = paper == self.selectedPath && round == self.round?.n
-            if here { self.showPanelToast("References looked up") }
-            if !NSApp.isActive && !LaunchOptions.background { Notify.post("References looked up", body: (self.papers.first { $0.path == paper }?.title ?? "") + " · Round \(round)") }
         }
         refs.arrived = { [weak self] paper, round, key, source, result in
             guard let self, paper == self.selectedPath, round == self.round?.n else { return }

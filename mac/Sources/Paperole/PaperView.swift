@@ -299,6 +299,10 @@ struct BuildStatusLine: View {
                                  offer: model.shellEscapeOffer.map { o in (o.title, !model.busy, { model.takeShellEscapeOffer(o) }) })
                 }
                 .fixedSize()
+            if build.pdf != nil {
+                Divider().frame(height: 12).padding(.horizontal, 4)
+                CheckActivityButton(model: model, checks: model.checks, refs: model.refs)
+            }
             Spacer(minLength: 8)
             if build.pdf != nil {
                 ReadingStatusView(status: model.reading.status, model: model)

@@ -59,7 +59,7 @@ final class RefLookupTests: XCTestCase {
         let l = RefLookup(cacheURL: nil, fetchers: [:])
         var stored: [(RefSource, [String])] = []
         var ended = 0
-        l.store = { _, _, s, rs in stored.append((s, rs.keys.sorted())) }
+        l.store = { _, _, s, rs, _ in if !rs.isEmpty { stored.append((s, rs.keys.sorted())) } }
         l.finished = { _, _ in ended += 1 }
         let third = RefEntry(key: "he2016", title: "Deep residual learning for image recognition")
         l.deliver(RefLookup.Job(paper: "/p", round: 1, entry: third, source: .semanticScholar),

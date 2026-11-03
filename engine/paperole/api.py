@@ -12,7 +12,7 @@ import sys
 import traceback
 from pathlib import Path
 
-from . import EngineError, analysis, anchor, archive, cards, check, check_items, checks, comments, disk, export, \
+from . import EngineError, analysis, anchor, archive, cards, check, check_items, check_report, checks, comments, disk, export, \
     history, ledger, links, notes, overview, project, prose, refs, render, state, tags, texdiff
 
 _REQUIRED = object()
@@ -560,7 +560,7 @@ def finish(params, progress):
                 rnd["check_disabled"] = disabled
             found = checks.load(paper, n)
             if found is not None:
-                check_items.sync(lg, n, found["checks"], groups, disabled)
+                check_items.sync(lg, n, found["checks"], groups, disabled, check_report.failed(found))
             # A setting changed while checks were rebuilding: honour it even without a current cache.
             for item in (lg.get("check_items") or {}).values():
                 if str(n) in item["rounds"] and (item["code"] in disabled or item["group"] not in groups):
@@ -776,7 +776,12 @@ def checks_(params, progress):
     rnd = _built_round(paper, lg, params.get("round"))
     found = _checks_built(paper, lg, rnd["n"], progress)
     ok = lg.get("checks_ok") or {}
+    groups = rnd.get("check_groups", []) if rnd["closed"] else _check_groups(params)
+    disabled = rnd.get("check_disabled", []) if rnd["closed"] else _check_disabled(params)
+    if rnd["closed"] and "checks_sent" not in rnd:
+        groups = []
     return {"round": rnd["n"], "path": str(checks.path(paper, rnd["n"])) if found is not None else None,
+            "report": check_report.selected(found.get("report"), groups, disabled) if found else None,
             "checks": [dict(c, ok=c["key"] in ok) for c in found["checks"]]
             if found is not None else None}
 
@@ -809,6 +814,8 @@ def references(params, progress):
     entries = data.get("entries") if data else None
     keys = {e["key"] for e in entries or ()}
     return {"round": n, "entries": entries,
+            "attempts": {s: {k: a for k, a in attempts.items() if k in keys}
+                         for s, attempts in (data or {}).get("attempts", {}).items()},
             "results": {s: {k: r for k, r in found.items() if k in keys} for s, found in data["results"].items()}
             if entries is not None else {}}
 
@@ -825,7 +832,7 @@ def ref_results(params, progress):
     n = _built_round(paper, lg, n)["n"]
     if not isinstance((refs.load(paper, n) or {}).get("entries"), list):
         _checks_built(paper, lg, n, progress)
-    return {"stored": refs.store(paper, n, _param(params, "source"), _param(params, "results"))}
+    return {"stored": refs.store(paper, n, _param(params, "source"), _param(params, "results"), params.get("attempts"))}
 
 
 def check_ok(params, progress):
@@ -886,7 +893,7 @@ def check_items_(params, progress):
         rnd = ledger.latest_round(lg)
         if rnd["n"] != found["round"] or rnd["closed"]:  # finished, or replaced, meanwhile: as recorded
             return check_items.views(lg, rnd["n"])
-        check_items.sync(lg, rnd["n"], found["checks"], groups, disabled)
+        check_items.sync(lg, rnd["n"], found["checks"], groups, disabled, check_report.failed(found))
         if rnd.get("check_groups") != groups:  # finish syncs again with them
             rnd["check_groups"] = groups
         if disabled or "check_disabled" in rnd:

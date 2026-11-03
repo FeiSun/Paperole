@@ -180,7 +180,8 @@ def _labels(paper, c):
 
 def test_the_entries_fields(mixed):
     reply = api.references({"paper": str(mixed)}, quiet)
-    assert set(reply) == {"round", "entries", "results"} and reply["round"] == 1 and reply["results"] == {}
+    assert set(reply) == {"round", "entries", "results", "attempts"} and reply["round"] == 1 and reply["results"] == {}
+    assert reply["attempts"] == {}
     entries = {e["key"]: e for e in reply["entries"]}
     assert list(entries) == KEYS.split(",")  # in citation order
     for e in entries.values():

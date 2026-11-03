@@ -1261,7 +1261,7 @@ This replaces "nothing reaches the student unless you comment" above.
   - The checks are built by an engine process of their own (`checksEngine`). The engine answers one request at a time, so this way a long paper's checks never hold the window's requests.
   - Then the window's engine gives the items: `check_items`, with the kinds chosen in Settings. In an open round it numbers and syncs them.
   - The round's key holds whether it is open, so a finished round is asked again and read as recorded.
-  - The panel's toast says "Checks done · 7 found" (or "nothing found") once a round per run, for an open round only. A finished round's tab shows what went out with it, nothing when it was finished with Checks off. Meanwhile the tab's sentence says "Checking…", and nothing is busy.
+  - Completion stays in the status bar’s Auto checks entry and its inspectable log (2026-11-03 amendment below). A finished round's tab shows what went out with it, nothing when it was finished with Checks off. Meanwhile the tab's sentence says "Checking…", and nothing is busy.
 - **The tab** (`ChecksModel.Group`): the Comments tab's headers (`SectionHeader`), rows and card.
   - **To check**: in an open round, the checks found again that the student answered with `% A2-05`. As for comments to check: the vermilion ring, and the tab's count, "Checks 1".
   - **For the student**: "goes in the Round 2 final.pdf". Shown until hidden. Its rows are under the kinds' titles (References…).
@@ -1334,7 +1334,7 @@ This replaces "nothing reaches the student unless you comment" above.
 - **Google Scholar** (`GoogleScholar`): the results page in a WebKit view of the app's own (its cookies; nothing disguised).
   - It reads the first result's title, "Cited by" count and year.
   - At most one search a minute and 60 a day (kept in the defaults, `scholarDay`). A citation's preview moves its entry first (`prefer`).
-  - A CAPTCHA stops every request and shows the page in a small window titled "Google Scholar · answer its check to go on" (never in a test run). Once a results page loads there, the look-ups go on.
+  - A CAPTCHA pauses the queue and offers Verify Google Scholar… in the check log; that action shows a small window titled "Google Scholar · answer its check to go on" (never in a test run). Once a results page loads there, the look-ups go on.
 - **Review fixes** (2026-11-01):
   - **The queues:** a job is taken out of its queue by itself, so a preview that moved another first is never lost; a request coming back for a source turned off meanwhile is dropped; a fresh cached result is used before going to the network.
   - **Turning off:** a source turned off (or Checks) stops at once, gives the engine what it found and ends without the toast; turning a second source on asks again (the sources are in the request's key).
@@ -1348,7 +1348,7 @@ This replaces "nothing reaches the student unless you comment" above.
 - **Results**:
   - A source's results go to the engine when its queue for the round ends (`ref_results`, on the checks' engine). The shown round's checks are then built again: the row chosen stays chosen, the tab's list stays until the new one comes, and the toast is not said again.
   - While look-ups run, the Checks tab's sentence gains "Looking up references · Semantic Scholar 12 of 34 · Google Scholar 3 of 34, about 31 min" ("waiting for you to answer its check" while blocked).
-  - At the end: the panel's toast "References looked up"; a system notification when Paperole is not the front app (asked for once; never in a test run).
+  - At the end: the status bar and check log retain the result. No completion toast or system notification (2026-11-03).
 - **The citation's preview** (§37; `LinkPreview.refs`, `RefRow`): under "Cited 3×", after a hairline:
   - Each source on: its logo (`SourceMark`, `SourceLogos`: the sites' icons, downloaded 2026-11-02 with the advisor's OK, kept as PNG data in the source; a drawn stand-in if one cannot be read) and its count in full. A click opens the source's page; hover names it. "—" while not looked up; "No record" for one source.
   - When no source has a record: the vermilion ring, "No record on Semantic Scholar or Google Scholar", and "Closest: <title> · <year> · <author>". No counts.
@@ -1690,3 +1690,27 @@ A failed build (no PDF, `FailedBuildView`) whose build asks for it has Build Aga
 Settings > Reading adds Writing checks: six native checkboxes (short last lines, single-line paragraph breaks, hanging headings, split references and units, draft markers, sentence openings). They are on by default, kept under the master Checks switch and their Typesetting/Submission category; disabling a parent preserves each child choice. Short labels stay on screen; rule details are help tags. The Reading form is 540 pt tall and scrolls; the six checkboxes share one compact group.
 
 `disabledCheckCodes` is saved through Prefs and exported/imported with settings (along with `checkKinds`). A changed choice clears the open round's displayed marks and requests its items again; a request counter rejects stale replies for the same round. Finish sends the latest categories and disabled codes. The engine pauses disabled items rather than fixing them, preserves notes and pending ids across off/on, and freezes each finished round's choice. Historical rounds remain as sent. The shared raw checks cache is not filtered. Draft markers covers both the older TODO/TBD words and the new literal placeholders; todo-note annotations retain their existing rule.
+
+### Inspectable check log (2026-11-03)
+
+The PDF’s existing 26 pt status bar has a clickable Checks entry beside Build Details, in Review and Focus. Its text
+distinguishes checking, reference lookup, complete, incomplete, action needed and off. In narrow windows it reduces to
+Checks; the full state remains accessible and in its help tag. Findings do not make a successfully completed scan an
+execution error.
+
+Click opens a native popover for the current paper and round. The five existing categories expand to every rule,
+including zero-finding, excluded and inapplicable rules. Each shows its conclusion, count and coverage or failure
+reason; findings link to their existing Checks cards. The two lookup sources expand to individual titles,
+found/not-found/unavailable/pending/stopped/limited outcomes, returned metadata and recorded times. A complete local
+scan does not imply that online work has finished; queued work, saving and the ensuing scan refresh keep the overall
+status pending. Unknown or failed coverage never becomes a clean result.
+
+Clicking a category or lookup-source header (its title, summary or the space between them) toggles its disclosure;
+the native arrow continues to work independently. Headers are controls; log body text supports native mouse selection
+and copying. A finding’s separate arrow opens its Checks card, so dragging
+across the finding text selects it without navigating. The panel sizes to its content up to a scrolling limit, uses the
+incumbent native typography and palette, and offers View findings, Copy log (all groups and records, including collapsed ones) and Settings. Completion remains visible,
+without opening the panel, switching tabs, moving the PDF, showing a toast or posting a system notification. A Google
+Scholar CAPTCHA offers an explicit Verify action instead of opening a window over the reader. The current round’s latest
+scan and settled lookup outcomes persist in the engine’s existing caches; no global notification inbox, unread badges,
+percentages or unbounded log history are added.

@@ -1162,3 +1162,21 @@ Float distance reminders, 2026-11-03 (the advisor: placement before or after a c
 Bibliography text highlights, 2026-11-03 (the advisor: use text-selection highlights; whole-entry coverage is sufficient).
 - Whole-entry bibliography findings use per-line PDF word rectangles, including hanging first-line prefixes and all continuation parts. Existing field/word-specific rectangles are retained. No text found means a page-only place, not a paragraph fill.
 - The Check/Place schemas are unchanged. The existing native marks and final.pdf renderer consume the same line rectangles; IDs, notes, rules, colours and completed-round records are unchanged. CHECKS 8 invalidates earlier caches for open-round recomputation.
+
+### Check execution log, 2026-11-03
+
+Additive to Checks and References; ledger schema remains 1. `checks` accepts the same optional `groups` and `disabled`
+as `check_items`, and adds `report` (null when no scan can be built). A report has `started_at`, `completed_at` (UTC ISO
+timestamps) and `rules`: `{code, group, title, count, status, detail, online}`. Status is `done`, `skipped`,
+`unavailable`, `partial`, `failed`, or `off` for a selection exclusion. The cache stores the scan before selection; a
+response for a closed round uses its saved check selection, not current settings. `done` means the rule returned
+normally within its documented scope, not that the paper passed a comprehensive review. Rules that raise retain their
+own failure outcome while other checks continue; missing prior findings of a failed rule are paused instead of declared
+fixed.
+
+`references` adds `attempts: {source: {key: {status, at}}}`; `ref_results` optionally accepts an `attempts` map
+alongside `results`. Allowed attempt statuses: `matched`, `not_found`, `unavailable`, `skipped`, `stopped`, `limited`.
+`at` must be an ISO timestamp with a timezone. Keys must belong to the round, and completed outcomes require the
+corresponding result in the same call. Invalid attempts reject the entire update. Attempts merge under the existing lock
+and atomic write and survive entry refresh. They do not become bibliographic results or affect online finding logic. The
+latest attempt and latest scan persist across app restarts; this is not an append-only history.

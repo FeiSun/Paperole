@@ -132,3 +132,17 @@ on other pages/columns are included. Existing word-specific findings remain prec
 location is page-only. Both the app and final.pdf already render these rectangles as text highlights. CHECKS 8
 invalidates old caches; open rounds refresh their marks without changing IDs, while finished-round records remain
 as sent. No detector decisions, colours, reference metadata or native rendering code change.
+
+### Check execution records (2026-11-03)
+
+`checks` now returns a `report` beside the findings: scan start/completion timestamps and one entry per rule, including
+zero-finding rules. Each entry names the rule, its group, finding count, execution outcome and conservative coverage.
+Outcomes distinguish completed, not applicable, unavailable inputs, partial coverage and failure. `groups` and
+`disabled` exclude rules in the returned report without changing the cached scan; closed rounds use their recorded
+selection. These are scan outcomes, not assertions that a paper is correct. An execution failure cannot mark a
+previously reported finding fixed. CHECKS 9 invalidates older caches; no ledger schema migration.
+
+`references` also returns saved lookup `attempts`. `ref_results` accepts optional attempts by reference key, with a
+known outcome and timezone-qualified ISO timestamp. An unavailable response, stopped queue, missing search input or
+daily limit is recorded separately from a bibliographic result, never as `found: false`. Records survive entry refresh.
+Both caches retain the latest outcome, not an unbounded history. The engine makes no network requests.

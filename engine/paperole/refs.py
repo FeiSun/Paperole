@@ -14,6 +14,7 @@ import hashlib
 import json
 import re
 import unicodedata
+from datetime import datetime
 from pathlib import Path
 
 from . import EngineError, checks, disk, ledger
@@ -137,8 +138,8 @@ def state(paper, n):
     return digest(data["results"]) if data and isinstance(data.get("entries"), list) else None
 
 
-def _write(paper, n, entries, found):
-    data = {"schema": SCHEMA, "round": n, "entries": entries, "results": found}
+def _write(paper, n, entries, found, attempts=None):
+    data = {"schema": SCHEMA, "round": n, "entries": entries, "results": found, "attempts": attempts or {}}
     disk.atomic_write(path(paper, n), json.dumps(data, ensure_ascii=False, separators=(",", ":")))
 
 
@@ -148,10 +149,10 @@ def keep(paper, n, entries):
     with ledger.locked(paper):
         data = load(paper, n)
         if data is None or data.get("entries") != entries:
-            _write(paper, n, entries, data["results"] if data else {})
+            _write(paper, n, entries, data["results"] if data else {}, (data or {}).get("attempts"))
 
 
-def store(paper, n, source, found):
+def store(paper, n, source, found, attempts=None):
     """Merge one source's results into round n's refs.json (by key, a later result replacing an earlier) and return how
     many were stored; refused for a source not in SOURCES, a result that is no {"found": bool, …}, or a key round n does
     not cite (its entries)."""
@@ -160,17 +161,35 @@ def store(paper, n, source, found):
     if not isinstance(found, dict) or not all(isinstance(k, str) and isinstance(r, dict) and
                                               isinstance(r.get("found"), bool) for k, r in found.items()):
         raise EngineError("results is a map of reference keys to results, each with found true or false.")
+    attempts = {} if attempts is None else attempts
+    states = {"matched", "not_found", "unavailable", "skipped", "stopped", "limited"}
+    if not isinstance(attempts, dict):
+        raise EngineError("attempts is a map of reference keys to lookup outcomes.")
+    for k, a in attempts.items():
+        if not isinstance(k, str) or not isinstance(a, dict) or set(a) != {"status", "at"} or \
+                not isinstance(a["status"], str) or a["status"] not in states or not isinstance(a["at"], str):
+            raise EngineError("Each lookup outcome has a known status and an ISO timestamp.")
+        try:
+            at = datetime.fromisoformat(a["at"].replace("Z", "+00:00"))
+            if at.tzinfo is None:
+                raise ValueError()
+        except ValueError:
+            raise EngineError("Each lookup outcome has a timestamp with a timezone.")
+        if a["status"] in {"matched", "not_found"} and (k not in found or found[k]["found"] != (a["status"] == "matched")):
+            raise EngineError("A completed lookup outcome needs its matching result.")
     with ledger.locked(paper):
         data = load(paper, n)
         keys = {e["key"] for e in (data or {}).get("entries") or ()}
-        for k in found:
+        for k in found.keys() | attempts.keys():
             if k not in keys:
                 raise EngineError("A result for reference {}, which round {} does not cite.".format(k, n))
-        if not found:
+        if not found and not attempts:
             return 0
         stored = dict(data["results"])
         stored[source] = dict(stored.get(source) or {}, **found)
-        _write(paper, n, data["entries"], stored)
+        recorded = dict(data.get("attempts") or {})
+        recorded[source] = dict(recorded.get(source) or {}, **attempts)
+        _write(paper, n, data["entries"], stored, recorded)
     return len(found)
 
 

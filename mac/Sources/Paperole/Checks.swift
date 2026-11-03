@@ -152,6 +152,7 @@ struct Check: Decodable, Equatable {
 struct ChecksReply: Decodable {
     var round: Int?
     var checks: [Check]?
+    var report: CheckScanReport?
 }
 
 /// The engine's `check_items` reply (no state): the round's check items, synced with its checks while it is open.
@@ -220,6 +221,10 @@ final class ChecksModel: ObservableObject {
 
     @Published private(set) var phase = Phase.hidden
     @Published private(set) var list: [Check] = []
+    @Published var report: CheckScanReport?
+    @Published var scanFindings: [Check] = []
+    @Published var reportError: String?
+    @Published var refreshing = false
     /// The row chosen last (a click, J or K), marked on the page.
     @Published private(set) var current: Int?
     /// Closed this round listed under its header (Show), else folded into it, as at first; For the student shown
@@ -255,6 +260,9 @@ final class ChecksModel: ObservableObject {
         unhover()
         looks = [:]
         phase = .asking
+        report = nil
+        scanFindings = []
+        reportError = nil
     }
 
     /// The reply for a round: nil hides the group. `pages`: the round's page count, when known; a place past it is left
@@ -281,6 +289,10 @@ final class ChecksModel: ObservableObject {
     }
 
     func clear() {
+        report = nil
+        scanFindings = []
+        reportError = nil
+        refreshing = false
         key = nil
         round = nil
         cursor = nil

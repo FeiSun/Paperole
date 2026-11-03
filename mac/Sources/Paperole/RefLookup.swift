@@ -104,6 +104,20 @@ struct ReferencesReply: Decodable {
     var round: Int?
     var entries: [RefEntry]?
     var results: [String: [String: RefResult]]?
+    var attempts: [String: [String: RefAttempt]]?
+}
+
+/// A settled lookup attempt, separate from a bibliographic result: failure never means "no record".
+struct RefAttempt: Codable, Equatable {
+    var status: String
+    var at: String
+
+    init(_ status: String, at: String = ISO8601DateFormatter().string(from: Date())) {
+        self.status = status
+        self.at = at
+    }
+
+    var json: [String: String] { ["status": status, "at": at] }
 }
 
 enum RefSource: String, CaseIterable {
@@ -203,6 +217,7 @@ final class RefLookup: ObservableObject {
     @Published private(set) var blocked = false
     /// A source resting after it kept refusing, until when.
     @Published private(set) var resting: [RefSource: Date] = [:]
+    @Published private(set) var attempts: [String: [RefSource: [String: RefAttempt]]] = [:]
     /// The results by lookup key and source (the app's cache, kept across papers and rounds).
     private(set) var cache: [String: [String: RefResult]] = [:]
     private let cacheURL: URL?
@@ -211,9 +226,10 @@ final class RefLookup: ObservableObject {
     private var last: [RefSource: Date] = [:]
     /// Results not yet given to the engine, by paper|round and source.
     private var unsent: [String: [RefSource: [String: RefResult]]] = [:]
-    /// Called with paper, round, source and results to store in the engine; then `stored` once it has them.
-    var store: ((String, Int, RefSource, [String: RefResult]) -> Void)?
-    /// A paper|round's look-ups all ended (the toast).
+    private var unsentAttempts: [String: [RefSource: [String: RefAttempt]]] = [:]
+    /// The round’s results and settled attempts to persist in the engine together.
+    var store: ((String, Int, RefSource, [String: RefResult], [String: RefAttempt]) -> Void)?
+    /// A paper|round’s look-ups all ended (also observed by queue tests).
     var finished: ((String, Int) -> Void)?
     /// A result came for an entry (paper, round, key, source): the shown round's results and an open preview of it
     /// show it at once (the engine gets it with its source's batch).
@@ -249,17 +265,29 @@ final class RefLookup: ObservableObject {
     /// A round's entries to look up by the sources on: those the engine has a result for are left; a fresh cached
     /// result is given to the engine at once; the others are queued (after what is queued already). Google Scholar
     /// only searches titles.
-    func start(paper: String, round: Int, entries: [RefEntry], stored: [String: [String: RefResult]], sources: [RefSource]) {
+    func start(paper: String, round: Int, entries: [RefEntry], stored: [String: [String: RefResult]], sources: [RefSource],
+               recorded: [String: [String: RefAttempt]] = [:]) {
         let rk = Self.roundKey(paper, round)
+        for (source, records) in recorded {
+            guard let s = RefSource(rawValue: source) else { continue }
+            for (key, attempt) in records where attempts[rk]?[s]?[key] == nil {
+                attempts[rk, default: [:]][s, default: [:]][key] = attempt
+            }
+        }
         for s in sources {
             on.insert(s)
             for e in entries {
                 let titled = (e.title ?? "").count > 3
-                guard titled || (s == .semanticScholar && (e.arxiv != nil || e.doi != nil)) else { continue }
+                guard titled || (s == .semanticScholar && (e.arxiv != nil || e.doi != nil)) else {
+                    record(paper, round, s, e.key, "skipped")
+                    continue
+                }
                 if stored[s.rawValue]?[e.key] != nil { continue }
                 if queued[s, default: []].contains(where: { $0.paper == paper && $0.round == round && $0.entry.key == e.key }) { continue }
                 if let r = cached(e, s) {
                     unsent[rk, default: [:]][s, default: [:]][e.key] = r
+                    record(paper, round, s, e.key, r.found ? "matched" : "not_found",
+                           at: r.at.map { ISO8601DateFormatter().string(from: $0) })
                     arrived?(paper, round, e.key, s, r)
                     count(rk, s, done: 1, of: 1)
                     continue
@@ -284,7 +312,7 @@ final class RefLookup: ObservableObject {
 
     /// A source turned off (or Checks): its queue is dropped and nothing more is sent; what it found so far still goes
     /// to the engine; its rounds end without the toast.
-    func stop(_ s: RefSource) {
+    func stop(_ s: RefSource, reason: String = "stopped") {
         on.remove(s)
         let jobs = queued[s] ?? []
         queued[s] = []
@@ -294,6 +322,7 @@ final class RefLookup: ObservableObject {
         }
         var rounds: [(String, String, Int)] = []
         for j in jobs {
+            record(j.paper, j.round, s, j.entry.key, reason)
             let rk = Self.roundKey(j.paper, j.round)
             count(rk, s, done: 1, of: 0)
             if !rounds.contains(where: { $0.0 == rk }) { rounds.append((rk, j.paper, j.round)) }
@@ -355,7 +384,7 @@ final class RefLookup: ObservableObject {
                 if s == .googleScholar && blocked { break }
                 if s == .googleScholar && !GoogleScholar.underCap() {
                     capped = true  // the day's searches are spent: the rest waits for the round to be opened another day
-                    stop(.googleScholar)
+                    stop(.googleScholar, reason: "limited")
                     break
                 }
                 let wait = (Self.pace[s] ?? 3) - Date().timeIntervalSince(last[s] ?? .distantPast)
@@ -377,13 +406,13 @@ final class RefLookup: ObservableObject {
                 }
                 if s == .googleScholar && GoogleScholar.shared.captcha {
                     blocked = true
-                    GoogleScholar.shared.showCaptcha(then: { [weak self] in self?.unblock() },
-                                                     closed: { [weak self] in self?.stop(.googleScholar) })
                     break
                 }
                 guard take(job) else { continue }
                 let rk = Self.roundKey(job.paper, job.round)
                 count(rk, s, done: 1, of: 0)
+                record(job.paper, job.round, s, job.entry.key,
+                       r.map { $0.found ? "matched" : "not_found" } ?? "unavailable")
                 if r != nil {
                     if r?.at == nil { r?.at = Date() }
                     if let k = job.entry.lookupKey, let r { cache[k, default: [:]][s.rawValue] = r }
@@ -410,14 +439,32 @@ final class RefLookup: ObservableObject {
         run(.googleScholar)
     }
 
-    /// Gives the engine what is not given yet for a paper's round.
-    private func flush(_ rk: String, paper: String, round: Int) {
-        guard let by = unsent[rk] else { return }
-        unsent[rk] = nil
-        for (s, results) in by where !results.isEmpty { store?(paper, round, s, results) }
+    /// Verification is opened by the reader from the activity panel, never over their reading automatically.
+    func verify() {
+        guard blocked else { return }
+        GoogleScholar.shared.showCaptcha(then: { [weak self] in self?.unblock() },
+                                         closed: { [weak self] in self?.stop(.googleScholar) })
     }
 
-    /// A round's look-ups all ended: said (the toast) when a source found something and they were not stopped.
+    private func record(_ paper: String, _ round: Int, _ source: RefSource, _ key: String, _ status: String, at: String? = nil) {
+        let rk = Self.roundKey(paper, round)
+        let value = RefAttempt(status, at: at ?? ISO8601DateFormatter().string(from: Date()))
+        attempts[rk, default: [:]][source, default: [:]][key] = value
+        unsentAttempts[rk, default: [:]][source, default: [:]][key] = value
+    }
+
+    /// Gives the engine what is not given yet for a paper's round.
+    private func flush(_ rk: String, paper: String, round: Int) {
+        let by = unsent[rk] ?? [:]
+        let records = unsentAttempts[rk] ?? [:]
+        unsent[rk] = nil
+        unsentAttempts[rk] = nil
+        for s in RefSource.allCases where !(by[s] ?? [:]).isEmpty || !(records[s] ?? [:]).isEmpty {
+            store?(paper, round, s, by[s] ?? [:], records[s] ?? [:])
+        }
+    }
+
+    /// A round’s look-ups all ended: notify the observer when results arrived and the queue was not stopped.
     private func checkFinished(_ rk: String, paper: String, round: Int, quiet: Bool = false) {
         guard let p = progress[rk], p.values.allSatisfy({ $0.done >= $0.of }) else { return }
         progress[rk] = nil
@@ -443,6 +490,7 @@ final class RefLookup: ObservableObject {
         let rk = Self.roundKey(job.paper, job.round)
         if let k = job.entry.lookupKey { cache[k, default: [:]][job.source.rawValue] = r }
         unsent[rk, default: [:]][job.source, default: [:]][job.entry.key] = r
+        record(job.paper, job.round, job.source, job.entry.key, r.found ? "matched" : "not_found")
         queued[job.source]?.removeAll { $0 == job }
         count(rk, job.source, done: 1, of: 0)
         got[rk, default: 0] += 1
@@ -552,8 +600,8 @@ enum SemanticScholar {
 
 /// Google Scholar's results page in a WebKit view of the app's own (its own cookies; a test run's kept in memory;
 /// nothing disguised): the first result's title and "Cited by" count. A page that does not load, or is not a results
-/// page, gives no result ("—", never "No record"). A CAPTCHA stops every request and shows the page in a small window
-/// for the advisor to answer; once a results page loads there, the look-ups go on; closing it drops the queue.
+/// page, gives no result ("—", never "No record"). A CAPTCHA pauses requests; Verify in the check log opens its
+/// window for the advisor to answer; once a results page loads there, the look-ups go on; closing it drops the queue.
 @MainActor
 final class GoogleScholar: NSObject, WKNavigationDelegate, NSWindowDelegate {
     static let shared = GoogleScholar()

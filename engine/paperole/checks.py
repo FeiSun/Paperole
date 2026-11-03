@@ -31,7 +31,7 @@ from pathlib import Path
 
 import pymupdf
 
-from . import anchor, comments, links, project, prose, refs, texdiff
+from . import anchor, check_report, comments, links, project, prose, refs, texdiff
 
 # stored in checks.json, with prose.PARSER and links.LINKS (the blocks and the table it reads); other values: stale
 # (2: biblatex's citations and .bib, places in reading order, a range of references covers its middle floats, an
@@ -39,8 +39,9 @@ from . import anchor, comments, links, project, prose, refs, texdiff
 # 3: a \todo only when the PDF prints it; 4: each check's key; 5: the references' format and online checks, refs.json;
 # 6: paragraph/heading breaks, short endings, split pairs, sentence starts and more printed placeholders;
 # 7: floats before their first reference need the same two-page distance as those after it;
-# 8: bibliography marks follow text lines, including hanging first words and continuation parts)
-CHECKS = 8
+# 8: bibliography marks follow text lines, including hanging first words and continuation parts;
+# 9: persisted per-rule execution outcomes and coverage)
+CHECKS = 9
 SCHEMA = 1
 GROUPS = ("references", "bibliography", "consistency", "typesetting", "submission")
 OVERFULL = 1.0  # points: an overfull line at most this much too wide is not reported
@@ -247,22 +248,31 @@ def build(paper, lg, n, data, table):
     and return it. checks.json's "refs" is the digest of the results the checks read."""
     paper = Path(paper)
     p = _Paper(paper, lg, n, data, table)
-    found = []
+    found, records = [], []
+    started = check_report.now()
+    entries_failed = False
     try:
         p.entries
     except Exception as e:  # the cited entries cannot be told: none, and the checks that read them find nothing
         _failed("references", e)
         p.entries = []
+        entries_failed = True
     for code, run in RUNS:
+        matches, error = [], None
         try:
-            found += run(p)
+            matches = run(p)
+            found += matches
         except Exception as e:  # that check is left out alone
             _failed(code, e)
+            error = e
+        records.append(check_report.record(p, code, CODES[code], len(matches), error,
+                                           table is not None, entries_failed))
     found.sort(key=_order)
     _keys(found, n)
     refs.keep(paper, n, p.entries)
     out = {"schema": SCHEMA, "version": CHECKS, "parser": prose.PARSER, "links": links.LINKS,
-           "table": table is not None, "round": n, "refs": refs.digest(p.results), "checks": found}
+           "table": table is not None, "round": n, "refs": refs.digest(p.results), "checks": found,
+           "report": {"started_at": started, "completed_at": check_report.now(), "rules": records}}
     target = path(paper, n)
     tmp = target.with_name("checks.json.{}.tmp".format(os.getpid()))  # two engine processes may build it at once
     tmp.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

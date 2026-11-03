@@ -139,6 +139,22 @@ def test_matching_by_key_place_and_text():
     assert again == lg  # idempotent
 
 
+def test_failed_rule_pauses_prior_findings_without_losing_ids_or_notes():
+    c = _check("spelling", "Synthetic spelling difference", [], ident="synthetic")
+    lg = {"rounds": [{"n": 1, "last_seq": 0, "last_check_seq": 1}, {"n": 2, "last_seq": 0}],
+          "check_items": {"A1-01": _item("A1-01", c)}}
+    check_items.sync(lg, 2, [c], checks.GROUPS)
+    item = lg["check_items"]["A1-01"]
+    item["rounds"]["2"]["advisor_note"] = "Check the venue's spelling."
+    check_items.sync(lg, 2, [], checks.GROUPS, failed={"spelling"})
+    assert item["rounds"]["2"] == {"state": None, "advisor_note": "Check the venue's spelling."}
+    assert check_items.views(lg, 2)["items"] == []  # no empty card for an unverified, paused finding
+    check_items.sync(lg, 2, [c], checks.GROUPS)
+    assert item["rounds"]["2"]["state"] == "still" and "advisor_note" in item["rounds"]["2"]
+    check_items.sync(lg, 2, [], checks.GROUPS)
+    assert item["rounds"]["2"]["state"] == "fixed"  # only a successful later scan establishes this
+
+
 def test_a_slip_let_go_and_an_earlier_round():
     """Review 2026-11-01: a check known by its place that the advisor marked OK in round 2 (its key with |r2) is not
     sent again as new in round 3 when it is found once more (its place's words, else its text); an earlier round shows

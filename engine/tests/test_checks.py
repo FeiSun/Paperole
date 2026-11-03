@@ -501,7 +501,7 @@ def test_failures_give_no_checks_and_never_an_error(defect, copy, monkeypatch, c
         runs.append(1)
         raise ValueError("a PDF PyMuPDF cannot read")
     monkeypatch.setattr(checks._Paper, "__init__", broken)
-    assert api.checks_({"paper": str(paper)}, quiet) == {"round": 1, "path": None, "checks": None}
+    assert api.checks_({"paper": str(paper)}, quiet) == {"round": 1, "path": None, "checks": None, "report": None}
     assert "a PDF PyMuPDF cannot read" in capsys.readouterr().err
     assert _checks(paper) is None and len(runs) == 1  # not built again
     os.utime(prose.path(paper, 1), ns=(1, 1))  # until the round's prose.json (or PDF, or links.json) changes
@@ -509,7 +509,7 @@ def test_failures_give_no_checks_and_never_an_error(defect, copy, monkeypatch, c
     monkeypatch.undo()
     prose.path(paper, 1).unlink()  # the paragraphs cannot be found: still no error
     monkeypatch.setattr(prose, "build", lambda *a, **k: (_ for _ in ()).throw(RuntimeError("no paragraphs")))
-    assert api.checks_({"paper": str(paper)}, quiet) == {"round": 1, "path": None, "checks": None}
+    assert api.checks_({"paper": str(paper)}, quiet) == {"round": 1, "path": None, "checks": None, "report": None}
     # without a link table the checks that need none still run
     monkeypatch.undo()
     (paper / "r1/prose.failed").unlink()
@@ -540,7 +540,7 @@ def test_rpc_cli_and_refusals(defect, tmp_path):
     try:
         eng.send(json.dumps({"id": 1, "method": "checks", "params": {"paper": str(defect), "round": 1}}))
         reply = eng.reply(1)
-        assert set(reply["result"]) == {"round", "path", "checks"}
+        assert set(reply["result"]) == {"round", "path", "checks", "report"}
         assert reply["result"]["checks"] == _checks(defect) and reply["result"]["path"] == str(checks.path(defect, 1))
         # each check's key and whether it is marked OK; check_ok marks it in the ledger, for every round after
         first = reply["result"]["checks"][0]
