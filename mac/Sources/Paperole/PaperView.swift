@@ -34,7 +34,7 @@ struct PaperView: View {
                 }
             } else if model.state != nil {
                 EmptyPage(icon: "tray.and.arrow.down", title: "No rounds yet",
-                          text: "Choose the student’s LaTeX folder or .zip to start Round 1.\n\(AppVariant.current.name) builds it, and you comment on the PDF.") {
+                          text: "Choose or drop the student’s LaTeX folder or .zip to start Round 1.\n\(AppVariant.current.name) builds it, and you comment on the PDF.") {
                     Button("Start Round 1…") { model.startRound() }
                         .buttonStyle(.borderedProminent)
                         .disabled(!model.canStartRound)

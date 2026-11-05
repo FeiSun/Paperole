@@ -119,6 +119,7 @@ struct Sidebar: View {
                         missing: gone ? (drive == nil ? "missing" : "not connected") : damage == nil ? nil : "damaged")
             .tag(SidebarItem.paper(p.path))
             .contextMenu { PaperMenu(model: model, paper: p, status: status) }
+            .modifier(SourceDropTarget(model: model, path: p.path, row: true))
     }
 
     private func footer(compact: Bool) -> some View {

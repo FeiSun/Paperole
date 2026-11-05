@@ -106,7 +106,7 @@ enum HelpContent {
         HelpSection(title: "Comment on the PDF", text: "Select words and choose Comment on the bar that appears, or ⌥-drag a box round a figure, table or equation. Each comment is tied to the LaTeX source, so it is found again in the next draft."),
         HelpSection(title: "Send it back", text: "Finish Round 1… writes the round’s final.pdf with your comments for the student. Nothing is sent: you send the PDF.",
                     picture: .glyph(.waiting)),
-        HelpSection(title: "The next draft", text: "New Round… brings in the student’s next draft. The comments still open are carried into it, each waiting for your answer.",
+        HelpSection(title: "The next draft", text: "New Round…, or the student’s folder or .zip dropped on the paper or its row in the sidebar, brings in the next draft. The comments still open are carried into it, each waiting for your answer.",
                     picture: .glyph(.ring(0.4))),
         HelpSection(title: "Finish the paper", text: "Mark as Finished, in the paper’s menu in the sidebar, once nothing more will come. Its rounds and comments stay.",
                     picture: .glyph(.finished)),

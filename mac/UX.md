@@ -1727,3 +1727,24 @@ replacement. The existing rebuild sheet has a Replace Draft title and Replace bu
 source folder or ZIP. It states that the round number is retained and the previous draft is not kept as a separate
 round. Build Round N Again… in the build details retains its existing purpose and wording. Navigation to another
 paper or away from Review cancels any waiting sheet action.
+
+## 43. Drop a draft on a paper (2026-11-05)
+
+BACKLOG D11, DESIGN §2: a student's source folder or .zip dragged from Finder onto a paper's page (Review or its
+overview) or onto its row in the sidebar brings in the next draft. The open panel stays as the menu path.
+
+- What a drop does follows the paper's latest round (its summary, so a row needs nothing loaded; `SourceDrop.of`):
+  none yet or finished → **Start Round N?** (an alert naming the short title, the student and the file; Start Round N /
+  Cancel); open with nothing done in it yet → the **Replace Draft** sheet, the dropped source filled in; open with
+  review work (the summary's `replaceable` false) → nothing.
+- While a source is over a place, that place alone is outlined: on the page an inset accent outline, a faint tint and a
+  capsule with the action ("Start Round 3", "Replace Draft"); on a row the outline and the action at its trailing end.
+  Where a drop does nothing the outline and words are grey ("Round 2 is open"), and the drop is refused.
+- Only one folder or one .zip (any case) is a source; anything else (a PDF, two items, a package) is refused with the
+  window's alert "Drop the student's LaTeX source here: one folder or one .zip."
+- A drop on another paper's row opens that paper in Review after the confirmation, and its round is started once its
+  state is in (`pendingStart`), only if the paper still takes it (`.start(N)` again); otherwise the alert says nothing
+  was started. A page of the hierarchy, or another paper, drops the waiting start. A note being written on the shown
+  paper keeps a drop on another paper from doing anything.
+- No drop target on the hierarchy's pages (All Students, Your Move, a student's page): the sidebar's rows are there.
+- Debug items: `drophover page|row|off`, `drop <source>` (on the shown paper), `dropstart [seconds]`.

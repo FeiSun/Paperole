@@ -477,6 +477,19 @@ final class DebugScript {
             // the tab switch's motion slowed down (`motion 8`) so screenshots can catch it in flight; `motion 1` back
             TabMotion.slow = max(Double(rest) ?? 1, 1)
             next(0.05) { ["motion": TabMotion.slow] }
+        case "drophover":  // `drophover page|row|off`: the highlight of a source held over the shown paper (UX.md §43)
+            if let m = model, let p = m.selectedPath, rest != "off" { m.dropHover = DropHover(paper: p, row: rest == "row") }
+            else { model?.dropHover = nil }
+            next(0.3) { [weak self] in ["drophover": self?.model?.dropHover.map { $0.row ? "row" : "page" } ?? "off",
+                                        "action": self?.model?.selectedPath.flatMap { self?.model?.sourceDrop(on: $0)?.label } ?? ""] }
+        case "drop":  // `drop <source>`: a folder or .zip dropped on the shown paper; `dropstart`: its confirmation's Start
+            let accepted = model?.selectedPath.map { model?.dropSource([URL(fileURLWithPath: rest)], on: $0) ?? false } ?? false
+            next(0.3) { [weak self] in ["drop": accepted, "confirm": self?.model?.confirmDrop?.question ?? "",
+                                        "message": self?.model?.confirmDrop?.message ?? "", "retry": self?.model?.showRetry ?? false,
+                                        "alert": self?.model?.alertMessage ?? ""] }
+        case "dropstart":
+            if let a = model?.confirmDrop { model?.startDropped(a) }
+            next(Double(rest) ?? 1) { [weak self] in ["rounds": self?.model?.state?.rounds.count ?? -1] }
         case "busy":
             model?.holdBusy(rest != "off")
             next(0.1) { [weak self] in ["busy": self?.model?.busy ?? false] }

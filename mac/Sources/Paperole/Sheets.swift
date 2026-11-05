@@ -322,7 +322,9 @@ struct RetrySheet: View {
         .frame(width: 560)
         .onAppear {
             first = model.startRefused != nil
-            source = model.retryReplacingDraft ? "" : model.startRefused?.source ?? model.lastSource ?? ""
+            // Replace Draft… asks for a new source, unless one was dropped on the paper (SourceDrop.swift)
+            source = model.retryReplacingDraft ? model.retrySource ?? "" : model.startRefused?.source ?? model.lastSource ?? ""
+            model.retrySource = nil
             main = model.state?.paper.main ?? ""
             engine = model.state?.paper.engine ?? ""
             askedShellEscape = model.retryWithShellEscape

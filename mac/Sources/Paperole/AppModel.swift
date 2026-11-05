@@ -461,6 +461,12 @@ final class AppModel: ObservableObject {
     /// Your Move's Finish Round N…: that paper's Finish sheet opens once its state is in.
     var pendingFinish: String?
     var pendingReplace: String?
+    /// A dropped source (SourceDrop.swift, UX.md §43): Start Round N's confirmation, the round it starts once the
+    /// paper's state is in, the source Replace Draft's sheet opens with, and the place the source is over.
+    @Published var confirmDrop: DropAsk?
+    var pendingStart: DropAsk?
+    var retrySource: String?
+    @Published var dropHover: DropHover?
     /// The sheets of the hierarchy: Edit Paper… (a paper's path), Rename Student… and Map Headings… (a student's key).
     @Published var editingPaper: String?
     @Published var renamingStudent: String?
@@ -1175,6 +1181,7 @@ final class AppModel: ObservableObject {
         if path == nil { setFocus(false) }
         pendingFinish = nil  // Your Move's Finish was another paper's
         pendingReplace = nil
+        pendingStart = nil  // a dropped source's round: `startDropped` sets it again after opening its paper
         if let t = edit.tagging { closeTagPicker(t) }  // a card's tag picker: written to its own paper first
         // an open inline editor is saved first, to the paper it was begun on, as for another round (UX.md §17)
         commitEdit(focusLost: true)
@@ -1214,6 +1221,7 @@ final class AppModel: ObservableObject {
         call("state", ["paper": path], quiet: true, failed: { [weak self] message in
             guard let self, self.selectedPath == path, self.state == nil else { return }
             self.stateError = message
+            self.pendingStart = nil  // a dropped source never starts after Try Again without its confirmation
         })
     }
 

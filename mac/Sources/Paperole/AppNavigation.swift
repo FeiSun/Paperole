@@ -109,6 +109,7 @@ extension AppModel {
         pendingReview = nil
         pendingFinish = nil
         pendingReplace = nil
+        pendingStart = nil
         if selectedPath != nil { selectPaper(nil) }
         guard selectedPath == nil else { return }
         setHub(page)
@@ -130,8 +131,10 @@ extension AppModel {
         return s
     }
 
-    func openRoundAction(_ path: String, replace: Bool) {
+    /// `source`: a dropped one (SourceDrop.swift), which Replace Draft's sheet then holds; nil from the menus.
+    func openRoundAction(_ path: String, replace: Bool, source: String? = nil) {
         guard !busy, !waitsForNote() else { return }
+        retrySource = source
         openPaper(path, level: .review)
         guard selectedPath == path, hub == nil, level == .review else { return }
         pendingFinish = replace ? nil : path
@@ -280,6 +283,7 @@ extension AppModel {
         }
         if level == .overview { loadOverview() }
         openPendingFinish()
+        startPendingDrop()
     }
 
     /// Finish or Replace from a paper menu, once its latest round is shown in Review: the sheet opens

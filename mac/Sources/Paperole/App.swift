@@ -357,6 +357,7 @@ struct ContentView: View {
                 HubScreen(model: model, hub: model.hubModel, page: page)
             } else if model.selectedPath != nil {
                 PaperView()
+                    .modifier(SourceDropTarget(model: model, path: model.selectedPath))
             } else {
                 NoPaperView(hasPapers: !model.papers.isEmpty, newPaper: { model.showNewPaper = true },
                             addExisting: { model.data.chooseImport(origin: .window) })
@@ -390,6 +391,7 @@ struct ContentView: View {
         } message: { a in
             Text(a.message)
         })
+        .modifier(SourceDropConfirm(model: model))
         .overlay { JumpOverlay(jump: model.jump, model: model) }
         .sheet(isPresented: $model.showNewPaper) { NewPaperSheet() }
         .alert(AppVariant.current.name, isPresented: Binding(get: { model.alertMessage != nil },
