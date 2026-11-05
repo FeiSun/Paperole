@@ -460,6 +460,7 @@ final class AppModel: ObservableObject {
     private(set) var roundsFound = 0
     /// Your Move's Finish Round N…: that paper's Finish sheet opens once its state is in.
     var pendingFinish: String?
+    var pendingReplace: String?
     /// The sheets of the hierarchy: Edit Paper… (a paper's path), Rename Student… and Map Headings… (a student's key).
     @Published var editingPaper: String?
     @Published var renamingStudent: String?
@@ -562,6 +563,7 @@ final class AppModel: ObservableObject {
     /// The sheet that builds the latest round again (Retry…, Build Round N Again…), or starts Round 1 when the engine
     /// refused it (`startRefused`).
     @Published var showRetry = false
+    private(set) var retryReplacingDraft = false
     /// The sheet opened by Build Again with Shell Escape…: its Shell escape toggle starts on (`openRetry`; UX.md §41).
     private(set) var retryWithShellEscape = false
     /// The build's Details on the status line (`BuildStatusLine`), here so a debug script can open it (`builddetails`).
@@ -925,6 +927,7 @@ final class AppModel: ObservableObject {
     var canBuildAgain: Bool {
         guard let r = round, let latest = latestRound, r.n == latest.n, !latest.closed, (r.finishes ?? []).isEmpty
         else { return false }
+        if let allowed = state?.summary?.replaceable { return allowed }
         return (state?.comments ?? []).allSatisfy { $0.carried && $0.verdict == nil && $0.revived == nil }
     }
     var canFinish: Bool { roundIsOpen && !busy }
@@ -1171,6 +1174,7 @@ final class AppModel: ObservableObject {
         }
         if path == nil { setFocus(false) }
         pendingFinish = nil  // Your Move's Finish was another paper's
+        pendingReplace = nil
         if let t = edit.tagging { closeTagPicker(t) }  // a card's tag picker: written to its own paper first
         // an open inline editor is saved first, to the paper it was begun on, as for another round (UX.md §17)
         commitEdit(focusLost: true)
@@ -1530,8 +1534,9 @@ final class AppModel: ObservableObject {
 
     /// The sheet that builds the latest round again or starts Round 1 (`showRetry`); `shellEscape`: opened by Build Again
     /// with Shell Escape…, its toggle on (UX.md §41).
-    func openRetry(shellEscape: Bool = false) {
+    func openRetry(shellEscape: Bool = false, replacingDraft: Bool = false) {
         retryWithShellEscape = shellEscape
+        retryReplacingDraft = replacingDraft
         showRetry = true
     }
 

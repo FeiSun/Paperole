@@ -1180,3 +1180,10 @@ alongside `results`. Allowed attempt statuses: `matched`, `not_found`, `unavaila
 corresponding result in the same call. Invalid attempts reject the entire update. Attempts merge under the existing lock
 and atomic write and survive entry refresh. They do not become bibliographic results or affect online finding logic. The
 latest attempt and latest scan persist across app restarts; this is not an append-only history.
+
+Paper-menu draft replacement, 2026-11-03 (additive; no ledger schema change):
+- `summary.replaceable` is a boolean in state, summaries and overview responses. True only for the latest open round
+  with no earlier finishes, comments created in it, verdicts, revived comments, or `advisor_note` on an automatic check
+  in that round. Failed builds and carried comments awaiting review can be replaced.
+- `ledger.can_replace_round` supplies both the flag and ingest's existing refusal check. Replacement still reuses the
+  round number and existing snapshot/compile/recovery path; no source retention or Finish behavior changes.

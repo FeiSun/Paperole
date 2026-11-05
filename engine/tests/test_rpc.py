@@ -11,7 +11,7 @@ def test_round1_rpc(tmp_path):
         state = eng.call("new", paper=paper, title=TITLE, student="Lin Zhou")["state"]
         assert state["round"] is None and state["paper"]["path"] == paper
         assert state["summary"] == {"round": None, "closed": False, "status": None, "to_judge": 0, "to_check": 0,
-                                    "answered": 0, "handled": 0, "closed_at": None, "resumable": False}
+                                    "answered": 0, "handled": 0, "closed_at": None, "resumable": False, "replaceable": False}
 
         state = eng.call("ingest", paper=paper, source=str(FIXTURE / "v1"))["state"]
         assert "Compiling with pdflatex…" in eng.events

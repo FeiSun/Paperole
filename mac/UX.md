@@ -1714,3 +1714,16 @@ without opening the panel, switching tabs, moving the PDF, showing a toast or po
 Scholar CAPTCHA offers an explicit Verify action instead of opening a window over the reader. The current round’s latest
 scan and settled lookup outcomes persist in the engine’s existing caches; no global notification inbox, unread badges,
 percentages or unbounded log history are added.
+
+## Paper-menu round actions (2026-11-03)
+
+The sidebar and Student/Board paper menus share Finish Round… and Replace Draft… for an open latest round.
+Finish does not require new comments or Ready to finish; it opens the existing Finish sheet. A failed build without a
+PDF cannot finish. Mark as Finished remains the separate paper-level action after the round is closed.
+
+Replace Draft… uses the latest summary's `replaceable` flag and rechecks the loaded target paper before opening.
+Review comments, verdicts, revived comments, automatic-check notes, an earlier Finish, or unsent reply drafts prevent
+replacement. The existing rebuild sheet has a Replace Draft title and Replace button, and requires a newly chosen
+source folder or ZIP. It states that the round number is retained and the previous draft is not kept as a separate
+round. Build Round N Again… in the build details retains its existing purpose and wording. Navigation to another
+paper or away from Review cancels any waiting sheet action.

@@ -604,7 +604,7 @@ struct StudentCardMenu: View {
 
     var body: some View {
         let gone = model.missingPapers.contains(paper.path)
-        if let item {
+        if let item, item.status != .ready {
             Button(MoveRow.title(item)) { model.moveAction(item) }.disabled(gone)
             Divider()
         } else if status == .waiting || status == .noRounds {

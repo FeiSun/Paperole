@@ -154,6 +154,12 @@ struct PaperMenu: View {
     var body: some View {
         let gone = model.missingPapers.contains(paper.path)
         Button("Open in Review") { model.openPaper(paper.path, level: .review) }.disabled(gone)
+        if let s = model.openRoundSummary(paper.path) {
+            Button("Finish Round…") { model.openRoundAction(paper.path, replace: false) }
+                .disabled(gone || model.busy || s.status == "failed")
+            Button("Replace Draft…") { model.openRoundAction(paper.path, replace: true) }
+                .disabled(gone || model.busy || s.replaceable == false)
+        }
         if let a = model.resumable(paper.path) {  // its latest round, finished (UX.md §31)
             Button("Resume Round \(a.round)") { model.askResume(paper.path) }.disabled(gone)
         }

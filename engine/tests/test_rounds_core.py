@@ -67,7 +67,8 @@ def test_rounds_2_and_3(paper, standin):
             (1, "Our simulator is event-driven", "这段放到本节最后。", "highlight"),
             (1, "which performed best on a held-out day of the trace.", "只用一天调参够吗？", "note")]:
         call("comment", paper=p, page=page, rects=select(pdf1, page, phrase), text="", note=note, kind=kind)
-    nothing = {"to_judge": 0, "to_check": 0, "answered": 0, "handled": 0, "closed_at": None, "resumable": False}
+    nothing = {"to_judge": 0, "to_check": 0, "answered": 0, "handled": 0, "closed_at": None, "resumable": False,
+               "replaceable": False}
     assert call("state", paper=p)["state"]["summary"] == dict(nothing, round=1, closed=False, status="ok")
     round1_state = call("finish", paper=p)["state"]
     assert round1_state["summary"] == dict(nothing, round=1, closed=True, status="ok", resumable=True,
@@ -100,7 +101,7 @@ def test_rounds_2_and_3(paper, standin):
     assert state["changes"][1]["new_text"] == "Because the controller needs no changes"
     # the papers list: 5 comments to judge and c02 to check
     assert state["summary"] == {"round": 2, "closed": False, "status": "ok", "to_judge": 5, "to_check": 1,
-                                "answered": 0, "handled": 0, "closed_at": None, "resumable": False}
+                                "answered": 0, "handled": 0, "closed_at": None, "resumable": False, "replaceable": True}
 
     # Edit and delete are for this round's comments, verdicts for the carried ones.
     with pytest.raises(EngineError, match="Give it a verdict"):

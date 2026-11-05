@@ -663,7 +663,7 @@ final class HierarchyModelTests: XCTestCase {
         XCTAssertEqual(m.level, .overview)
         XCTAssertEqual(t.selectedRow, try row(.paper(reef)))
         // DATA.md §0.2: each paper's and student's actions are here, not in Settings
-        XCTAssertEqual(try menu(.paper(reef)), ["Open in Review", "Edit Paper…", "Show in Finder", "Export…", "Export Comments",
+        XCTAssertEqual(try menu(.paper(reef)), ["Open in Review", "Finish Round…", "Replace Draft…", "Edit Paper…", "Show in Finder", "Export…", "Export Comments",
                                                 "Put Back an Earlier Ledger…", "Remove from List"])
         XCTAssertEqual(try menu(.student(StudentName.key("Mei Lin"))), ["Open Mei Lin’s Page", "Rename Student…", "Hide Papers",
                                                                          "Show in Finder", "Export…", "Export Comments",

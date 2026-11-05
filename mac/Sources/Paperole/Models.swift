@@ -93,6 +93,8 @@ struct PaperSummary: Decodable, Equatable {
     /// finished (CONTRACT amendment "Resume a finished round"). nil from an engine before Resume.
     var closedAt: String? = nil
     var resumable: Bool? = nil
+    /// Whether ingest may replace the latest draft; includes review notes on automatic checks.
+    var replaceable: Bool? = nil
     /// What is done in the open round (CONTRACT amendment "UI v4 data"): carried comments with a verdict, and unrequested
     /// changes no longer to check. nil from an engine before them (the official app's frozen one).
     var answered: Int? = nil

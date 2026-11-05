@@ -245,7 +245,7 @@ def test_build_status_and_replacing_a_round(tmp_path):
     assert "nosuchclassxyz" in build["log_tail"]
     assert state["comments"] == [] and state["changes"] == []
     assert state["summary"] == {"round": 1, "closed": False, "status": "failed", "to_judge": 0, "to_check": 0,
-                                "answered": 0, "handled": 0, "closed_at": None, "resumable": False}
+                                "answered": 0, "handled": 0, "closed_at": None, "resumable": False, "replaceable": True}
     with pytest.raises(EngineError, match="build failed"):
         api.comment({"paper": str(paper), "page": 0, "rects": [[1, 1, 2, 2]], "note": "x"}, quiet)
 

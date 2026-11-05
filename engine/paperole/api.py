@@ -156,10 +156,7 @@ def ingest(params, progress):
             if last.get("finishes"):  # replacing it would delete what its earlier finishes wrote (rN/earlier/)
                 raise EngineError("Round {} was finished before and resumed. Finish it again before ingesting a new "
                                   "round.".format(n))
-            if any(c["created_round"] == n or (c["rounds"].get(str(n)) or {}).get("verdict")
-                   or (c["rounds"].get(str(n)) or {}).get("revived") for c in lg["comments"]) \
-                    or any("advisor_note" in (it["rounds"].get(str(n)) or {})
-                           for it in (lg.get("check_items") or {}).values()):  # or the advisor's words on a check
+            if not ledger.can_replace_round(lg):
                 raise EngineError("Round {} already has comments or verdicts. Finish it before ingesting a new "
                                   "round.".format(n))
             last_seq = last["last_seq"]  # deleted ids stay used

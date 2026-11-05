@@ -280,7 +280,7 @@ def summary(paper, lg):
     (handled). All four are 0 for a closed or failed round."""
     rnd = ledger.latest_round(lg)
     out = {"round": None, "closed": False, "status": None, "to_judge": 0, "to_check": 0, "answered": 0, "handled": 0,
-           "closed_at": None, "resumable": False}
+           "closed_at": None, "resumable": False, "replaceable": ledger.can_replace_round(lg)}
     if rnd is None:
         return out
     n = rnd["n"]

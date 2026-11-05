@@ -239,7 +239,8 @@ struct RetrySheet: View {
     @FocusState private var mainFocused: Bool
 
     /// "Build Round 2 Again" for the open round it replaces; "Start Round 1" when there is none to replace.
-    static func title(_ latest: RoundSummary?) -> String {
+    static func title(_ latest: RoundSummary?, replacing: Bool = false) -> String {
+        if replacing { return "Replace Draft" }
         guard let r = latest, !r.closed else { return "Start Round \((latest?.n ?? 0) + 1)" }
         return "Build Round \(r.n) Again"
     }
@@ -259,7 +260,11 @@ struct RetrySheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(Self.title(model.latestRound)).font(.title2.bold())
+            Text(Self.title(model.latestRound, replacing: model.retryReplacingDraft)).font(.title2.bold())
+            if model.retryReplacingDraft, let n = model.latestRound?.n {
+                Text("Replace the source for Round \(n). The previous draft is not kept as a separate round.")
+                    .foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true)
+            }
             if first, let problem = model.startRefused?.problem {
                 Text(problem).foregroundStyle(Ink.secondary).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
             }
@@ -305,19 +310,19 @@ struct RetrySheet: View {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
-                Button("Build") {
+                Button(model.retryReplacingDraft ? "Replace" : "Build") {
                     model.ingest(source: source, main: main, engine: engine, shellEscape: showsShellEscape ? shellEscape : nil)
                     if !first { dismiss() }
                 }
                 .keyboardShortcut(.defaultAction)
-                .disabled(source.isEmpty || (first && model.busy))
+                .disabled(source.isEmpty || model.busy || (model.retryReplacingDraft && !model.canBuildAgain))
             }
         }
         .padding(20)
         .frame(width: 560)
         .onAppear {
             first = model.startRefused != nil
-            source = model.startRefused?.source ?? model.lastSource ?? ""
+            source = model.retryReplacingDraft ? "" : model.startRefused?.source ?? model.lastSource ?? ""
             main = model.state?.paper.main ?? ""
             engine = model.state?.paper.engine ?? ""
             askedShellEscape = model.retryWithShellEscape

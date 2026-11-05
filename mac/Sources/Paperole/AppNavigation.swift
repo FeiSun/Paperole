@@ -108,6 +108,7 @@ extension AppModel {
     private func showHub(_ page: HubPage, scroll: Double?) {
         pendingReview = nil
         pendingFinish = nil
+        pendingReplace = nil
         if selectedPath != nil { selectPaper(nil) }
         guard selectedPath == nil else { return }
         setHub(page)
@@ -118,8 +119,24 @@ extension AppModel {
     /// Your Move's button (FEATURES OV-8: it goes straight into Review): Continue, Show Log… (Review shows the log), or
     /// Finish Round N…, whose sheet opens once the paper's state is in.
     func moveAction(_ item: MoveItem) {
+        if item.status == .ready { return openRoundAction(item.paper.path, replace: false) }
         openPaper(item.paper.path, level: .review)
-        if item.status == .ready, selectedPath == item.paper.path { pendingFinish = item.paper.path }
+    }
+
+    /// Both paper menus use the target paper's latest summary, even while another paper is open.
+    func openRoundSummary(_ path: String) -> PaperSummary? {
+        let s = selectedPath == path && state != nil ? state?.summary : summaries[path]
+        guard let s, s.round != nil, !s.closed else { return nil }
+        return s
+    }
+
+    func openRoundAction(_ path: String, replace: Bool) {
+        guard !busy, !waitsForNote() else { return }
+        openPaper(path, level: .review)
+        guard selectedPath == path, hub == nil, level == .review else { return }
+        pendingFinish = replace ? nil : path
+        pendingReplace = replace ? path : nil
+        openPendingFinish()
     }
 
     /// A student page card's New Round… (UI v4): the paper selected first (its overview), then Start Round as from
@@ -265,19 +282,40 @@ extension AppModel {
         openPendingFinish()
     }
 
-    /// Your Move's Finish Round N… (`pendingFinish`), once the paper's latest round is shown in Review: the sheet opens
+    /// Finish or Replace from a paper menu, once its latest round is shown in Review: the sheet opens
     /// when the engine is free (the round's paragraphs are found first after an engine update, and the sheet then opens
     /// with their state), and is dropped once it can no longer open (another paper, the overview, another round, the
     /// round closed).
     func openPendingFinish() {
-        guard let p = pendingFinish else { return }
-        guard p == selectedPath, level == .review, round?.n == latestRound?.n, roundIsOpen else {
+        let replacing = pendingReplace != nil
+        guard let p = pendingReplace ?? pendingFinish else { return }
+        guard p == selectedPath, hub == nil, level == .review else {
             pendingFinish = nil
+            pendingReplace = nil
+            return
+        }
+        guard state != nil else { return }
+        guard round?.n == latestRound?.n else {
+            if pendingReview == nil { pendingFinish = nil; pendingReplace = nil }
             return
         }
         guard !busy else { return }
         pendingFinish = nil
-        DispatchQueue.main.async { [weak self] in self?.openFinish() }
+        pendingReplace = nil
+        let n = round?.n
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.selectedPath == p, self.hub == nil, self.level == .review,
+                  self.round?.n == n, self.round?.n == self.latestRound?.n, !self.busy else { return }
+            if replacing {
+                guard self.canBuildAgain, !self.drafts.values.contains(where: { !Self.trimmed($0).isEmpty }) else {
+                    self.alertMessage = "This round has review work or was finished before. Finish it and start a new round instead."
+                    return
+                }
+                self.openRetry(replacingDraft: true)
+            } else {
+                self.openFinish()
+            }
+        }
     }
 
     // MARK: The overview

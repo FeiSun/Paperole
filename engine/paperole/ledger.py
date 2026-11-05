@@ -193,6 +193,18 @@ def latest_round(lg):
     return lg["rounds"][-1] if lg["rounds"] else None
 
 
+def can_replace_round(lg):
+    """The latest draft can be replaced only before review work or an earlier Finish."""
+    rnd = latest_round(lg)
+    if rnd is None or rnd["closed"] or rnd.get("finishes"):
+        return False
+    n, key = rnd["n"], str(rnd["n"])
+    return not (any(c["created_round"] == n or (c["rounds"].get(key) or {}).get("verdict")
+                    or (c["rounds"].get(key) or {}).get("revived") for c in lg["comments"])
+                or any("advisor_note" in (it["rounds"].get(key) or {})
+                       for it in (lg.get("check_items") or {}).values()))
+
+
 def get_comment(lg, cid):
     for c in lg["comments"]:
         if c["id"] == cid:

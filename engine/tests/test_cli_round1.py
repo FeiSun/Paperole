@@ -39,7 +39,7 @@ def test_round1_cli(tmp_path):
                                             "main": None, "engine": None, "id": pid, "shell_escape": False},
                      "rounds": [], "round": None, "comments": [], "changes": [], "note_warnings": [],
                      "summary": {"round": None, "closed": False, "status": None, "to_judge": 0, "to_check": 0,
-                                 "answered": 0, "handled": 0, "closed_at": None, "resumable": False},
+                                 "answered": 0, "handled": 0, "closed_at": None, "resumable": False, "replaceable": False},
                      "reading": None, "tag_names": {}}
     assert "already has a ledger" in run("new", paper, "--title", "x", "--student", "y", ok=False)
 
@@ -148,7 +148,7 @@ def test_round1_cli(tmp_path):
     assert "There is no round 2." in run("state", paper, "--round", 2, ok=False)
     assert run("summaries", paper, tmp_path) == {"papers": [
         {"path": str(paper), "summary": {"round": 1, "closed": True, "status": "ok", "to_judge": 0, "to_check": 0,
-                                         "answered": 0, "handled": 0, "closed_at": rnd["closed_at"], "resumable": True},
+                                         "answered": 0, "handled": 0, "closed_at": rnd["closed_at"], "resumable": True, "replaceable": False},
          "paper": {"title": TITLE, "student": "Lin Zhou", "id": pid, "finished": None}},
         {"path": str(tmp_path), "error": "{} is not a Paperole paper folder (no ledger.json).".format(tmp_path)}]}
 

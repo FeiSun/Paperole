@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import SwiftUI
 import XCTest
 @testable import Paperole
 
@@ -46,6 +47,124 @@ final class ModelFixTests: XCTestCase {
         var json = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
         change(&json)
         return try EngineState.decode(JSONSerialization.data(withJSONObject: json))
+    }
+
+    private func unreviewed(replaceable: Bool = true) throws -> EngineState {
+        try state { json in
+            json["comments"] = [] as [Any]
+            var summary: [String: Any] = ["round": 2, "closed": false, "status": "ok", "to_judge": 0, "to_check": 1]
+            summary["replaceable"] = replaceable
+            json["summary"] = summary
+        }
+    }
+
+    func testPaperMenuFinishesWithoutCommentsOrReadyStatus() throws {
+        let m = makeModel()
+        m.apply(try unreviewed())
+        let path = try XCTUnwrap(m.selectedPath)
+        XCTAssertNotNil(m.openRoundSummary(path))
+        XCTAssertFalse(m.readyToFinish, "unchecked edits need not prevent finishing")
+        m.openRoundAction(path, replace: false)
+        spin(0.05)
+        XCTAssertTrue(m.showFinish)
+        XCTAssertFalse(m.showRetry)
+    }
+
+    func testPaperMenuReplacementWaitsForTheTargetPaper() throws {
+        let m = makeModel(), target = tmp.appendingPathComponent("other-paper").path
+        let original = try XCTUnwrap(m.selectedPath), reviewed = try XCTUnwrap(m.state)
+        let fresh = try unreviewed()
+        m.selectPaper(target, state: fresh)
+        m.selectPaper(original, state: reviewed)
+        XCTAssertEqual(m.openRoundSummary(target)?.replaceable, true)
+        XCTAssertFalse(m.canBuildAgain, "the selected paper already has comments")
+        m.openRoundAction(target, replace: true)
+        XCTAssertEqual(m.selectedPath, target)
+        XCTAssertEqual(m.pendingReplace, target)
+        XCTAssertFalse(m.showRetry)
+        m.apply(fresh)
+        spin(0.05)
+        XCTAssertTrue(m.showRetry)
+        XCTAssertTrue(m.retryReplacingDraft)
+        XCTAssertFalse(m.showFinish)
+    }
+
+    func testReplacementChecksFreshEligibilityAndUnsentDrafts() throws {
+        let m = makeModel(), path = try XCTUnwrap(m.selectedPath)
+        m.apply(try unreviewed(replaceable: false))
+        XCTAssertFalse(m.canBuildAgain, "the engine may know about notes on automatic checks")
+        m.openRoundAction(path, replace: true)
+        spin(0.05)
+        XCTAssertFalse(m.showRetry)
+        XCTAssertNotNil(m.alertMessage)
+        m.apply(try unreviewed())
+        m.setDraft("R1-01", "An unsent explanation")
+        m.openRoundAction(path, replace: true)
+        spin(0.05)
+        XCTAssertFalse(m.showRetry)
+    }
+
+    func testQueuedPaperActionsCannotOpenOnAnotherPaper() throws {
+        for replace in [false, true] {
+            let m = makeModel(), path = try XCTUnwrap(m.selectedPath)
+            m.apply(try unreviewed())
+            m.openRoundAction(path, replace: replace)
+            m.selectPaper(tmp.appendingPathComponent("different-paper").path, state: try unreviewed())
+            spin(0.05)
+            XCTAssertFalse(m.showRetry)
+            XCTAssertFalse(m.showFinish)
+            XCTAssertNil(m.pendingReplace)
+            XCTAssertNil(m.pendingFinish)
+        }
+    }
+
+    func testReplacementCanRetryAFailedBuildAndUsesItsOwnSheetTitle() throws {
+        let m = makeModel(), path = try XCTUnwrap(m.selectedPath)
+        m.apply(try state { json in
+            json["comments"] = [] as [Any]
+            var r = json["round"] as? [String: Any] ?? [:]
+            var build = r["build"] as? [String: Any] ?? [:]
+            build["pdf"] = NSNull(); build["status"] = "failed"
+            r["build"] = build; json["round"] = r
+        })
+        XCTAssertFalse(m.canFinish)
+        m.openRoundAction(path, replace: true)
+        spin(0.05)
+        XCTAssertTrue(m.showRetry)
+        XCTAssertEqual(RetrySheet.title(m.latestRound, replacing: m.retryReplacingDraft), "Replace Draft")
+        m.showRetry = false
+        m.openRetry()
+        XCTAssertFalse(m.retryReplacingDraft)
+        XCTAssertEqual(RetrySheet.title(m.latestRound), "Build Round 2 Again")
+    }
+
+    func testReplaceDraftSheetRenders() throws {
+        let m = makeModel()
+        m.apply(try unreviewed())
+        m.openRetry(replacingDraft: true)
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 560, height: 350),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        defer { window.close() }
+        for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            let host = NSHostingView(rootView: RetrySheet().environmentObject(m)
+                .environment(\.colorScheme, name == "dark" ? .dark : .light)
+                .background(Color(nsColor: .windowBackgroundColor)))
+            host.appearance = NSAppearance(named: appearance)
+            window.appearance = host.appearance
+            window.contentView = host
+            host.frame = NSRect(x: 0, y: 0, width: 560, height: 350)
+            host.layoutSubtreeIfNeeded()
+            spin(0.05)
+            if let directory = ProcessInfo.processInfo.environment["PAPEROLE_ROUND_CAPTURE"],
+               let rep = host.bitmapImageRepForCachingDisplay(in: host.bounds) {
+                host.effectiveAppearance.performAsCurrentDrawingAppearance {
+                    host.cacheDisplay(in: host.bounds, to: rep)
+                }
+                try XCTUnwrap(rep.representation(using: .png, properties: [:]))
+                    .write(to: URL(fileURLWithPath: directory).appendingPathComponent("replace-draft-\(name).png"))
+            }
+        }
     }
 
     // MARK: A1-01
