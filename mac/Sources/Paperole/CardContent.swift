@@ -162,6 +162,16 @@ enum CardContent {
         var tags: [[(text: String, round: Int?)]] = []  // per section, joined into words at the end
         var sectionPage: Int?  // the page the last section's text was last seen on
         for (i, r) in records.enumerated() {
+            if c.isOverall {  // one section: no text of its own in any round, never "unchanged" or "not found"
+                if i == 0 {
+                    out.append(ThreadSection(round: r.round, rounds: [r.round], event: "on the whole paper", page: nil,
+                                             kind: .none, full: BlockText(text: ""), short: nil, strong: true, crop: nil))
+                    tags.append([])
+                } else {
+                    out[0].rounds.append(r.round)
+                }
+                continue
+            }
             if i == 0 {
                 let (kind, full, req) = content(r, first: true)
                 var event = c.carried ? "as commented" : c.markKind == .box || kind == .image ? "selected area"
@@ -242,7 +252,7 @@ enum CardContent {
             if r.page != nil { sectionPage = r.page }
         }
         for k in out.indices { out[k].tags = joined(tags[k]) }
-        out[out.count - 1].uncertain = c.anchorState != "orphan" && (c.lowConfidence || c.page == nil)
+        out[out.count - 1].uncertain = !c.isOverall && c.anchorState != "orphan" && (c.lowConfidence || c.page == nil)
         return out
     }
 
@@ -518,6 +528,8 @@ struct CardModel: Equatable, Identifiable {
     var color: MarkColor
     var kind: MarkKind
     var page: Int?
+    /// On the whole paper: "overall" where the page goes, no mark to show, no kind or re-anchoring.
+    var overall = false
     var note: String
     var title: NoteTitle
     var firstLine: String
@@ -569,6 +581,7 @@ struct CardModel: Equatable, Identifiable {
         color = c.markColor
         kind = c.markKind
         page = c.page
+        overall = c.isOverall
         note = c.note
         title = NoteTitle(c.note)
         firstLine = c.note.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
@@ -585,6 +598,10 @@ struct CardModel: Equatable, Identifiable {
         let last = thread[thread.count - 1]
         if status == .new || status == .followUp {
             stateWord = status.word.lowercased()  // what final.pdf asks for
+        } else if c.isOverall {
+            // no words of its own to follow: what the student did about it, their note and the edits beside it
+            stateWord = !elsewhere.isEmpty ? (attachments.first?.page.map { "edit on p.\($0 + 1)" } ?? "edited")
+                : c.studentNote != nil ? "explained" : "no note"
         } else if c.anchorState == "orphan" {
             stateWord = status == .notFound && open ? "not found · re-anchor" : "not found"
             stateTone = status == .notFound ? .danger : .plain
@@ -640,7 +657,7 @@ struct CardModel: Equatable, Identifiable {
         verdict = c.verdict
         verdictNote = c.verdictNote ?? ""
         studentNote = c.studentNote.flatMap { $0.isEmpty ? nil : $0.text.trimmingCharacters(in: .whitespacesAndNewlines) }
-        let pageText = c.page.map { "page \($0 + 1)" } ?? "no page"
+        let pageText = c.isOverall ? "on the whole paper" : c.page.map { "page \($0 + 1)" } ?? "no page"
         let word = status.word(open: open).lowercased()  // "left open" in a closed round
         accessibility = [c.id, word, stateWord == word ? nil : stateWord, pageText]
             .compactMap { $0 }.joined(separator: ", ")

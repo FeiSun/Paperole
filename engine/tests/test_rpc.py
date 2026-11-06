@@ -71,7 +71,7 @@ def test_round1_rpc(tmp_path):
         assert all(set(c) == {"id", "kind", "color", "note", "source", "created_round", "carried", "verdict",
                               "verdict_note", "anchor_state", "confidence", "method", "page", "rects", "text",
                               "old_quote", "new_quote", "file", "line", "changes", "student_note", "context", "history",
-                              "paragraph", "tags", "env", "revived", "revivable"}
+                              "paragraph", "tags", "env", "revived", "revivable", "name", "places", "relation"}
                    for c in state["comments"])
         assert all(set(c["context"]) == {"display", "page", "rects", "clip", "text", "sel", "cut", "changed",
                                          "against"} for c in state["comments"])

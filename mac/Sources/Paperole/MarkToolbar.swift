@@ -138,7 +138,7 @@ struct ColourDot: View {
     @EnvironmentObject var edit: EditState
 
     var body: some View {
-        let kinds = MarkStyleRow.kinds(carried: card.carried, kind: card.kind)
+        let kinds = card.overall ? [] : MarkStyleRow.kinds(carried: card.carried, kind: card.kind)  // no mark, no kind
         Button { actions.toggleSwatches(card.id) } label: {
             Circle().fill(Color(nsColor: card.color.fill))
                 .overlay(Circle().strokeBorder(Color(nsColor: card.color.ink).opacity(0.6), lineWidth: 0.5))

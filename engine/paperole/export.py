@@ -9,7 +9,7 @@ def comments(path):
     """{"paper": {"title", "student"}, "tag_names", "comments"} of one paper folder. Each comment, in the ledger's
     order: id, created_round, created, kind, color, note, tags (ids), and its rounds, oldest first, one for each round
     it is in: round; section, that round's title of the section it is printed in (null when not placed or the round's
-    paragraphs are not known yet); page, 0-based (null when not placed); place (placed, gone, unplaced) and response
+    paragraphs are not known yet); page, 0-based (null when not placed); place (placed, gone, unplaced, whole: an overall comment) and response
     and answer as the overview's path has them; state, verdict and verdict_note as the ledger has them; student_note,
     the text of the student's note in that round (null without one); text, the PDF words it marks there."""
     paper = Path(path)

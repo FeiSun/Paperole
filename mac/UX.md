@@ -1748,3 +1748,34 @@ overview) or onto its row in the sidebar brings in the next draft. The open pane
   paper keeps a drop on another paper from doing anything.
 - No drop target on the hierarchy's pages (All Students, Your Move, a student's page): the sidebar's rows are there.
 - Debug items: `drophover page|row|off`, `drop <source>` (on the shown paper), `dropstart [seconds]`.
+
+## 44. Overall comments (2026-11-05; design/comments/PLAN.md §3 S, §6a)
+
+A comment on the whole paper: one note, no place in any round (engine/CONTRACT.md amendment "Comments on places,
+step 1"; the ledger becomes schema 2 at the first one).
+
+- **Writing one.** "+ Overall comment" at the left of the line over the comment list, there in an open round from the
+  start (the line used to wait for a first comment; while a tag is shown alone its count and Show All take the place),
+  and Comment › Overall Comment…, which leaves Focus and shows Comments first. Its editor is the new-comment editor as a
+  popover under the line: colours, the note, tags; no kind, no quoted words, no page. Save keeps it open until the engine
+  has the comment, then selects its card; a refusal keeps the note. Begun on one paper or round, it is never saved on
+  another.
+- **Row and card.** First in its group. "overall" where the page goes (not a button: there is no mark to show). Its
+  thread is one section, "on the whole paper", over every round it was in; no "unchanged", "not found", "position
+  uncertain" or Re-anchor…. The row's word, once carried: "no note", "explained" (the student's `% R2-01` note) or
+  "edit on p.N" (the edits beside that note); the quiet turns of rounds with no note say "no note". Colour and Edit
+  Note as any new comment; no Kind in its menu or colour dot.
+- **On the PDF** (the advisor's test, 2026-11-06: with no mark it was nowhere in the review view): a label "○ R1-04 ·
+  overall" at the top of p.1, 6 pt over its text from the text's left edge, side by side, in more rows when one is
+  full (the first on top; near the page's edge they go down over the text's top, never over each other); in the comment's ink and status sign, faded when closed, hidden with the marks. A click selects the card (no
+  mark toolbar: there is no mark to restyle); the card's selection outlines, reveals and flashes the label. final.pdf
+  has none: the student reads it on the summary page.
+- **The student** reads it first in final.pdf's summary, whole, in the Overall section (engine). Answers, follow-ups,
+  Reopen and tags work as for any comment.
+- **Elsewhere** (the review of 2026-11-05): By section groups it under "Whole paper", first; by tag it is first; the
+  overview says "on the whole paper" (the engine's place `whole`, never "unplaced"); Export Comments writes "whole
+  paper"; Jump shows "overall" where the page goes; the colour dot offers no kinds.
+- **Its editor** cannot ask before a click elsewhere closes it (a SwiftUI popover), so a note written there is kept and
+  comes back at the next + Overall comment on the same paper and round; Cancel drops it. Save waits for words: an
+  overall comment is only its words. A save answered after another paper is shown selects nothing there.
+- Debug item: `overall` (the editor opened), `overall <note>` (typed and saved).

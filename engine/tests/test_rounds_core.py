@@ -152,8 +152,9 @@ def test_rounds_2_and_3(paper, standin):
     summary = unicodedata.normalize("NFKC", final[0].get_text())  # MuPDF keeps the "ﬁ" ligature
     for expected in ("Review of Round 2", "To do for Round 3 (3)\nR1-02\nR1-04\n+ R2-01", "Follow-ups (1)",
                      "Still open (1)", "Resolved (2)\nR1-01\nR1-03", "No change\nneeded (1)",
-                     "这次先不改。\nRound 1: 只用一天调参够吗?", "Your changes no comment asked for (1)"):
+                     "这次先不改。", "Your changes no comment asked for (1)"):
         assert expected in summary
+    assert "只用一天调参够吗" not in summary  # a line per comment: the earlier note is in the margin box
     assert "(location not found in Round 2)" in " ".join(summary.split())  # wrapped at the paper's page width
     # no annotation but the paper's links: the outline lists the comments, and the marks are burned in, each in the
     # comment's colour (a highlight in its fill, other kinds in its ink)

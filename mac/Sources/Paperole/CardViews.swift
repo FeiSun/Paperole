@@ -79,7 +79,8 @@ struct CompactRow: View, Equatable {
                     .foregroundStyle(Ink.secondary)
                     .padding(.trailing, 3)
                 }
-                Text(card.page.map { "p.\($0 + 1)" } ?? "—").font(.system(size: 11)).foregroundStyle(Ink.secondary).monospacedDigit()
+                Text(card.overall ? "overall" : card.page.map { "p.\($0 + 1)" } ?? "—").font(.system(size: 11))
+                    .foregroundStyle(Ink.secondary).monospacedDigit()
             }
             .frame(height: 18)
             Group {
@@ -304,12 +305,16 @@ struct ExpandedCard: View, Equatable {
             if edit.saving && edit.id == card.id { ProgressView().controlSize(.small) }
             HStack(spacing: 12) {
                 if edit.roundOpen { ColourDot(card: card, actions: actions) }
-                Button(card.page.map { "p.\($0 + 1)" } ?? "no page") { actions.reveal(card.id) }
-                    .buttonStyle(.plain)
-                    .help("Show the mark in the PDF")
+                if card.overall {
+                    Text("overall").help("On the whole paper: it has no mark")
+                } else {
+                    Button(card.page.map { "p.\($0 + 1)" } ?? "no page") { actions.reveal(card.id) }
+                        .buttonStyle(.plain)
+                        .help("Show the mark in the PDF")
+                }
                 Button { actions.moreMenu(card.id) } label: { Image(systemName: "ellipsis.circle").font(.system(size: 16)) }
                     .buttonStyle(.plain)
-                    .help("Colour, kind, source and edits, Re-anchor…, Copy ID")
+                    .help(card.overall ? "Colour, Edit Note, tags, Copy ID" : "Colour, kind, source and edits, Re-anchor…, Copy ID")
                     .popover(isPresented: Binding(get: { edit.info == card.id }, set: { if !$0 { edit.info = nil } }),
                              arrowEdge: .bottom) { info }
             }
@@ -579,6 +584,8 @@ struct ExpandedCard: View, Equatable {
             Text(s.full.text).font(CardType.words).foregroundStyle(Ink.secondary)
                 .padding(.leading, 10)
                 .overlay(alignment: .leading) { Rectangle().fill(Color(nsColor: Palette.rule)).frame(width: 2) }
+        case .none where card.overall:
+            EmptyView()  // on the whole paper: no words of its own to show, and nothing lost
         case .none:
             Text(LocalizedStringKey("Not found in R\(s.round)."
                                     + (edit.roundOpen && now ? " Choose [Re-anchor…](reanchor:) to place it." : "")))
@@ -1257,7 +1264,7 @@ enum CardMenus {
         kind.submenu = NSMenu()
         kind.submenu?.autoenablesItems = false
         kindItems(c, model).forEach { kind.submenu?.addItem($0) }
-        m.addItem(kind)
+        if !c.isOverall { m.addItem(kind) }  // no mark, so no kind
         // the writing tags (UX.md §24), in any round: one on or off each
         let tagsItem = NSMenuItem(title: "Tags", action: nil, keyEquivalent: "")
         tagsItem.submenu = NSMenu()
@@ -1283,7 +1290,9 @@ enum CardMenus {
         }
         // the card's old ⓘ (POLISH §3, 8): a popover at the ⋯ button
         m.addItem(item("Source and Edits…") { model.edit.info = id })
-        m.addItem(item("Re-anchor…", enabled: model.roundIsOpen) { model.beginReanchor(id) })  // busy too: Place waits
+        if !c.isOverall {  // on the whole paper: no place to move
+            m.addItem(item("Re-anchor…", enabled: model.roundIsOpen) { model.beginReanchor(id) })  // busy too: Place waits
+        }
         m.addItem(item("Copy ID") {
             AppModel.clipboard.clearContents()
             AppModel.clipboard.setString(id, forType: .string)

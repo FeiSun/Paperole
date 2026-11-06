@@ -755,7 +755,7 @@ def test_check_finds_each_problem_and_changes_no_byte(done, tmp_path):
 
     assert set(variant("unreadable", lambda paper: (paper / "ledger.json").write_text("{\"schema\": 1,"))) \
         == {"ledger_unreadable"}
-    assert set(variant("newer", lambda paper: edit(paper, lambda lg: lg.update(schema=2)))) == {"ledger_too_new"}
+    assert set(variant("newer", lambda paper: edit(paper, lambda lg: lg.update(schema=ledger.SCHEMA + 1)))) == {"ledger_too_new"}
     assert set(variant("none", lambda paper: (paper / "ledger.json").unlink())) == {"no_ledger"}
     assert [q["code"] for q in check.paper(tmp_path / "nowhere")] == ["missing_folder"]
 

@@ -1187,3 +1187,65 @@ Paper-menu draft replacement, 2026-11-03 (additive; no ledger schema change):
   in that round. Failed builds and carried comments awaiting review can be replaced.
 - `ledger.can_replace_round` supplies both the flag and ingest's existing refusal check. Replacement still reuses the
   round number and existing snapshot/compile/recovery path; no source retention or Finish behavior changes.
+
+### Comments on places, step 1, 2026-11-05 (ledger schema 2; design/comments/PLAN.md P0.1 summary half, P0.2)
+
+**Schema 2.** The engine reads ledgers of schema 1 and 2 (`ledger.SCHEMA = 2`, `ledger.readable_schema`). A new ledger
+is written as schema 1 (`ledger.BASE`). On every save the schema becomes `max(schema, ledger.schema_needed(lg))`:
+2 once any comment has a kind in `ledger.V2_KINDS` (today `overall`), and it is never lowered, so deleting that comment
+leaves the ledger at 2. An engine reading only schema 1 (the official app's frozen one) refuses such a ledger: load
+says "ledger.json has schema 2; this engine reads schema 1", the check reports `ledger_too_new`, and import refuses it
+("written by a newer Paperole"). Run `release.sh` before moving such a review to the official app. Amends §4.
+
+**Overall comments.** `comment` with `kind: "overall"` takes `note` (and `color`, `tags`), no `page`, `rects` or
+`text`: a comment on the whole paper (`comments.create_overall`). Each of its round records has `anchor: null`,
+`method: "overall"`, `confidence: 1.0` and `anchor_state` `new` in its creation round, else `overall` (a carry or a
+revive copies it forward: nothing to locate, so it is never `orphan`). It takes verdicts, follow-ups, Reopen, tags and
+the student's `% R2-01` notes (with the edits beside them) as any comment. `edit_comment` changes its note and colour;
+a kind change into or out of `overall` is refused, and `reanchor` is refused ("it has no place to move"). Shadows, card
+contexts and the change attachment by place skip it (no anchor).
+
+**final.pdf and email.txt.**
+- The summary opens, after the title block and before How to reply, with an **Overall** section when the round has
+  overall comments: one row each, the status word, the chip with its sign and the text whole (the follow-up first, the
+  earlier note muted, as `_texts`); a text longer than the page goes on at the top of the next page, never cut. Open
+  ones are in To do. They are listed only there, not again under Earlier or New comments, and have no margin box.
+  The PDF outline gets "Overall (k)" after "Summary", an entry per comment on the summary's first page.
+- Every other summary row is one line (P0.1, the summary half): group label, chip (its link to the margin box),
+  page, and the text's first line cut with "…" (the quote in italics when the note is empty); no quote, no crop, no
+  "(full text in the email)". The margin box beside the words holds the note whole. A comment not found this round
+  keeps its whole text in the summary, then "“last quote” (location not found in Round N)", since no margin holds it.
+- email.txt opens its groups with "Overall (k)": each open overall comment as `R2-01  whole paper` and its lines.
+
+### Comments on places, step 2: several places, 2026-11-05 (ledger schema 2; design/comments/PLAN.md §2, §6a, P0.4)
+
+**Record.** A comment may have other places besides its own anchor (place "a"):
+`comment.link = {"text": the advisor's words for how they relate (free, may be ""), "places": [{"key": "b"…"z",
+"kind", "added": round, "removed"?: round}]}` and in each round record `places: {key: {anchor, anchor_state,
+confidence, method, context}}`. Keys are never reused. `link` makes the ledger schema 2 (`ledger.schema_needed`).
+`comments.places(c, n)` lists `[("a", rec)] + [(key, place record)]`; `comments.place_comment(c, key)` is the comment
+seen from one place (id "R1-03#b", that place's kind and records), for code that knows one anchor.
+
+**Calls.**
+- `add_place` {paper, id, page, rects, text, kind} adds a place to a comment of the open round (written in it or
+  carried into it; never an overall one), located as `comment` locates; the result has `place`, its key.
+- `remove_place` {paper, id, place}: added this round, it goes; else it is marked `removed` and no longer carried. The
+  last one gone, `link` goes.
+- `reanchor` takes `place` to place one of them anew (a carried place: method `advisor`, as a carried comment).
+- `edit_comment` takes `relation` (whitespace collapsed); refused on a comment with one place.
+
+**Carrying.** Each place still followed is carried as its own item ("R1-03#b"), from where it was. Changes attached to
+a place are attached to the comment (`attached_to` keeps comment ids) and, for a comment attached anywhere but "a"
+alone, `at: {"R1-03": ["a", "b"]}` says where. `ledger.id_key` sorts "R1-03#b" after "R1-03". A carried comment
+placed anew keeps its other places' attachments. Revive carries the places too.
+
+**State.** A comment has `places` ([] without a link): {key, kind, added, page, rects, text, anchor_state,
+confidence, method, file, line, context, name, changes (attached there)}, `relation`, and `name` for its own anchor.
+`name` (`state.place_name`) is the float's caption name ("Table 1"), else the section's heading ("§4.1 Setup"),
+else null.
+
+**final.pdf, email.txt.** Each place found is drawn with its mark and chip. Its margin box starts with the relation and
+where the others are: at the first place in reading order "does not match · also Table 1 (p.4)" with the note whole,
+at the others "… · see §1 Introduction (p.1)" with the note's first line. The summary row's page column reads
+"p.1 ⇄ p.4" (the text after it), and "(1 place not found in Round N)" leads its line when some are lost; it is Not
+found only when every place is. The email entry lists a line per place with its quote, then "How the places relate:".

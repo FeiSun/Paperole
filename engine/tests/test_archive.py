@@ -333,7 +333,7 @@ def test_each_status(tmp_path):
     (c / "ledger.json").write_text("{")
     d = handmade(tmp_path / "d")
     lg = json.loads((d / "ledger.json").read_text())
-    lg["schema"] = 2
+    lg["schema"] = ledger.SCHEMA + 1  # newer than this engine reads
     (d / "ledger.json").write_text(json.dumps(lg))
     r = archive.check(export(tmp_path, c, d, name="bad.zip"))
     assert [(p["status"], p["reason"]) for p in r["papers"]] == [

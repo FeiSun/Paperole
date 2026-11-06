@@ -331,7 +331,9 @@ final class CardActions {
 
     func rowClicked(_ id: String) { model?.select(.comment(id), reveal: true, scroll: .minimal) }
     /// A card's page number or an edit's link: a look-up, a step of Back when it goes far (PLAN §5.2).
-    func reveal(_ id: String) { if let c = model?.comment(id) { model?.pdf.reveal(page: c.page, rects: c.rects, step: .lookUp) } }
+    func reveal(_ id: String) {
+        if let c = model?.comment(id) { model?.pdf.show(c, reveal: true, flash: false, step: .lookUp) }
+    }
     func revealChange(_ id: String) {
         if let ch = model?.change(id) { model?.pdf.reveal(page: ch.page, rects: ch.rects, step: .lookUp) }
     }
@@ -463,6 +465,11 @@ final class AppModel: ObservableObject {
     var pendingReplace: String?
     /// A dropped source (SourceDrop.swift, UX.md §43): Start Round N's confirmation, the round it starts once the
     /// paper's state is in, the source Replace Draft's sheet opens with, and the place the source is over.
+    /// The paper and round + Overall comment's editor was opened on (`beginOverallComment`): saved only there.
+    var overallFor: (paper: String?, round: Int?) = (nil, nil)
+    /// An overall note closed by a click outside its popover, not saved or cancelled: kept for the next + Overall
+    /// comment on the same paper and round (the popover cannot ask before it closes, as the PDF's editor does).
+    var overallStash: CommentDraft?
     @Published var confirmDrop: DropAsk?
     var pendingStart: DropAsk?
     var retrySource: String?
@@ -949,7 +956,7 @@ final class AppModel: ObservableObject {
     /// Edit Note: a new comment of the open round, the engine busy or not (`beginNoteEdit`).
     func canEditNote(_ c: Comment) -> Bool { roundIsOpen && !c.carried }
     /// Kind changes: new text comments only; a box stays a box, a carried comment changes kind only by re-anchoring.
-    func canChangeKind(_ c: Comment) -> Bool { canEdit(c) && MarkKind.textKinds.contains(c.markKind) }
+    func canChangeKind(_ c: Comment) -> Bool { canEdit(c) && !c.isOverall && MarkKind.textKinds.contains(c.markKind) }
 
     var pdfURL: URL? { resolve(round?.build.pdf).map { URL(fileURLWithPath: $0) } }
 
@@ -961,8 +968,10 @@ final class AppModel: ObservableObject {
     }
 
     /// Carried comments first (in the engine's document order), then new ones.
+    /// Carried before new, and in each group a comment on the whole paper first (design/comments/PLAN.md §3 S).
     nonisolated static func ordered(_ cs: [Comment]) -> [Comment] {
-        cs.filter(\.carried) + cs.filter { !$0.carried }
+        let all = cs.filter(\.carried) + cs.filter { !$0.carried }
+        return all.filter(\.isOverall) + all.filter { !$0.isOverall }
     }
 
     func comment(_ id: String) -> Comment? { state?.comments.first { $0.id == id } }
@@ -1092,7 +1101,8 @@ final class AppModel: ObservableObject {
         s.comments = (g.toCheck + g.forStudent + g.closed).compactMap { card in
             byID[card.id].map {
                 Jump.CommentSource(id: $0.id, status: card.status, note: $0.note,
-                                   words: $0.context?.text ?? $0.text ?? $0.oldQuote ?? "", said: $0.verdictNote ?? "", page: $0.page)
+                                   words: $0.context?.text ?? $0.text ?? $0.oldQuote ?? "", said: $0.verdictNote ?? "", page: $0.page,
+                                   overall: $0.isOverall)
             }
         }
         s.edits = changes.unrequested.map {
@@ -1285,7 +1295,7 @@ final class AppModel: ObservableObject {
         var shown: String?  // the selected comment, its mark on screen
         if tab == .comments, case .comment(let id)? = selection {
             pendingSelect = id
-            if comment(id).map({ pdf.isVisible(page: $0.page, rects: $0.rects) }) == true { shown = id }
+            if comment(id).map({ pdf.isVisible($0) }) == true { shown = id }
             pendingSelectReveal = shown != nil || !follow
         }
         let place = follow ? readingPlace() : nil, moves = pdf.ownMoves
@@ -2471,7 +2481,10 @@ final class AppModel: ObservableObject {
         if b.options != options { b.options = options }
         if b.filter != panel.filter { b.filter = panel.filter }
         if b.grouping != panel.grouping { b.grouping = panel.grouping }
-        if b.shown != !panel.cards.isEmpty { b.shown = !panel.cards.isEmpty }
+        // in an open round from the start, for + Overall comment (design/comments/PLAN.md §6a)
+        let shown = !panel.cards.isEmpty || roundIsOpen
+        if b.shown != shown { b.shown = shown }
+        if b.canAddOverall != roundIsOpen { b.canAddOverall = roundIsOpen }
         let kept = panel.filter.map { f in panel.cards.filter { ListFilter.matches($0, f) }.count } ?? panel.cards.count
         if b.total != panel.cards.count { b.total = panel.cards.count }
         if b.kept != kept { b.kept = kept }
@@ -2631,7 +2644,7 @@ final class AppModel: ObservableObject {
         switch s {
         case .comment(let cid):
             guard let c = comment(cid) else { return }
-            if reveal { pdf.reveal(page: c.page, rects: c.rects, step: step) } else if flash { pdf.flash(page: c.page, rects: c.rects) }
+            pdf.show(c, reveal: reveal, flash: flash, step: step)
         case .change(let chid):
             guard let ch = change(chid) else { return }
             if reveal { pdf.reveal(page: ch.page, rects: ch.rects, step: step) } else if flash { pdf.flash(page: ch.page, rects: ch.rects) }
@@ -2818,6 +2831,54 @@ final class AppModel: ObservableObject {
 
     /// Return, Comment, or Add comment…: on the selection or the pending box.
     func beginComment() { pdf.beginComment() }
+
+    /// + Overall comment, or the Comment menu's Overall Comment… (design/comments/PLAN.md §6a): its editor under the
+    /// line over the comment list, so the list is shown (Comments, and out of Focus, whose panel is one card).
+    /// A note left by a click outside the popover (`overallStash`) comes back, on the paper and round it was begun on.
+    func beginOverallComment() {
+        guard roundIsOpen, !viewingEarlierRound, listBar.overallDraft == nil else { return }
+        let moved = focus || tab != .comments
+        if focus { setFocus(false) }
+        if tab != .comments { tab = .comments }
+        let draft = overallStash.flatMap { overallFor == shown ? $0 : nil }
+            ?? CommentDraft(kind: .highlight, color: toolbar.color, note: "", mode: .overall)
+        overallStash = nil
+        overallFor = shown
+        // after the panel's list is laid out again (Focus ended, or the Changes tab left), so the popover has its line
+        if moved {
+            DispatchQueue.main.async { [weak self] in self?.listBar.overallDraft = draft }
+        } else {
+            listBar.overallDraft = draft
+        }
+    }
+
+    /// The editor's Save: the engine's `comment` with kind `overall`, then its card selected. A refusal (the engine
+    /// busy with another paper's round, the round closed meanwhile) keeps the editor open with the note.
+    func saveOverallComment(_ d: CommentDraft) {
+        guard let paper = selectedPath, overallFor == shown else {
+            alertMessage = "This note was begun on another paper or round, so it was not saved here. Copy it, then cancel it."
+            return
+        }
+        if d.tags.naming && TagCatalog.clean(d.tags.newName) != nil { d.tags.commitNew(tags) }
+        d.saving = true
+        toolbar.setColor(d.color)
+        var params: [String: Any] = ["paper": paper, "kind": Comment.overall, "note": d.note, "color": d.color.rawValue]
+        if !d.tags.on.isEmpty {
+            params["tags"] = d.tags.on
+            params["accepted"] = d.tags.accepted.filter(d.tags.on.contains)
+            let names = tags.catalog.names(for: d.tags.on)
+            if !names.isEmpty { params["names"] = names }
+        }
+        let at = shown
+        call("comment", params, then: { [weak self] reply in
+            d.saving = false
+            guard let self else { return }
+            if self.listBar.overallDraft === d { self.listBar.overallDraft = nil }
+            guard self.shown == at else { return }  // another paper shown meanwhile: its card is not this one
+            self.tab = .comments
+            if let id = reply.id { self.select(.comment(id), reveal: false, scroll: .centre) }
+        }, failed: { _ in d.saving = false })
+    }
 
     // MARK: Reading in the PDF view (UX.md §18)
 

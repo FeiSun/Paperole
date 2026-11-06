@@ -393,6 +393,8 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     private var selectedID: String?
     private var selectedChange: (id: String, page: PDFPage, rects: [CGRect])?
     private var pendingReveal: (page: Int?, rects: [[Double]])?
+    private var pendingOverall: (id: String, reveal: Bool, step: PDFSteps.Kind?)?  // `show`, waiting for its label
+    private var firstPageText: CGRect?  // p.1's words, for overall comments' labels; per PDF
     /// A PDF just loaded is put at the top of its first page once the view has settled, unless it was moved first.
     private var opensAtTop = false
     private var pendingComment: (phrase: String, note: String?)?
@@ -637,6 +639,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             placeSelectionOutline()
             pageHeights = []
             docText = nil
+            firstPageText = nil
             if let url, let data = try? Data(contentsOf: url), let doc = PDFDocument(data: data) {
                 Self.hideLinkBoxes(doc)
                 v.document = doc
@@ -674,6 +677,13 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         if let r = pendingReveal, v.document != nil {
             pendingReveal = nil
             whenSettled { [weak self] in self?.reveal(page: r.page, rects: r.rects) }
+        }
+        if let o = pendingOverall, v.document != nil, markKey?.version == model?.stateVersion {
+            pendingOverall = nil
+            whenSettled { [weak self] in
+                guard let self, let c = self.model?.comment(o.id) else { return }
+                self.show(c, reveal: o.reveal, flash: !o.reveal, step: o.step)
+            }
         }
         if let p = pendingPlace, v.document != nil {
             pendingPlace = nil
@@ -785,6 +795,31 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             default: s.append(.text(c.id, rs, order: order))
             }
             shapes[idx, default: []] += s
+        }
+        // overall comments: a label each at the top of p.1, over its text, side by side (design/comments/PLAN.md §6a)
+        let overall = (st?.comments ?? []).enumerated().filter { $0.element.isOverall }
+        if !overall.isEmpty, let page = doc.page(at: 0) {
+            let cb = page.bounds(for: .cropBox)
+            // p.1's words, read once per PDF (PDFKit's text is slow to read)
+            let found = firstPageText ?? page.selection(for: cb)?.bounds(for: page) ?? .null
+            firstPageText = found
+            var text = found.isNull || found.isEmpty ? cb.insetBy(dx: 72, dy: 72) : found
+            if let t = view?.textX.first ?? nil, t.count == 2, t[0] < t[1] {
+                text = CGRect(x: cb.minX + t[0], y: text.minY, width: t[1] - t[0], height: text.height)
+            }
+            let labels = overall.map { MarkAnnotation.overallLabel($0.element.id, glyph: Status($0.element).glyph) }
+            let sizes = labels.map { Self.labelSize($0, MarkAnnotation.labelFonts[0], pad: 2 * MarkAnnotation.labelPads[0]) }
+            let rects = Self.overallLabelRects(sizes, text: text, cropBox: cb)
+            for (i, (order, c)) in overall.enumerated() {
+                let label = labels[i], lr = rects[i]
+                let a = MarkAnnotation(rects: [], style: .label, fill: c.markColor.fill, ink: c.markColor.ink,
+                                       label: label, labelRect: lr, labelColor: c.markColor.ink)
+                a.faded = Status(c).closed
+                later.append((page, a))
+                marks.append((page, a))
+                commentMarks[c.id] = (page, a)
+                shapes[0, default: []].append(.label(c.id, lr, order: order))
+            }
         }
         // the checks that go to the student: Paperole's slate highlight and a square label, placed after the comments'
         // labels (a comment's never moves for a check's) and drawn under the comments' marks
@@ -972,17 +1007,68 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         let known = Self.labelBounds(textX: tx, rulers: index < (view?.rulers.count ?? 0) ? view?.rulers[index] : nil,
                                      cropBox: cb)
         let text = known?.text ?? page.selection(for: cb)?.bounds(for: page) ?? cb.insetBy(dx: 72, dy: 72)
-        func size(_ s: String, _ font: NSFont, pad: CGFloat) -> CGSize {
-            let z = (s as NSString).size(withAttributes: [.font: font])
-            return CGSize(width: ceil(z.width) + pad, height: ceil(z.height))
-        }
         let left = first.midX < text.midX
         let ruler: CGRect? = known.map { left ? $0.left : $0.right } ?? rulerBounds(page, index: index, left: left, textX: tx)
         let placed = placedLabels[index] ?? []
-        let sizes = labels.indices.map { size(labels[$0], MarkAnnotation.labelFonts[$0], pad: 2 * MarkAnnotation.labelPads[$0]) }
+        let sizes = labels.indices.map { Self.labelSize(labels[$0], MarkAnnotation.labelFonts[$0], pad: 2 * MarkAnnotation.labelPads[$0]) }
         let r = Geometry.labelPlace(sizes: sizes, first: first, text: text, textX: tx, ruler: ruler, cropBox: cb, placed: placed)
         placedLabels[index] = placed + [r.rect]
         return r
+    }
+
+    /// A label's size in a font, with `pad` across.
+    nonisolated static func labelSize(_ s: String, _ font: NSFont, pad: CGFloat) -> CGSize {
+        let z = (s as NSString).size(withAttributes: [.font: font])
+        return CGSize(width: ceil(z.width) + pad, height: ceil(z.height))
+    }
+
+    /// Overall comments' labels at the top of p.1 (PDFKit page space): in rows from the text's left edge, 4 pt apart, a
+    /// new row when one would pass the text's right edge; the first row on top, the last 6 pt over the text, rows 3 pt
+    /// apart. Never above the page: then the rows go down over the text's top rather than over each other.
+    nonisolated static func overallLabelRects(_ sizes: [CGSize], text: CGRect, cropBox cb: CGRect) -> [CGRect] {
+        var at: [(row: Int, x: CGFloat)] = [], row = 0, x = text.minX
+        for z in sizes {
+            if x > text.minX && x + z.width > text.maxX { row += 1; x = text.minX }
+            at.append((row, x))
+            x += z.width + 4
+        }
+        let h = sizes.map(\.height).max() ?? 0, step = h + 3
+        let top = min(text.maxY + 6 + CGFloat(row) * step, cb.maxY - h - 4)
+        return zip(sizes, at).map { CGRect(x: $1.x, y: top - CGFloat($1.row) * step, width: $0.width, height: $0.height) }
+    }
+
+    /// An overall comment's label as drawn in the PDF shown (page index, contract rect), or nil: not drawn (marks
+    /// hidden) or drawn for another state or PDF than the model's (a round or paper being opened).
+    func overallLabel(_ id: String) -> (page: Int, rect: [Double])? {
+        guard let model, let doc = view?.document, let path = model.pdfURL?.path, loadedKey?.hasPrefix(path + "|") == true,
+              markKey?.version == model.stateVersion, let m = commentMarks[id], let lr = m.mark.labelRect else { return nil }
+        return (doc.index(for: m.page), Geometry.contractRect(lr, cropBox: m.page.bounds(for: .cropBox)))
+    }
+
+    /// A comment's reveal or flash in the PDF: its words; an overall comment's label, once this PDF's marks are drawn
+    /// (asked for before, it waits for them: `pendingOverall`). Nothing for an overall comment whose label is hidden.
+    func show(_ c: Comment, reveal: Bool, flash: Bool, step: PDFSteps.Kind? = nil) {
+        guard c.isOverall else {
+            if reveal { self.reveal(page: c.page, rects: c.rects, step: step) } else if flash { self.flash(page: c.page, rects: c.rects) }
+            return
+        }
+        guard reveal || flash else { return }
+        guard let at = overallLabel(c.id) else {
+            let current = model.map { m in markKey?.version == m.stateVersion && m.pdfURL.map { loadedKey?.hasPrefix($0.path + "|") } == true }
+            if current != true {  // the marks of the state or PDF on its way are not drawn yet
+                pendingReveal = nil
+                pendingOverall = (c.id, reveal, step)
+            }
+            return
+        }
+        if reveal { self.reveal(page: at.page, rects: [at.rect], step: step) } else { self.flash(page: at.page, rects: [at.rect]) }
+    }
+
+    /// Whether a comment's mark (an overall comment's label) is on screen.
+    func isVisible(_ c: Comment) -> Bool {
+        guard c.isOverall else { return isVisible(page: c.page, rects: c.rects) }
+        guard let v = view, let m = commentMarks[c.id], let lr = m.mark.labelRect else { return false }
+        return v.bounds.intersects(v.convert(lr, from: m.page))
     }
 
     /// A page's text and margin rulers for its id labels (PDFKit page space), from round.build's text_x and rulers:
@@ -1294,6 +1380,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     /// animating to the last mark ends where it is first (J pressed twice within 0.25 s, held J/K): on its next step it
     /// would carry the view to the last mark, past this one. `step`: what the move is for Back (PLAN §5.2; nil: none).
     func reveal(page: Int?, rects: [[Double]], step: PDFSteps.Kind? = nil) {
+        pendingOverall = nil
         // After a round is picked in the toolbar, its PDF is loaded on the next update: reveal there.
         guard let v = view, let doc = v.document, let path = model?.pdfURL?.path, loadedKey?.hasPrefix(path + "|") == true
         else {
@@ -2345,7 +2432,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
 
     /// Whether a click on the comment's mark shows its toolbar: a new comment of the open round, outside re-anchoring.
     static func showsMarkBar(_ c: Comment, roundOpen: Bool, reanchoring: Bool) -> Bool {
-        roundOpen && !c.carried && !reanchoring
+        roundOpen && !c.carried && !reanchoring && !c.isOverall  // an overall comment has no mark to restyle
     }
 
     /// Lays the toolbar by its mark (shown, or the marks drawn again after an edit) with the comment's style, as the
@@ -2941,7 +3028,7 @@ struct Swatch: View {
 
 /// One comment or change, drawn over the page in PDF page space (UX.md §5).
 final class MarkAnnotation: PDFAnnotation {
-    enum Style { case highlight, underline, strike, sticky, textNote, box, gone, band, unrequested, cross, rubber, pendingBox, reading }
+    enum Style { case highlight, underline, strike, sticky, textNote, box, gone, band, unrequested, cross, rubber, pendingBox, reading, label }
 
     let style: Style
     let fill: NSColor
@@ -2975,6 +3062,9 @@ final class MarkAnnotation: PDFAnnotation {
         [glyph + " " + id, glyph + "\u{2009}" + id, glyph + "\u{2009}" + id, id]
     }
 
+    /// An overall comment's label: "○ R1-04 · overall", at labelFonts' first size (the top margin has room).
+    static func overallLabel(_ id: String, glyph: String) -> String { labels(id, glyph: glyph)[0] + " · overall" }
+
     init(rects: [CGRect], style: Style, fill: NSColor, ink: NSColor, label: String? = nil, labelRect: CGRect? = nil,
          labelColor: NSColor = .clear, labelSize: Int = 0) {
         self.style = style
@@ -2991,7 +3081,8 @@ final class MarkAnnotation: PDFAnnotation {
     required init?(coder: NSCoder) { nil }
 
     private static func bounds(_ rects: [CGRect], _ labelRect: CGRect?) -> CGRect {
-        var b = rects.dropFirst().reduce(rects[0]) { $0.union($1) }
+        guard var b = rects.first ?? labelRect else { return .zero }  // a label alone: an overall comment's
+        for r in rects.dropFirst() { b = b.union(r) }
         if let labelRect { b = b.union(labelRect) }
         return b.insetBy(dx: -8, dy: -8)
     }
@@ -3115,6 +3206,8 @@ final class MarkAnnotation: PDFAnnotation {
                 ctx.addPath(CGPath(roundedRect: r, cornerWidth: 1, cornerHeight: 1, transform: nil))
                 ctx.fillPath()
             }
+        case .label:
+            break  // the label is all there is
         case .rubber, .pendingBox:
             ctx.setFillColor(ink.withAlphaComponent(style == .rubber ? 0.08 : 0.05).cgColor)
             lines.forEach { ctx.fill($0) }

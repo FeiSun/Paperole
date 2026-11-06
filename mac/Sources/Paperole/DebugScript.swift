@@ -477,6 +477,15 @@ final class DebugScript {
             // the tab switch's motion slowed down (`motion 8`) so screenshots can catch it in flight; `motion 1` back
             TabMotion.slow = max(Double(rest) ?? 1, 1)
             next(0.05) { ["motion": TabMotion.slow] }
+        case "overall":  // `overall`: + Overall comment's editor opened; `overall <note>`: also typed and saved
+            model?.beginOverallComment()
+            if !rest.isEmpty, let m = model, let d = m.listBar.overallDraft {
+                d.note = rest
+                m.saveOverallComment(d)
+            }
+            next(rest.isEmpty ? 0.6 : 3) { [weak self] in ["editor": self?.model?.listBar.overallDraft != nil,
+                                                           "selected": self?.model?.selectedComment?.id ?? "",
+                                                           "alert": self?.model?.alertMessage ?? ""] }
         case "drophover":  // `drophover page|row|off`: the highlight of a source held over the shown paper (UX.md §43)
             if let m = model, let p = m.selectedPath, rest != "off" { m.dropHover = DropHover(paper: p, row: rest == "row") }
             else { model?.dropHover = nil }

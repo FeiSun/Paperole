@@ -37,6 +37,7 @@ enum Jump {
         var words: String  // the words the comment is on (this round's sentence, else its anchor's text)
         var said: String  // this round's follow-up or closing remark
         var page: Int?
+        var overall = false  // on the whole paper: "overall" where the page goes
     }
 
     struct EditSource: Equatable {
@@ -127,7 +128,7 @@ enum Jump {
                 }
                 return Row(target: .comment(c.id), icon: c.status.icon, lead: c.id,
                            title: first.isEmpty ? "“" + snippet(c.words, around: ws) + "”" : first, detail: detail,
-                           trailing: c.page.map { "p.\($0 + 1)" } ?? "", words: ws)
+                           trailing: c.overall ? "overall" : c.page.map { "p.\($0 + 1)" } ?? "", words: ws)
             }
             if !comments.isEmpty { groups.append(Group(title: "Comments", rows: Array(comments))) }
             let edits = s.edits.filter { matches(ws, [$0.place, $0.kind.word, $0.excerpt]) }.prefix(limits.edits).map { e in

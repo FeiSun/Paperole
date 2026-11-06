@@ -7,7 +7,8 @@ import SwiftUI
 final class CommentDraft: ObservableObject, Identifiable {
     /// What the comment is on: selected text, a drawn box, or a point; `replace`: selected text struck out, the note
     /// the words that replace it (the PDF's menu, Replace With…).
-    enum Mode { case text, box, point, replace }
+    /// `overall`: on the whole paper (design/comments/PLAN.md §3 S), from + Overall comment: no words, kind or page.
+    enum Mode { case text, box, point, replace, overall }
 
     @Published var kind: MarkKind
     @Published var color: MarkColor
@@ -122,6 +123,8 @@ struct CommentEditor: View {
                     .help(draft.confirmDiscard ? "Discard this note (Esc)" : "Close without saving (Esc)")
                 Button(draft.saving ? "Saving…" : "Save", action: onSave)
                     .keyboardShortcut(.return, modifiers: .command)
+                    // a comment on the whole paper is only its words
+                    .disabled(draft.mode == .overall && draft.note.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     .buttonStyle(.borderedProminent)
                     .help("Save the comment and its tags (⌘↩)")
             }

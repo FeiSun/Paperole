@@ -234,6 +234,7 @@ extension CardContent {
                 case "moved": what = r.page != nil && r.page != c.page ? "moved to " + pageWords(r.page) : "moved"
                 case "gone": what = "still deleted"
                 case "orphan": what = "still not found"
+                case "overall": what = "no note"  // on the whole paper: only a note answers it
                 default: what = "unchanged"
                 }
                 // earlier rounds in a row with the same nothing are one line; the shown round's is a line of its own

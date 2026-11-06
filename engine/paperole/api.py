@@ -248,18 +248,22 @@ def _carry(paper, lg, n, progress):
     progress("Comparing with round {}…".format(n - 1))
     diff = texdiff.diff_trees(old_src, src, old_src.parent / "build", src.parent / "build")
     carried = ledger.carried_into(lg, n)
-    items = [_carry_item(paper, lg, c, n - 1) for c in carried]
+    items = [_carry_item(paper, lg, c, n - 1) for c in carried if c["kind"] != comments.OVERALL]
+    items += [it for c in carried for it in _place_items(paper, lg, c, n - 1)]  # each other place, as its own item
     progress("Locating {} comments from earlier rounds…".format(len(items)))
     rnd = next(r for r in lg["rounds"] if r["n"] == n)
     before = next(r for r in lg["rounds"] if r["n"] == n - 1)["build"]["pdf"]
     records, changes = anchor.carry(old_src, src, paper / rnd["build"]["pdf"], diff, items,
                                     old_pdf=paper / before if before else None)
+    records.update({c["id"]: comments.overall_record("overall") for c in carried if c["kind"] == comments.OVERALL})
+    _fold_places(changes)
     found, rnd["note_warnings"] = _notes(diff, lg, n, changes, progress)
     for c in carried:
         c["rounds"][str(n)] = dict(records[c["id"]], verdict=None, verdict_note="", verdict_at=None)
         if c["id"] in found:
             c["rounds"][str(n)]["student_note"] = found[c["id"]]
-        c["rounds"][str(n)]["context"] = cards.record_context(paper, lg, c, n, changes)
+        c["rounds"][str(n)]["context"] = cards.record_context(paper, lg, c, n, _at(changes, c["id"], "a"))
+        _store_places(paper, lg, c, n, records, changes)
     check_items.carry(lg, n, found)  # the open check items, with the student's notes on them
     shadows = _shadows(paper, lg, n, diff, changes, progress)
     progress("Reading the {} changes in both PDFs…".format(len(changes)))
@@ -269,6 +273,50 @@ def _carry(paper, lg, n, progress):
         data["shadows"] = shadows
     analysis.write(paper, rnd, data)  # its checksum in the round
     return diff
+
+
+def _place_items(paper, lg, c, k):
+    """anchor.carry's items for the other places comment c has in round k and still follows (comments.places), each
+    seen as a comment of its own ("R1-03#b": comments.place_comment)."""
+    if not c.get("link"):
+        return []
+    rec = c["rounds"][str(k)]
+    return [_carry_item(paper, lg, comments.place_comment(c, p["key"]), k) for p in c["link"]["places"]
+            if "removed" not in p and p["key"] in (rec.get("places") or {})]
+
+
+def _fold_places(changes):
+    """Changes attached to a place ("R1-03#b", from carry) attached to its comment instead; `at` then says at which of
+    a comment's places ({"R1-03": ["a", "b"]}, "a" its own anchor), for a comment attached anywhere but "a" alone."""
+    for ch in changes:
+        at = {}
+        for i in ch["attached_to"]:
+            cid, _, key = i.partition("#")
+            at.setdefault(cid, []).append(key or "a")
+        ch["attached_to"] = sorted(at, key=ledger.id_key)
+        linked = {cid: keys for cid, keys in at.items() if keys != ["a"]}
+        if linked:
+            ch["at"] = linked
+
+
+def _at(changes, cid, key):
+    """The changes attached to comment cid at its place key, each attached to the id that place is seen as
+    (comments.place_comment) for the code that knows one anchor (cards.record_context)."""
+    seen = cid if key == "a" else "{}#{}".format(cid, key)
+    return [dict(ch, attached_to=[seen]) for ch in changes
+            if cid in ch["attached_to"] and key in ch.get("at", {}).get(cid, ["a"])]
+
+
+def _store_places(paper, lg, c, n, records, changes):
+    """Round n's records of comment c's other places from carry's records (keys "R1-03#b"), with their contexts."""
+    rec = c["rounds"][str(n)]
+    for p in (c.get("link") or {}).get("places", ()):
+        pid = "{}#{}".format(c["id"], p["key"])
+        if pid in records:
+            rec.setdefault("places", {})[p["key"]] = dict(records[pid])
+    for key in list(rec.get("places") or {}):
+        rec["places"][key]["context"] = cards.record_context(paper, lg, comments.place_comment(c, key), n,
+                                                             _at(changes, c["id"], key))
 
 
 def _carry_item(paper, lg, c, k):
@@ -363,9 +411,12 @@ def _store_context(paper, lg, c):
 def comment(params, progress):
     paper = _paper(params)
     with _edit(paper) as lg:
-        c = comments.create(paper, lg, _param(params, "page"), _param(params, "rects"), _param(params, "text", ""),
-                            _param(params, "note", ""), _param(params, "kind", "highlight"),
-                            color=_param(params, "color", "yellow"))
+        if params.get("kind") == comments.OVERALL:  # on the whole paper: no page, rects or text
+            c = comments.create_overall(lg, _param(params, "note", ""), _param(params, "color", "yellow"))
+        else:
+            c = comments.create(paper, lg, _param(params, "page"), _param(params, "rects"), _param(params, "text", ""),
+                                _param(params, "note", ""), _param(params, "kind", "highlight"),
+                                color=_param(params, "color", "yellow"))
         if params.get("tags"):
             tags.set_tags(lg, c["id"], params["tags"], params.get("accepted"), params.get("names"))
         _store_context(paper, lg, c)
@@ -432,8 +483,12 @@ def revive(params, progress):
         old_src, src = paper / "r{}".format(k) / "src", paper / "r{}".format(n) / "src"
         progress("Comparing Round {} with Round {}…".format(k, n))
         diff = texdiff.diff_trees(old_src, src, old_src.parent / "build", src.parent / "build")
-        records, _ = anchor.carry(old_src, src, paper / rnd["build"]["pdf"], diff, [_carry_item(paper, lg, c, k)],
-                                  old_pdf=paper / before if before else None)
+        if c["kind"] == comments.OVERALL:  # nothing to locate
+            records = {cid: comments.overall_record("overall")}
+        else:
+            records, _ = anchor.carry(old_src, src, paper / rnd["build"]["pdf"], diff,
+                                      [_carry_item(paper, lg, c, k)] + _place_items(paper, lg, c, k),
+                                      old_pdf=paper / before if before else None)
         rec = c["rounds"][str(n)] = dict(records[cid], verdict=None, verdict_note="", verdict_at=None,
                                          revived={"from": k, "at": ledger.now()})
         if rec["anchor"] and any(ch["kind"] != "move" for ch in _reattach(paper, lg, c)) \
@@ -441,6 +496,7 @@ def revive(params, progress):
             rec["anchor_state"] = "changed"  # an edit of this round in its sentence: what broke it
         rec["context"] = cards.record_context(paper, lg, c, n,
                                               (analysis.read(paper, n, staged=True) or {}).get("changes", []))
+        _store_places(paper, lg, c, n, records, [])
     return _state(paper)
 
 
@@ -460,19 +516,49 @@ def _unattach(paper, rnd, cid):
 def edit_comment(params, progress):
     paper = _paper(params)
     with _edit(paper) as lg:
-        comments.edit(lg, _param(params, "id"), params.get("note"), params.get("kind"), params.get("color"))
+        if "relation" in params:  # how its places relate (comments.set_relation), alone or with the rest
+            comments.set_relation(lg, _param(params, "id"), params["relation"])
+        if any(params.get(k) is not None for k in ("note", "kind", "color")) or "relation" not in params:
+            comments.edit(lg, _param(params, "id"), params.get("note"), params.get("kind"), params.get("color"))
+    return _state(paper)
+
+
+def add_place(params, progress):
+    """Another place of a comment of the open round (comments.add_place): id, page, rects, text, kind. The result's
+    `place` is its key."""
+    paper = _paper(params)
+    with _edit(paper) as lg:
+        c, key = comments.add_place(paper, lg, _param(params, "id"), _param(params, "page"), _param(params, "rects"),
+                                    _param(params, "text", ""), _param(params, "kind", "highlight"))
+        n = ledger.open_round(lg)["n"]
+        c["rounds"][str(n)]["places"][key]["context"] = cards.record_context(
+            paper, lg, comments.place_comment(c, key), n)
+    return _state(paper, id=c["id"], place=key)
+
+
+def remove_place(params, progress):
+    """One of a comment's other places no longer followed (comments.remove_place): id, place."""
+    paper = _paper(params)
+    with _edit(paper) as lg:
+        comments.remove_place(lg, _param(params, "id"), _param(params, "place"))
     return _state(paper)
 
 
 def reanchor(params, progress):
+    """Place a comment, or with `place` one of its other places, anew (comments.reanchor)."""
     paper = _paper(params)
     with _edit(paper) as lg:
+        key = params.get("place")
         c, placed = comments.reanchor(paper, lg, _param(params, "id"), _param(params, "page"), _param(params, "rects"),
-                                      _param(params, "text", ""), params.get("kind"))
+                                      _param(params, "text", ""), params.get("kind"), key=key)
         n = ledger.open_round(lg)["n"]
-        if c["created_round"] != n and placed and any(ch["kind"] != "move" for ch in _reattach(paper, lg, c)):
-            c["rounds"][str(n)]["anchor_state"] = "changed"  # the student edited the sentence it is now on
-        _store_context(paper, lg, c)
+        if key:  # one of its other places: its context only (the edits carry attached there stay)
+            c["rounds"][str(n)]["places"][key]["context"] = cards.record_context(
+                paper, lg, comments.place_comment(c, key), n)
+        else:
+            if c["created_round"] != n and placed and any(ch["kind"] != "move" for ch in _reattach(paper, lg, c)):
+                c["rounds"][str(n)]["anchor_state"] = "changed"  # the student edited the sentence it is now on
+            _store_context(paper, lg, c)
     return _state(paper)
 
 
@@ -492,13 +578,22 @@ def _reattach(paper, lg, c):
     first, last = tex.count("\n", 0, s) + 1, tex.count("\n", 0, e) + 1
     here = []
     for ch in data["changes"]:
+        # its other places keep theirs (`at`): only those at its own anchor ("a") are worked out again
+        others = [k for k in ch.get("at", {}).get(c["id"], ["a"]) if k != "a"] if c["id"] in ch["attached_to"] else []
         att = [cid for cid in ch["attached_to"] if cid != c["id"]]
         inside = ch["file"] == a["file"] and ch["line"] is not None and first <= ch["line"] <= last \
             and not texdiff.break_only(ch)  # a paragraph split or joined changes no sentence
         if inside:
             here.append(ch)
-        if inside or c["id"] in ch.get("student_notes", []):
+        mine = ["a"] if inside or c["id"] in ch.get("student_notes", []) else []
+        if mine or others:
             att = sorted(att + [c["id"]], key=ledger.id_key)
+        if others:
+            ch.setdefault("at", {})[c["id"]] = mine + others
+        elif "at" in ch:
+            ch["at"].pop(c["id"], None)
+            if not ch["at"]:
+                del ch["at"]
         ch["attached_to"], ch["unrequested"] = att, not att
     analysis.stage(paper, rnd, data)  # swapped in with the ledger
     note = c["rounds"][str(n)].get("student_note")
@@ -1302,6 +1397,7 @@ def swap_in(params, progress):
 
 
 METHODS = {"new": new, "ingest": ingest, "comment": comment, "edit_comment": edit_comment, "reanchor": reanchor,
+           "add_place": add_place, "remove_place": remove_place,
            "delete_comment": delete_comment, "verdict": verdict, "import": import_, "finish": finish,
            "check_change": check_change, "state": state_, "summaries": summaries, "prose": prose_, "links": links_,
            "checks": checks_, "check_ok": check_ok, "check_items": check_items_, "check_note": check_note,

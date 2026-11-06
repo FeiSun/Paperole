@@ -17,6 +17,12 @@ import pymupdf
 from . import EngineError, annots, ledger, project, texdiff
 
 KINDS = ("highlight", "underline", "strikeout", "note", "box")
+OVERALL = "overall"  # a comment on the whole paper: no place, so no anchor in any round (ledger schema 2)
+
+
+def overall_record(state="new"):
+    """A round's record of an overall comment, before its verdict fields: nothing to locate, so never Not found."""
+    return {"anchor": None, "anchor_state": state, "confidence": 1.0, "method": OVERALL}
 VERDICTS = (None, "verified", "reopened", "wontfix")
 # The advisor's mark colours (mac/UX.md §5): name -> (fill, ink). A comment without "color" is yellow. Green is
 # kept for changes and "verified", so the second colour is teal; "green" from M2a ledgers reads as teal (LEGACY).
@@ -126,6 +132,91 @@ def create(paper, lg, page, rects, text, note, kind, source="app", color="yellow
     return comment
 
 
+def create_overall(lg, note, color="yellow"):
+    """A comment on the whole paper (engine/CONTRACT.md amendment "Comments on places, step 1"): one note, no place.
+    Its colour is kept for when a later step shows it; it marks nothing on the page."""
+    n = require_open(lg)["n"]
+    _check_color(color)
+    comment = {"id": ledger.new_id(lg, n), "created_round": n, "created": ledger.now(), "source": "app",
+               "kind": OVERALL, "color": color, "note": note or "",
+               "rounds": {str(n): dict(overall_record(), verdict=None, verdict_note="", verdict_at=None)}}
+    lg["comments"].append(comment)
+    return comment
+
+
+PLACE_KEYS = "bcdefghijklmnopqrstuvwxyz"  # a comment's other places; "a" is its own anchor (design/comments/PLAN.md §2)
+
+
+def places(c, n):
+    """[(key, record)] of comment c's places in round n: "a", its own record (with `anchor` None when not found), then
+    each other place that has a record in that round, in the order added."""
+    rec = c["rounds"].get(str(n))
+    if rec is None:
+        return []
+    extra = rec.get("places") or {}
+    return [("a", rec)] + [(p["key"], extra[p["key"]]) for p in (c.get("link") or {}).get("places", ())
+                           if p["key"] in extra]
+
+
+def place_comment(c, key):
+    """Comment c seen from one of its other places, as the code that knows one anchor reads a comment: its id
+    "R1-03#b", that place's kind, and its records (only the rounds that have the place), each with the round's verdict
+    fields."""
+    kind = next(p["kind"] for p in c["link"]["places"] if p["key"] == key)
+    rounds = {k: dict({f: r.get(f) for f in ("verdict", "verdict_note", "verdict_at", "revived")}, **r["places"][key])
+              for k, r in c["rounds"].items() if key in (r.get("places") or {})}
+    return dict(c, id="{}#{}".format(c["id"], key), kind=kind, rounds=rounds)
+
+
+def add_place(paper, lg, cid, page, rects, text, kind):
+    """Another place of comment cid, of the open round (one written in it or carried into it), from a selection, click
+    or box, located as create() locates a comment: its key ("b", "c", …), never reused, and its record in the round.
+    The comment keeps one note, number and answer (PLAN.md §2)."""
+    c, n = _in_open(lg, cid)
+    if c["kind"] == OVERALL:
+        raise EngineError("{} is on the whole paper, so it takes no places.".format(cid))
+    anchor, method, confidence = _place(paper, require_open(lg), page, rects, text, kind)
+    link = c.setdefault("link", {"text": "", "places": []})
+    used = {p["key"] for p in link["places"]}
+    key = next((k for k in PLACE_KEYS if k not in used), None)
+    if key is None:
+        raise EngineError("{} has as many places as a comment can have.".format(cid))
+    link["places"].append({"key": key, "kind": kind, "added": n})
+    c["rounds"][str(n)].setdefault("places", {})[key] = {"anchor": anchor, "anchor_state": "new",
+                                                        "confidence": confidence, "method": method}
+    return c, key
+
+
+def remove_place(lg, cid, key):
+    """Stop following one of comment cid's other places from the open round on: added in this round, it goes
+    altogether; else it is kept in the rounds it was in and marked removed. The last one taken off, the comment has
+    one place again (no `link`)."""
+    c, n = _in_open(lg, cid)
+    entry = next((p for p in (c.get("link") or {}).get("places", ()) if p["key"] == key), None)
+    rec = c["rounds"][str(n)]
+    if entry is None or key not in (rec.get("places") or {}):
+        raise EngineError("{} has no place {} in Round {}.".format(cid, key, n))
+    del rec["places"][key]
+    if not rec["places"]:
+        del rec["places"]
+    if entry["added"] == n:
+        c["link"]["places"].remove(entry)
+    else:
+        entry["removed"] = n
+    if not any("removed" not in p for p in c["link"]["places"]) and not any(
+            "places" in r for r in c["rounds"].values()):
+        del c["link"]
+
+
+def set_relation(lg, cid, text):
+    """The advisor's words for how comment cid's places relate (PLAN.md §6a: free text, optional), which the student
+    reads at each place. Any comment of the open round that has other places."""
+    c, _ = _in_open(lg, cid)
+    if not (c.get("link") or {}).get("places"):
+        raise EngineError("{} has one place; add another before saying how they relate.".format(cid))
+    c["link"]["text"] = " ".join((text or "").split())
+
+
 def _in_open(lg, cid):
     """(comment, open round number) for a comment that is part of the open round."""
     n = require_open(lg)["n"]
@@ -150,6 +241,11 @@ def edit(lg, cid, note=None, kind=None, color=None):
     if note is None and kind is None and color is None:
         raise EngineError("Nothing to change: give a note, kind or colour.")
     c = _own(lg, cid) if note is not None or kind is not None else _in_open(lg, cid)[0]
+    if kind is not None and OVERALL in (kind, c["kind"]):
+        if kind != c["kind"]:
+            raise EngineError("{} is {}; a comment on the whole paper and one on a place cannot be changed into "
+                              "each other.".format(cid, "on the whole paper" if c["kind"] == OVERALL else "on a place"))
+        kind = None
     if kind is not None:
         _check_kind(kind)
         rects = c["rounds"][str(c["created_round"])]["anchor"]["rects"]
@@ -164,29 +260,43 @@ def edit(lg, cid, note=None, kind=None, color=None):
             c[key] = value
 
 
-def reanchor(paper, lg, cid, page, rects, text, kind=None):
+def reanchor(paper, lg, cid, page, rects, text, kind=None, key=None):
     """Place a comment of the open round anew from a selection, click or box (DESIGN §5: a position the advisor set
     comes first). A comment written in this round gets a new creation anchor, located as create() does. A carried
     one gets this round's anchor replaced, with method "advisor" and confidence 1.0; later rounds carry from it.
     Placed on the same source range as before (a box redrawn around the same table), it keeps its state; else its
     state is "moved" when the PDF text is the last earlier round's, else "changed" (api.reanchor then makes it
     "changed" when a change of the round is in its new sentence). Without a kind, a box comment placed on text
-    becomes a highlight and any other comment keeps its kind. Returns (comment, whether the source range changed)."""
+    becomes a highlight and any other comment keeps its kind. key: one of its other places ("b", …), placed anew the
+    same way: one added in this round as when added, one carried as a carried comment. Returns (comment, whether the
+    source range changed)."""
     c, n = _in_open(lg, cid)
-    kind = kind or ("highlight" if c["kind"] == "box" else c["kind"])
+    if c["kind"] == OVERALL:
+        raise EngineError("{} is on the whole paper, so it has no place to move.".format(cid))
+    if key is None:
+        view, rec = c, c["rounds"][str(n)]
+    else:
+        if key not in (c["rounds"][str(n)].get("places") or {}):
+            raise EngineError("{} has no place {} in Round {}.".format(cid, key, n))
+        view, rec = place_comment(c, key), c["rounds"][str(n)]["places"][key]
+    kind = kind or ("highlight" if view["kind"] == "box" else view["kind"])
     anchor, method, confidence = _place(paper, require_open(lg), page, rects, text, kind)
-    rec = c["rounds"][str(n)]
     old = rec["anchor"]
     placed = not (old and rec["anchor_state"] not in ("orphan", "gone")
                   and (old["file"], old["start"], old["end"]) == (anchor["file"], anchor["start"], anchor["end"]))
-    if c["created_round"] != n:
-        before = next((r["anchor"]["text"] for k, r in sorted(c["rounds"].items(), key=lambda kr: -int(kr[0]))
+    first = c["created_round"] if key is None else \
+        next(p["added"] for p in c["link"]["places"] if p["key"] == key)
+    if first != n:
+        before = next((r["anchor"]["text"] for k, r in sorted(view["rounds"].items(), key=lambda kr: -int(kr[0]))
                        if int(k) < n and r["anchor"] and r["anchor"]["text"]), "")
         method, confidence = "advisor", 1.0
         if placed:
             rec["anchor_state"] = "moved" if before and _fold(before) == _fold(anchor["text"]) else "changed"
     rec.update(anchor=anchor, method=method, confidence=confidence)
-    c["kind"] = kind
+    if key is None:
+        c["kind"] = kind
+    else:
+        next(p for p in c["link"]["places"] if p["key"] == key)["kind"] = kind
     return c, placed
 
 

@@ -15,7 +15,10 @@ from pathlib import Path
 
 from . import EngineError, disk, history
 
-SCHEMA = 1
+SCHEMA = 2  # the newest ledger this engine reads; it writes 1 until a comment uses what only 2 has (schema_needed)
+BASE = 1  # what a new ledger is written as (engine/CONTRACT.md amendment "Comments on places, step 1")
+V2_KINDS = ("overall",)  # comment kinds an engine reading schema 1 does not know; a comment's `link` (several
+# places) is schema 2 too
 TRAIL = 300  # versions on the trail, besides every Finish
 
 
@@ -84,6 +87,17 @@ def compare(a, b):
     return "diverged"
 
 
+def readable_schema(schema):
+    """A ledger schema this engine reads: 1 or 2."""
+    return isinstance(schema, int) and not isinstance(schema, bool) and BASE <= schema <= SCHEMA
+
+
+def schema_needed(lg):
+    """2 once any comment is of a kind only schema 2 has (an overall comment), else 1. An engine that reads only
+    schema 1 then refuses the ledger, rather than drawing or carrying such a comment wrongly."""
+    return 2 if any(c.get("kind") in V2_KINDS or c.get("link") for c in lg.get("comments", ())) else BASE
+
+
 def save(paper, lg, finish=False, prior=None):
     """Write lg as the paper's next version (the caller holds the lock): rev + 1, saved, and its [rev, digest] on the
     trail (marked "finish" for Finish), whole or not at all (disk.atomic_write). prior: the version it was read as,
@@ -92,6 +106,7 @@ def save(paper, lg, finish=False, prior=None):
     trail = [e for e in lg.get("trail") or () if isinstance(e, list)]
     if prior and not any(e[:2] == prior for e in trail):
         trail.append(prior)
+    lg["schema"] = max(lg.get("schema", BASE), schema_needed(lg))  # never lowered: a copy stays what it was
     rev = _rev(lg) + 1
     lg["rev"], lg["saved"] = rev, now()
     trail.append([rev, digest(lg)] + (["finish"] if finish else []))
@@ -105,7 +120,7 @@ def create(paper, title, student):
     with _lock(paper):
         if _path(paper).exists():
             raise EngineError("{} already has a ledger.json.".format(paper))
-        lg = {"schema": SCHEMA,
+        lg = {"schema": BASE,
               "paper": {"title": title, "student": student, "main": None, "engine": None, "created": now(),
                         "id": new_paper_id()},
               "rounds": [], "comments": [], "read": {}}
@@ -127,8 +142,8 @@ def _read(paper):
         lg = json.loads(raw.decode("utf-8"))
     except ValueError:  # cut short (a sync copy, a hand edit), or not UTF-8
         raise EngineError("ledger.json cannot be read. Put back an earlier ledger.")
-    if not isinstance(lg, dict) or lg.get("schema") != SCHEMA:
-        raise EngineError("ledger.json has schema {}; this engine reads schema {}.".format(
+    if not isinstance(lg, dict) or not readable_schema(lg.get("schema")):
+        raise EngineError("ledger.json has schema {}; this engine reads schema 1 and {}.".format(
             lg.get("schema") if isinstance(lg, dict) else None, SCHEMA))
     return raw, lg
 
@@ -213,9 +228,11 @@ def get_comment(lg, cid):
 
 
 def id_key(cid):
-    """Sort key for ids like R1-03: (round, sequence)."""
+    """Sort key for ids like R1-03: (round, sequence); a place of one ("R1-03#b", carried as its own item: api._carry)
+    after it, by its key."""
+    cid, _, key = cid.partition("#")
     n, seq = cid[1:].split("-")
-    return int(n), int(seq)
+    return (int(n), int(seq), key) if key else (int(n), int(seq))
 
 
 def new_id(lg, n):

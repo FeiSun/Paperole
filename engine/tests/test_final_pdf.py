@@ -123,9 +123,9 @@ def test_two_column(tmp_path):
     bbox = next(ch["bbox"] for ch in spans[0]["chars"] if ch["c"] == "熵")
     pix = final[1].get_pixmap(clip=pymupdf.Rect(bbox), matrix=pymupdf.Matrix(4, 4), colorspace=pymupdf.csGRAY)
     assert sum(1 for v in pix.samples if v < 128) > 20
-    # the summary shows the formula as a picture of the page, not as its PDF text
+    # the summary is a line per comment (design/comments/PLAN.md P0.1): no pictures, no quotes of the formula
     summary = final[0]
-    assert len(summary.get_images()) == 1 and "H :=" not in summary.get_text()
+    assert len(summary.get_images()) == 0 and "H :=" not in summary.get_text()
     assert [final[i].get_label() for i in range(3)] == ["Summary", "1", "2"]
     toc = final.get_toc()
     assert toc[0][1:] == ["Summary", 1] and toc[1][1] == "Comments (5)" and len(toc) >= 7
@@ -145,9 +145,8 @@ def test_crowded_page(tmp_path):
             for z in zones]
     assert len(ids) >= 12
     final, placed = _finish(paper)
-    first = final.page_count - build.page_count  # the summary needs several pages here
-    assert first >= 2 and [final[i].get_label() for i in range(first + 1)] == \
-        ["Summary {}".format(k + 1) for k in range(first)] + ["1"]
+    first = final.page_count - build.page_count  # a line per comment: one summary page holds them all
+    assert first == 1 and [final[i].get_label() for i in range(first + 1)] == ["Summary", "1"]
     page = final[first]
     assert page.rect.width == pw + render.MARGIN and page.rect.height > ph  # taller, never wider
     assert final[first + 1].rect == pymupdf.Rect(0, 0, pw + render.MARGIN, ph)  # a page that fits keeps its size
@@ -288,9 +287,9 @@ def test_an_overfull_margin_keeps_every_item_on_the_page():
 
 
 def test_a_note_longer_than_a_page(tmp_path):
-    """Review fixes, 2026-10-24 (m3): a summary row longer than a page is cut to fit one, its main text first, and
-    says where the whole text is; it ran past the page's bottom edge. The email keeps the whole note. 2026-10-30
-    (P0.1): taller than the margin, the note goes whole to the band under the paper, and the page grows to hold it."""
+    """Review fixes, 2026-10-24 (m3): a long note never runs past the summary page's bottom edge. The email keeps the
+    whole note. 2026-10-30 (P0.1): taller than the margin, the note goes whole to the band under the paper, and the page
+    grows to hold it; 2026-11-05 (P0.1, the summary half): its summary row is its first line, cut with "…"."""
     paper, pdf = _paper(tmp_path, twocolumn=False)
     note = " ".join("Sentence {} of a long note about the amber zone.".format(k) for k in range(60))
     assert len(note) > 2400
@@ -300,7 +299,8 @@ def test_a_note_longer_than_a_page(tmp_path):
     for k in range(first):
         assert all(w[3] <= final[k].rect.height - 36 for w in final[k].get_text("words"))
     summary = " ".join(" ".join(w[4] for w in final[k].get_text("words")) for k in range(first))
-    assert "Sentence 0 of" in summary and "Sentence 59 of" not in summary and "(full text in the email)" in summary
+    assert "Sentence 0 of" in summary and "Sentence 3 of" not in summary and "(full text in the email)" not in summary
+    assert "…" in summary  # its first line, cut: the margin's box (the band here) holds it whole
     assert "  " + note + "\n" in (paper / "r1" / "email.txt").read_text(encoding="utf-8")
     assert len(placed) == 1 and placed[0]["side"] == "B" and placed[0]["rect"].y1 <= final[first].rect.height - 24 + 0.01
     words = " ".join(w[4] for w in final[first].get_text("words"))

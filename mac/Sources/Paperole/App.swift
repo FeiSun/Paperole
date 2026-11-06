@@ -54,6 +54,9 @@ struct PaperoleApp: App {
                     .disabled(!model.canComment || model.level != .review)
                 Button("Draw a Box Round a Figure, Table or Equation (B, or ⌥-drag)") { model.toolbar.boxArmed.toggle() }
                     .disabled(!model.roundIsOpen || model.busy || model.level != .review)
+                Divider()
+                Button("Overall Comment…") { model.beginOverallComment() }
+                    .disabled(!model.roundIsOpen || model.viewingEarlierRound || model.level != .review)
             }
             // the window's history across papers and levels (UX.md §21), as Finder's Go menu
             CommandMenu("Go") {

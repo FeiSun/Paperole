@@ -220,7 +220,7 @@ def read_ledger(raw):
         lg = None
     if isinstance(lg, dict) and _int(lg.get("schema")) and lg["schema"] > ledger.SCHEMA:
         return None, _problem("ledger_too_new", "The ledger was written by a newer Paperole.", files=["ledger.json"])
-    if not (isinstance(lg, dict) and lg.get("schema") == ledger.SCHEMA and isinstance(lg.get("paper"), dict)
+    if not (isinstance(lg, dict) and ledger.readable_schema(lg.get("schema")) and isinstance(lg.get("paper"), dict)
             and isinstance(lg.get("rounds"), list) and isinstance(lg.get("comments"), list)
             and all(isinstance(r, dict) and _int(r.get("n")) for r in lg["rounds"])):
         return None, _problem("ledger_unreadable", "The ledger cannot be read.", files=["ledger.json"])

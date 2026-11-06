@@ -269,6 +269,7 @@ extension OverviewPanel {
         let place: String
         switch last.state {
         case "unplaced": place = "not placed in Round \(last.round)"
+        case "whole": place = "on the whole paper"
         case "gone": place = (last.page.map { "p.\($0 + 1): " } ?? "") + "passage deleted"
         default: place = last.page.map { "p.\($0 + 1)" } ?? "no page"
         }
@@ -299,6 +300,7 @@ extension OverviewPanel {
             let a = eds.reduce(0) { $0 + ($1.added ?? 0) }, del = eds.reduce(0) { $0 + ($1.deleted ?? 0) }
             let what: String
             if st.state == "unplaced" { what = "not placed in this round" }
+            else if st.state == "whole" && eds.isEmpty { what = st.response.flatMap { responses[$0] } ?? "" }
             else if st.state == "gone" { what = "passage deleted" }
             else if !eds.isEmpty { what = count(eds.count, "edit") + (a + del > 0 ? "" : " · no printed words") }
             else { what = st.response.flatMap { responses[$0] } ?? "" }  // nothing: an empty cell ("–" is Kept as is)

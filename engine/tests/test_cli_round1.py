@@ -128,7 +128,8 @@ def test_round1_cli(tmp_path):
     assert order == ["R1-01", "R1-07", "R1-05", "R1-02", "R1-03", "R1-04"]
     keys = {"id", "kind", "color", "note", "source", "created_round", "carried", "verdict", "verdict_note",
             "anchor_state", "confidence", "method", "page", "rects", "text", "old_quote", "new_quote", "file", "line",
-            "changes", "student_note", "context", "history", "paragraph", "tags", "env", "revived", "revivable"}
+            "changes", "student_note", "context", "history", "paragraph", "tags", "env", "revived", "revivable",
+            "name", "places", "relation"}
     assert all(set(c) == keys for c in state["comments"])
     assert all(c["old_quote"] is None and c["history"] == [] and c["changes"] == [] for c in state["comments"])
     assert state["changes"] == []

@@ -56,7 +56,6 @@ CJK_FONTS = ("/System/Library/Fonts/Hiragino Sans GB.ttc", "/System/Library/Font
 CJK = "\u2e80-\u9fff\uf900-\ufaff\uff00-\uffef"  # ideographs, CJK punctuation and full-width forms: break anywhere
 CLOSE = "，。、；：！？）」』〉》】”’"  # never starts a line
 TOKEN = re.compile(r"[^\S\xa0]+|[{0}][{1}]*|(?:[^\s{0}]|\xa0)+[{1}]*".format(CJK, CLOSE))  # no break at U+00A0
-DISPLAY_IMAGE_H = 64  # points: the most a summary crop is high
 DIGIT_INK = 0.18  # of a line number's box height: no ink above its digits, nor below them (digits have no descenders)
 
 
@@ -101,7 +100,23 @@ def _quote(c, n, limit=60):
     return ""
 
 
+def _overall(c):
+    return c.get("kind") == "overall"
+
+
+def _found(c, n):
+    """The anchors of comment c's places found in round n (comments.places), in reading order (page, top, left)."""
+    out = [r["anchor"] for _, r in comments.places(c, n)
+           if r["anchor"] and r["anchor"]["page"] is not None and r["anchor"]["rects"]]
+    return sorted(out, key=lambda a: (a["page"], a["rects"][0][1], a["rects"][0][0]))
+
+
 def _where(c, n):
+    if _overall(c):
+        return "whole paper"
+    if c.get("link"):  # several places: their pages, "p.1 ⇄ p.4"
+        pages = sorted({a["page"] for a in _found(c, n)})
+        return " ⇄ ".join("p.{}".format(p + 1) for p in pages) if pages else "location not found"
     anchor = c["rounds"][str(n)]["anchor"]
     return "p.{}".format(anchor["page"] + 1) if anchor and anchor["page"] is not None else "location not found"
 
@@ -345,7 +360,12 @@ def _comment_item(c, n, snippets, sz=SIZE):
     else:
         head += " · text deleted" if rec["anchor_state"] == "gone" else ""
         rows = [_row([head], sz["head"], "b", text, glyph=status or "open", lead=sz["head"] + 3.2)]
+        place = c.get("_place")
+        if place and place["line"]:  # one of several places: how they relate, and where the others are
+            rows.append(_row(_wrap(place["line"], BOX_W - 13, sz["small"]), sz["small"], color=MUTED))
         main, muted = _texts(c, n)
+        if place and not place["first"]:  # the note's first line: its first place holds it whole
+            main, muted = _fit(" ".join((main or "").split()), BOX_W - 13, sz["note"]), ""
         if main:
             rows.append(_row(_wrap(main, BOX_W - 13, sz["note"]), sz["note"]))
         if muted:
@@ -806,71 +826,115 @@ class _Flow:
 
 
 def _target(c, n):
-    """(paper page, y) a summary chip jumps to, or None."""
-    a = c["rounds"][str(n)]["anchor"]
-    return (a["page"], a["rects"][0][1]) if a and a["page"] is not None and a["rects"] else None
+    """(paper page, y) a summary chip jumps to, or None: its place first in reading order."""
+    found = _found(c, n)
+    return (found[0]["page"], found[0]["rects"][0][1]) if found else None
 
 
-def _crop(paper, lg, c, n):
-    """(page, clip) of the round's image context of a comment (display math, figure, table, box), or None."""
-    rec = c["rounds"][str(n)]
-    ctx = rec["context"] if "context" in rec else cards.context(paper, lg, c, n)
-    if ctx and ctx.get("display") == "image" and ctx.get("clip") and ctx.get("page") is not None:
-        return ctx["page"], pymupdf.Rect(ctx["clip"])
-    return None
+def _place_where(data, a):
+    """A place as the student reads it: "Algorithm 1 (p.4)", or "p.4" (state.place_name)."""
+    name = state.place_name(data, a) if data else None
+    return "{} ({})".format(name, "p.{}".format(a["page"] + 1)) if name else "p.{}".format(a["page"] + 1)
 
 
-def _comment_row(f, clean, paper, lg, c, n, label=None):
-    """A summary row: group label, chip, page, the comment's text, and its quote or a crop of its image."""
-    status = _status(c, n)
-    X1 = f.L + 160
-    TW = (f.R - X1) * 0.55 - 12
-    X2, QW = X1 + TW + 16, f.R - (X1 + TW + 16)
+def _place_views(cs, n, data):
+    """The comments as the pages draw them: one per comment, or for a comment with several places (design/comments/
+    PLAN.md §2) one per place found this round, in reading order, each seen as the comment with that place's anchor
+    and kind and its id. `_place` says which is first (its margin box holds the note whole) and the line the student
+    reads there: the advisor's words for how the places relate, then "also Algorithm 1 (p.4)" at the first, "see
+    p.1" at the others (PLAN.md §6a). A comment none of whose places is found is drawn nowhere (the summary keeps it)."""
+    out = []
+    for c in cs:
+        ps = comments.places(c, n)
+        if len(ps) < 2:
+            out.append(c)
+            continue
+        found = sorted(((k, r) for k, r in ps if r["anchor"] and r["anchor"]["page"] is not None
+                        and r["anchor"]["rects"]),
+                       key=lambda kr: (kr[1]["anchor"]["page"], kr[1]["anchor"]["rects"][0][1],
+                                       kr[1]["anchor"]["rects"][0][0]))
+        rel = (c.get("link") or {}).get("text", "")
+        where = {k: _place_where(data, r["anchor"]) for k, r in found}
+        for i, (k, r) in enumerate(found):
+            if i == 0:
+                others = list(dict.fromkeys(where[j] for j, _ in found[1:]))  # a name once
+                line = " · ".join(t for t in (rel, "also " + ", ".join(others) if others else "") if t)
+            else:
+                line = " · ".join(t for t in (rel, "see " + where[found[0][0]]) if t)
+            v = c if k == "a" else dict(
+                c, kind=next(p["kind"] for p in c["link"]["places"] if p["key"] == k),
+                rounds=dict(c["rounds"], **{str(n): dict(c["rounds"][str(n)], **{f: r.get(f) for f in (
+                    "anchor", "anchor_state", "confidence", "method", "context")})}))
+            out.append(dict(v, _place={"first": i == 0, "line": line}))
+    return out
+
+
+def _comment_row(f, c, n, label=None):
+    """A summary row: group label, chip (a link to the comment on its page), page and the text's first line, cut with
+    "…": the margin box beside the words holds it whole (design/comments/PLAN.md P0.1, the summary half). A comment
+    with no place on the page (Not found) keeps its whole text and its last known quote here, the only place it is
+    shown; a note longer than the page goes on at the top of the next, never cut."""
+    status, target = _status(c, n), _target(c, n)
+    where = _where(c, n).replace("location not found", "—")
+    X1 = max(f.L + 160, f.L + 126 + _width(where, 8.5) + 8)  # "p.1 ⇄ p.4" pushes the text along
     main, muted = _texts(c, n)
-    a = _wrap(main, TW, 9.0) if main else []
-    b = _wrap(muted, TW, 8.0) if muted else []
-    room = f.size[1] - 96  # the most text a row holds: a summary page's room (_Flow: 48 pt from its top to 40 pt
-    # from its foot), less the row's 2 pt below its text and 6 pt before the next
-    if 11 * len(a) + 9.8 * len(b) > room:  # longer than a page (about 2,400 characters): the main text first, then
-        # at least two lines of the muted one and, when the main text is cut, where the whole text is
-        ka = min(len(a), int((room - 9.8 * (min(len(b), 2) + 1)) // 11))
-        cue = ["(full text in the email)"] if ka < len(a) else []
-        a = _wrap(main, TW, 9.0, maxlines=ka)
-        kb = int((room - 11 * len(a)) // 9.8) - len(cue)
-        b = (_wrap(muted, TW, 8.0, maxlines=kb) if muted and kb > 0 else []) + cue
-    crop = _crop(paper, lg, c, n)
-    if crop:
-        scale = min(QW / crop[1].width, DISPLAY_IMAGE_H / crop[1].height, 1.0)
-        qh = crop[1].height * scale + 2
-    else:
-        quote, state = _quote(c, n, 200), c["rounds"][str(n)]["anchor_state"]
-        quote = ("deleted: " if state == "gone" else "") + "“{}”".format(quote) if quote else ""
-        if state == "orphan":
-            quote += " (location not found in Round {})".format(n)
-        q = _wrap(quote, QW, 8.5, "i", 3) if quote else []
-        qh = 10.5 * len(q)
     heading = _wrap(label, 74, 9, "b") if label else []  # "No change needed (k)": on two lines, clear of the chip
-    h = max(11 * len(a) + 9.8 * len(b) + 2, qh, 11 * len(heading), 11)
-    f.need(h + 6)
-    top, yb = f.y, f.y + 9
-    for k, line in enumerate(heading):
-        _put(f.page, f.L, yb + 11 * k, line, 9, "b", STATUS[status][2])
-    f.chip(f.L + 78, yb, c["id"], STATUS[status], target=_target(c, n))
-    _put(f.page, f.L + 126, yb, _where(c, n).replace("location not found", "—"), 8.5, "r", MUTED)
-    for k, line in enumerate(a):
-        _put(f.page, X1, yb + 11 * k, line, 9.0)
-    for k, line in enumerate(b):
-        _put(f.page, X1, yb + 11 * len(a) + 2 + 9.8 * k, line, 8.0, "r", MUTED)
-    if crop:
-        r = pymupdf.Rect(X2, top + 1, X2 + crop[1].width * scale, top + 1 + crop[1].height * scale)
-        # a picture, not the page as a form: PDFKit would find the whole page's text in it (search, copy)
-        pix = clean[crop[0]].get_pixmap(matrix=pymupdf.Matrix(4 * scale, 4 * scale), clip=crop[1], alpha=False)
-        f.page.insert_image(r, pixmap=pix)
-        f.page.draw_rect(r + (-1, -1, 1, 1), color=_rgb(FAINT), width=0.4)
+    lost = sum(1 for _, r in comments.places(c, n) if not (r["anchor"] and r["anchor"]["page"] is not None
+                                                           and r["anchor"]["rects"])) if c.get("link") else 0
+    if target and lost:  # one of several places not found this round: said first
+        main = "({} not found in Round {}) {}".format("1 place" if lost == 1 else "{} places".format(lost), n,
+                                                      main or "")
+    if target:
+        text = " ".join((main or "").split())
+        line = (_fit(text, f.R - X1, 9.0), 9.0, "r", INK) if text else \
+            (_fit("“{}”".format(_quote(c, n, 200)), f.R - X1, 8.5), 8.5, "i", MUTED)
+        lines = [line + (11,)]
     else:
-        for k, line in enumerate(q):
-            _put(f.page, X2, yb + 10.5 * k, line, 8.5, "i", MUTED)
-    f.y = top + h + 6
+        lines = [(t, 9.0, "r", INK, 11) for t in (_wrap(main, f.R - X1, 9.0) if main else [])]
+        lines += [(t, 8.0, "r", MUTED, 9.8) for t in (_wrap(muted, f.R - X1, 8.0) if muted else [])]
+        quote = _quote(c, n, 200)
+        where = "location not found in Round {}".format(n)
+        lines += [(t, 8.5, "i", MUTED, 10.5) for t in _wrap(("“{}” ({})".format(quote, where) if quote
+                                                            else "({})".format(where)), f.R - X1, 8.5, "i")]
+    f.need(min(max(sum(e[4] for e in lines), 11 * len(heading)) + 2, f.size[1] - 96) + 6)
+    y = f.y + 9
+    for k, t in enumerate(heading):
+        _put(f.page, f.L, y + 11 * k, t, 9, "b", STATUS[status][2])
+    f.chip(f.L + 78, y, c["id"], STATUS[status], target=target)
+    _put(f.page, f.L + 126, y, where, 8.5, "r", MUTED)
+    bottom = y + 11 * len(heading)
+    for k, (t, size, style, ink, step) in enumerate(lines):
+        if k and lines[k - 1][1] != size:
+            y += 2  # the muted text a little apart
+        if y > f.size[1] - 40:
+            f.new_page()
+            y, bottom = f.y + 9, 0
+        _put(f.page, X1, y, t, size, style, ink)
+        y += step
+    f.y = max(y, bottom, f.y + 20) - 9 + 2 + 6
+
+
+def _overall_row(f, c, n):
+    """An Overall row: the status word, the chip, and the comment's text whole (no place holds it elsewhere); a note
+    longer than the page goes on at the top of the next."""
+    status = _status(c, n)
+    X1 = f.L + 126
+    main, muted = _texts(c, n)
+    lines = [(line, 9.0, INK, 11) for line in (_wrap(main, f.R - X1, 9.0) if main else [])]
+    lines += [(line, 8.0, MUTED, 9.8) for line in (_wrap(muted, f.R - X1, 8.0) if muted else [])]
+    f.need(min(sum(e[3] for e in lines) + 2, f.size[1] - 96) + 6)
+    y = f.y + 9
+    _put(f.page, f.L, y, "new" if status == "new" else LABELS[status], 9, "b", STATUS[status][2])
+    f.chip(f.L + 78, y, c["id"], STATUS[status], glyph=_sign(status))
+    for k, (line, size, ink, step) in enumerate(lines):
+        if k and lines[k - 1][1] != size:
+            y += 2  # the muted text a little apart
+        if y > f.size[1] - 40:
+            f.new_page()
+            y = f.y + 9
+        _put(f.page, X1, y, line, size, "r", ink)
+        y += step
+    f.y = max(y, f.y + 11 + 9) - 9 + 2 + 6
 
 
 def _check_row(f, v, label=None):
@@ -976,7 +1040,7 @@ def _check_target(v):
     return (p["page"], p["rects"][0][1]) if p else None
 
 
-def _summary(doc, clean, paper, lg, n, changes, size, asked, read=(), sent=None):
+def _summary(doc, paper, lg, n, changes, size, asked, read=(), sent=None):
     """Draw the summary pages at the front of doc; returns them as a _Flow (count and chip links). changes: in the
     paper's order; asked: comments.commenters; sent: the check items that go out (check_items.outgoing) or None."""
     rnd = next(r for r in lg["rounds"] if r["n"] == n)
@@ -996,8 +1060,21 @@ def _summary(doc, clean, paper, lg, n, changes, size, asked, read=(), sent=None)
         _put(p, L, y + 1.5, line, 8.5, "r", MUTED)
         y += 11
 
+    # comments on the whole paper, first and whole (design/comments/PLAN.md §3 S), then only here
+    overall = [c for c in revived + reopened + still + new + wontfix + verified if _overall(c)]
+    revived, reopened, still, new, verified, wontfix = ([c for c in group if not _overall(c)]
+                                                        for group in (revived, reopened, still, new, verified, wontfix))
+    if overall:
+        f.y = y - 4
+        f.section("Overall")
+        for c in overall:
+            _overall_row(f, c, n)
+        y, p = f.y + 6, f.page
+
     # how to reply, and what to do next round
-    todo = sorted(revived + reopened + still + new, key=lambda c: ledger.id_key(c["id"]))
+    todo = sorted(revived + reopened + still + new + [c for c in overall if _status(c, n) in ("revived", "reopened",
+                                                                                              None, "new")],
+                  key=lambda c: ledger.id_key(c["id"]))
     items = sent["items"] if sent else []
     rule = _wrap(_reply_rule(items).replace(NOTE_EXAMPLE, NOTE_EXAMPLE.replace(" ", "\xa0")).replace("% A", "%\xa0A"),
                  R - L - 106, 9.5)
@@ -1043,7 +1120,7 @@ def _summary(doc, clean, paper, lg, n, changes, size, asked, read=(), sent=None)
 
     # key of the statuses in this round, in the order of the summary's groups: each its sign and word, open ones black
     # and closed ones grey
-    used = {_status(c, n) for c in revived + reopened + still + new + verified + wontfix}
+    used = {_status(c, n) for c in revived + reopened + still + new + verified + wontfix + overall}
     x = _put(p, L, f.y, "Key", 8, "b") + 9
     for status in ("reopened", None, "new"):
         if status in used:
@@ -1087,7 +1164,7 @@ def _summary(doc, clean, paper, lg, n, changes, size, asked, read=(), sent=None)
                                    (still, "Still open", len(still)),
                                    (wontfix, "No change needed", len(wontfix)), (noted, "Resolved", len(verified))):
             for k, c in enumerate(group):
-                _comment_row(f, clean, paper, lg, c, n, "{} ({})".format(name, total) if k == 0 else None)
+                _comment_row(f, c, n, "{} ({})".format(name, total) if k == 0 else None)
             if group:
                 f.y += 5
         if plain:
@@ -1109,7 +1186,7 @@ def _summary(doc, clean, paper, lg, n, changes, size, asked, read=(), sent=None)
     if new:
         f.section("New comments in this round ({})".format(len(new)))
         for c in new:
-            _comment_row(f, clean, paper, lg, c, n)
+            _comment_row(f, c, n)
     if sent:
         _check_section(f, n, sent)
     unrequested = [ch for ch in changes if not ch["attached_to"]]
@@ -1163,7 +1240,8 @@ def final_pdf(paper, lg, n, out, sent=None):
     paper = Path(paper)
     rnd = next(r for r in lg["rounds"] if r["n"] == n)
     pdf = str(paper / rnd["build"]["pdf"])
-    doc, clean = pymupdf.open(pdf), pymupdf.open(pdf)  # crops for the summary come from the unmarked build
+    doc = pymupdf.open(pdf)
+    size = (doc[0].rect.width, doc[0].rect.height)  # the paper's own, before the margins widen its pages
     lay = {k: state._build_layout(paper, rnd["build"], k) for k in ("text_x", "columns")}  # as ingest stored them
     changes = analysis.changes(paper, n)
     changes = [dict(ch, **extra) for ch, extra in zip(changes, state._change_details(paper, lg, n, changes))]
@@ -1183,27 +1261,30 @@ def final_pdf(paper, lg, n, out, sent=None):
     header = _fit("Round {} review, final · {} · {}".format(n, lg["paper"]["title"], datetime.date.today().isoformat()),
                   MARGIN - 18, 7.5)  # each page's margin: from 10 pt into it to 8 pt before its edge
     labels = doc.get_page_labels()
+    data = prose.load(paper, n)
+    views = _place_views(cs, n, data)  # a comment with several places at each of them
     placed = []
     for pno, page in enumerate(doc):
         gap = lay["columns"][pno][0] if lay["columns"][pno] else None
         own = lay["text_x"][pno]
         tx = (min(own[0], usual[0]), max(own[1], usual[1])) if own and usual else own or usual
-        placed += _review_page(page, pno, n, cs, changes, (two, tx, gap), header, asked,
+        placed += _review_page(page, pno, n, views, changes, (two, tx, gap), header, asked,
                                sent["items"] if sent else ())
         for link in page.get_links():  # the paper's link boxes (hyperref's green and red) would read as marks
             if link.get("xref"):
                 doc.xref_set_key(link["xref"], "Border", "[0 0 0]")
 
-    data, done = prose.load(paper, n), prose.read_map(paper, lg)
+    done = prose.read_map(paper, lg)
     read = {ch["id"] for ch in changes if prose.change_read(ch, prose.change_hashes(data, ch), done, n)}
     # the summary at the paper's own page size (Letter, A4), not the widened one, so it prints at 100%
-    f = _summary(doc, clean, paper, lg, n, changes, (clean[0].rect.width, clean[0].rect.height), asked, read, sent)
+    f = _summary(doc, paper, lg, n, changes, size, asked, read, sent)
     offset = f.count
     for spno, r, (pno, y) in f.links:
         doc[spno].insert_link({"kind": pymupdf.LINK_GOTO, "from": r, "page": pno + offset,
                                "to": pymupdf.Point(0, max(0, y - 60)), "zoom": 0})
     _outline(doc, offset, [c for c in cs if _target(c, n)], n,
-             [v for v in sent["items"] if _check_target(v)] if sent else ())
+             [v for v in sent["items"] if _check_target(v)] if sent else (),
+             sorted((c for c in cs if _overall(c)), key=lambda c: ledger.id_key(c["id"])))
     doc.set_page_labels([{"startpage": 0, "prefix": "Summary" + (" " if offset > 1 else ""),
                           "style": "D" if offset > 1 else "", "firstpagenum": 1}]
                         + ([] if any(lb["startpage"] == 0 for lb in labels) else
@@ -1221,8 +1302,8 @@ def final_pdf(paper, lg, n, out, sent=None):
     return placed
 
 
-def _outline(doc, offset, located, n, checked=()):
-    """Summary, the comments by page, the check items that go out by page (checked), then the paper's own outline
+def _outline(doc, offset, located, n, checked=(), overall=()):
+    """Summary, the overall comments, the comments by page, the check items that go out by page (checked), then the paper's own outline
     (named destinations resolved to pages). A point
     is given to set_toc as MuPDF's y less the page's MediaBox y0: set_toc writes the height less y, as if the MediaBox
     began at 0, and a page grown by a band (_review_page) begins below it."""
@@ -1230,6 +1311,11 @@ def _outline(doc, offset, located, n, checked=()):
         return pymupdf.Point(pt.x, pt.y - doc[pno].mediabox.y0)
 
     toc = [[1, "Summary", 1, {"kind": pymupdf.LINK_GOTO, "page": 0, "to": pymupdf.Point(0, 0), "zoom": 0}]]
+    if overall:  # on the summary's first page, whole (_overall_row)
+        toc.append([1, "Overall ({})".format(len(overall)), 1,
+                    {"kind": pymupdf.LINK_GOTO, "page": 0, "to": pymupdf.Point(0, 0), "zoom": 0}])
+        toc += [[2, "{} · {}".format(c["id"], LABELS[_status(c, n)]), 1,
+                 {"kind": pymupdf.LINK_GOTO, "page": 0, "to": pymupdf.Point(0, 0), "zoom": 0}] for c in overall]
     if located:
         toc.append([1, "Comments ({})".format(len(located)), 1,
                     {"kind": pymupdf.LINK_GOTO, "page": 0, "to": pymupdf.Point(0, 0), "zoom": 0}])
@@ -1265,7 +1351,17 @@ def _indented(text):
 
 def _entry(c, n):
     quote = _quote(c, n)
-    lines = ["{}  {}".format(c["id"], _where(c, n)) + ('  "{}"'.format(quote) if quote else "")]
+    if c.get("link"):  # several places: a line each, then how they relate
+        lines = ["{}  {}".format(c["id"], _where(c, n))]
+        for _, r in comments.places(c, n):
+            a = r["anchor"]
+            text = " ".join(a["text"].split()) if a and a["text"] else ""
+            lines.append("  {}".format("p.{}".format(a["page"] + 1) if a and a["page"] is not None
+                                       else "location not found") + ('  "{}"'.format(_short(text, 60)) if text else ""))
+        if c["link"].get("text"):
+            lines.append("  How the places relate: " + c["link"]["text"])
+    else:
+        lines = ["{}  {}".format(c["id"], _where(c, n)) + ('  "{}"'.format(quote) if quote else "")]
     lines += _indented(c["note"])
     if _status(c, n) == "revived":  # where it was closed, then this round's follow-up when written
         rec = c["rounds"][str(n)]
@@ -1286,7 +1382,9 @@ def email_text(lg, n, sent=None):
     revived, reopened, still, new, verified, wontfix = _groups(lg, n)
     items = sent["items"] if sent else []
     out = ["Round {} review: {}".format(n, lg["paper"]["title"]), "", _reply_rule(items)]
-    for name, group in (("Reopened", revived), ("Follow-ups", reopened), ("Still open", still),
+    overall = [c for c in revived + reopened + still + new if _overall(c)]
+    revived, reopened, still, new = ([c for c in group if not _overall(c)] for group in (revived, reopened, still, new))
+    for name, group in (("Overall", overall), ("Reopened", revived), ("Follow-ups", reopened), ("Still open", still),
                         ("New comments", new)):
         if group:
             out += ["", "{} ({})".format(name, len(group))]

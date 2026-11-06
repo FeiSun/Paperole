@@ -456,7 +456,9 @@ def _paper_overview(path, marks=False, key_page=None, buckets=None):
             rec, a = recs[n], recs[n]["anchor"]
             st = rec["anchor_state"]
             page, pos = (a["page"], place(n, a["page"], a["rects"])) if a else (None, None)
-            if st == "orphan" or a is None:
+            if c.get("kind") == "overall":  # on the whole paper: no place, and not lost
+                where_ = "whole"
+            elif st == "orphan" or a is None:
                 where_ = "unplaced"
             elif st == "gone":
                 where_ = "gone"

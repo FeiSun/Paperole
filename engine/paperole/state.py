@@ -5,6 +5,7 @@ import functools
 import hashlib
 import json
 import os
+import re
 import tempfile
 from pathlib import Path
 
@@ -125,6 +126,45 @@ def _attached(changes, cid):
     return [ch["id"] for ch in changes if cid in ch["attached_to"]]
 
 
+FLOAT_NAME = re.compile(r"(Figure|Table|Algorithm) [^\s:]+(?=: )")
+
+
+def place_name(data, anchor):
+    """What a place is called, for "also Algorithm 1 (p.4)" (design/comments/PLAN.md §6a): the float it is in by its
+    caption's name ("Table 1"), else its section's heading ("§4.1 Setup", a heading without a number by its title),
+    else None. data: the round's prose.json."""
+    k = prose.block_of(data, anchor)
+    if k is None:
+        return None
+    blocks = data["blocks"]
+    b = blocks[k]
+    m = FLOAT_NAME.match(b.get("text") or "") if b["kind"] in ("figure", "table", "code") else None
+    if m:
+        return m.group(0)
+    h = blocks[b["section"]] if b.get("section") is not None and b["section"] >= 0 else None
+    if h is None:
+        return None
+    return "§{} {}".format(h["number"], h["text"]) if h.get("number") else h["text"]
+
+
+def _places(paper, lg, c, n, changes, data, found):
+    """Comment c's other places in round n (comments.places): each its key and kind, where it is, its state and card
+    context, its name (place_name), the round it was added in and the changes attached there (`at`)."""
+    out = []
+    for key, r in comments.places(c, n)[1:]:
+        a = r["anchor"]
+        entry = next(p for p in c["link"]["places"] if p["key"] == key)
+        view = comments.place_comment(c, key)
+        out.append({"key": key, "kind": entry["kind"], "added": entry["added"],
+                    "page": a["page"] if a else None, "rects": a["rects"] if a else [], "text": a["text"] if a else "",
+                    "anchor_state": r["anchor_state"], "confidence": r["confidence"], "method": r["method"],
+                    "file": a["file"] if a else None, "line": a["lines"][0] if a else None,
+                    "context": _context(paper, lg, view, n, found), "name": place_name(data, a),
+                    "changes": [ch["id"] for ch in changes
+                                if c["id"] in ch["attached_to"] and key in ch.get("at", {}).get(c["id"], ["a"])]})
+    return out
+
+
 def _comment(paper, lg, c, n, changes, earlier_changes, data, found):
     """Comment c in round n's state; earlier_changes holds each earlier round's changes (analysis.json), for the
     changes attached in that round (history[].changes; those of them that replaced a picture file: figures; the page
@@ -151,6 +191,9 @@ def _comment(paper, lg, c, n, changes, earlier_changes, data, found):
             "tags": tags.ids(c), "env": first.get("env"), "revived": rec.get("revived"),
             "revivable": comments.revivable(lg, c),
             "context": _context(paper, lg, c, n, found), "paragraph": prose.block_of(data, anchor),
+            "name": place_name(data, anchor) if c.get("link") else None,
+            "places": _places(paper, lg, c, n, changes, data, found) if c.get("link") else [],
+            "relation": (c.get("link") or {}).get("text", ""),
             "history": [{"round": k, "page": r["anchor"]["page"] if r["anchor"] else None,
                          "anchor_state": r["anchor_state"], "verdict": r["verdict"], "verdict_note": r["verdict_note"],
                          "context": _context(paper, lg, c, k, found),

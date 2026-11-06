@@ -52,6 +52,9 @@ struct ListSections: Equatable {
         var name: String
     }
 
+    /// The group of comments on the whole paper (`Comment.isOverall`), first.
+    static let whole = -2
+
     var of: [String: Int] = [:]
     var titles: [Int: Title] = [:]
     var rank: [String: Int] = [:]
@@ -73,6 +76,7 @@ struct ListSections: Equatable {
         var s = ListSections()
         let placed = comments.enumerated().sorted { a, b in
             func key(_ c: Comment, _ i: Int) -> (Int, Int, Double, Double, Int) {
+                if c.isOverall { return (-1, 0, 0, 0, i) }  // on the whole paper: first
                 guard let p = c.page, let r = c.rects.first, r.count == 4 else { return (Int.max, 0, 0, 0, i) }
                 let gap = p < columns.count ? columns[p]?.first : nil
                 return (p, gap.map { r[0] >= $0 - 3 ? 1 : 0 } ?? 0, r[1], r[0], i)
@@ -80,6 +84,9 @@ struct ListSections: Equatable {
             return key(a.element, a.offset) < key(b.element, b.offset)
         }
         for (i, c) in placed.enumerated() { s.rank[c.element.id] = i }
+        // on the whole paper: a group of its own, first (its key below every block's, and -1's, the front matter's)
+        s.titles[ListSections.whole] = Title(number: nil, name: "Whole paper")
+        for c in comments where c.isOverall { s.of[c.id] = ListSections.whole }
         guard let r = reading else { return s }
         s.found = true
         let headings = r.headings.sorted { $0.block < $1.block }
@@ -91,7 +98,7 @@ struct ListSections: Equatable {
             s.titles[h.block] = Title(number: n, name: name.isEmpty ? h.title : name)
         }
         s.titles[-1] = Title(number: nil, name: "Title and abstract")
-        for c in comments {
+        for c in comments where !c.isOverall {
             guard let p = c.paragraph else { continue }
             s.of[c.id] = tops.last { $0.0.block <= p }?.0.block ?? -1
         }
@@ -207,6 +214,10 @@ final class ListBar: ObservableObject {
     /// The round's comments, and those the filter keeps.
     @Published var total = 0
     @Published var kept = 0
+    /// The shown round is open: + Overall comment at the line's left (design/comments/PLAN.md §6a), its editor a
+    /// popover under it while `overallDraft` is set.
+    @Published var canAddOverall = false
+    @Published var overallDraft: CommentDraft?
     weak var model: AppModel?
 
     /// The menu's Show section: only that tag's comments (`TagCatalog.untagged`: those with none), or all (nil).
@@ -325,12 +336,36 @@ struct CommentListBar: View {
                 Spacer(minLength: ListBarMetrics.between)
                 ListMenuButton(bar: bar, tag: tag, name: fit.name)
             } else {
+                if bar.canAddOverall { OverallCommentButton(bar: bar) }
                 Spacer(minLength: 0)
                 ListMenuButton(bar: bar, tag: nil, name: 0)
             }
         }
         .font(.system(size: 12))
         .lineLimit(1)
+    }
+}
+
+/// + Overall comment (design/comments/PLAN.md §6a): a link at the left of the line over the list, its editor a popover
+/// under it (the new-comment editor without words, kind or page). The Comment menu's Overall Comment… opens the same.
+struct OverallCommentButton: View {
+    @ObservedObject var bar: ListBar
+
+    var body: some View {
+        Button("+ Overall comment") { bar.model?.beginOverallComment() }
+            .buttonStyle(LinkStyle())
+            .help("A comment on the whole paper: it goes first in the summary of final.pdf")
+            .popover(item: Binding(get: { bar.overallDraft }, set: { new in
+                // closed by a click elsewhere: a note written is kept for the next time (AppModel.overallStash)
+                if new == nil, let d = bar.overallDraft, d.changed, !d.saving { bar.model?.overallStash = d }
+                bar.overallDraft = new
+            }), arrowEdge: .bottom) { d in
+                if let model = bar.model {
+                    CommentEditor(title: "Overall comment", draft: d, tags: model.tags,
+                                  onSave: { model.saveOverallComment(d) },
+                                  onCancel: { model.overallStash = nil; bar.overallDraft = nil })
+                }
+            }
     }
 }
 

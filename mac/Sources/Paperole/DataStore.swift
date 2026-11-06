@@ -214,7 +214,7 @@ enum CommentExport {
                           "Student’s response", "Your answer", "Answer note", "Student’s note", "Tags", "Kind", "Note",
                           "Marked text"]
 
-    static let places = ["placed": "in the PDF", "gone": "text deleted", "unplaced": "not found"]
+    static let places = ["placed": "in the PDF", "gone": "text deleted", "unplaced": "not found", "whole": "whole paper"]
     static let responses = ["new": "new this round", "edited": "edited", "note_only": "note only", "untouched": "untouched",
                             "waiting": "waiting for you"]
     static let answers = ["resolved": "Resolved", "follow_up": "Followed up", "kept": "Kept as is", "left_open": "Left open",

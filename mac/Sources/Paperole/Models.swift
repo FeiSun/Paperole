@@ -290,6 +290,9 @@ struct Comment: Decodable, Equatable, Identifiable {
     var lowConfidence: Bool { confidence < 0.75 && !(markKind == .note && anchorState != "gone") }
     var markColor: MarkColor { MarkColor(name: color ?? "") ?? .yellow }
     var markKind: MarkKind { MarkKind(rawValue: kind) ?? .highlight }
+    /// On the whole paper (engine/CONTRACT.md amendment "Comments on places, step 1"): no page or mark in any round.
+    var isOverall: Bool { kind == Self.overall }
+    static let overall = "overall"
 }
 
 struct HistoryEntry: Decodable, Equatable {
