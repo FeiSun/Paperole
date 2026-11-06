@@ -123,9 +123,10 @@ def test_two_column(tmp_path):
     bbox = next(ch["bbox"] for ch in spans[0]["chars"] if ch["c"] == "熵")
     pix = final[1].get_pixmap(clip=pymupdf.Rect(bbox), matrix=pymupdf.Matrix(4, 4), colorspace=pymupdf.csGRAY)
     assert sum(1 for v in pix.samples if v < 128) > 20
-    # the summary is a line per comment (design/comments/PLAN.md P0.1): no pictures, no quotes of the formula
+    # the summary is a line per comment (design/comments/PLAN.md P0.1): no quotes of the formula, and no pictures
+    # but the page strip's, one a page (design/summary-page)
     summary = final[0]
-    assert len(summary.get_images()) == 0 and "H :=" not in summary.get_text()
+    assert len(summary.get_images()) == len(final) - 1 and "H :=" not in summary.get_text()
     assert [final[i].get_label() for i in range(3)] == ["Summary", "1", "2"]
     toc = final.get_toc()
     assert toc[0][1:] == ["Summary", 1] and toc[1][1] == "Comments (5)" and len(toc) >= 7

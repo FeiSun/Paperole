@@ -1249,3 +1249,59 @@ where the others are: at the first place in reading order "does not match · als
 at the others "… · see §1 Introduction (p.1)" with the note's first line. The summary row's page column reads
 "p.1 ⇄ p.4" (the text after it), and "(1 place not found in Round N)" leads its line when some are lost; it is Not
 found only when every place is. The email entry lists a line per place with its quote, then "How the places relate:".
+
+### Summary page as a to-do sheet, 2026-11-06 (design/summary-page)
+
+The advisor's request: the summary page reads like a to-do list, so the student sees at once what to do and where; the
+notes are not repeated there (the margin holds them). Where it conflicts with "Final PDF in the margin style", "Fix
+round M2b" and "Comments on places, step 1" (the summary half), this wins.
+
+- **What is to do**: comments of the round that are new, still open, followed up or reopened, but not one whose only
+  tag is Well done (`praise`). The count is theirs plus the check items that go out, beside "of N comments[ + M
+  checks]" (N: every comment of the round); a bar beside it: closed (resolved, no change needed, and Well done ones),
+  again (carried and open), new.
+- **Order on the page**: the header (`Paperole · Review of Round N · date`, the title, `student · draft received
+  date`); the count and the bar; `Main issues` (the to-do comments' tags, top five, only with 6 or more to do and a tag
+  used twice); `Overall (k)`, each open overall comment whole (follow-up words first, the earlier ones muted); the page
+  strip (each page of the build as built, 16 a row, more in a row past 64 pages so it never takes more than four
+  rows; pages narrower than 16 pt go unnamed; a vermilion dot at each place of a comment to do and a grey
+  one at a closed comment's, a framed page says how many; each page a link); `To do for Round N+1` (`On the pages (k)`
+  when overall comments are to do); the reply rule with "Next round, send the full LaTeX source (zip) again." (the
+  note's form in Courier); `Automatic checks (k)` as before; `Closed (k)`: Resolved, No change needed and Well done, each
+  with its count; chips for comments on the page (the margin holds their notes); a comment no margin holds (on the
+  whole paper, or found on no page) keeps its words whole there, with "location not found in Round N" for the latter;
+  Well done gives a praise-only comment's page (a link) and its words cut to a line, or an overall one's whole; `Your changes no comment asked for (k)`, a row each
+  with the chips that ask about it and "asks about this", or "✓ read"; `Build`; `Marks` (round 2 on: a change and a
+  deletion; a comment's colour bar).
+- **A row**: the comment's colour (its mark's), its chip with the status sign (a link), the status word, its page(s)
+  ("p.1 ⇄ p.4"), its section number (`§4.1`, from prose.json: the text block holding its first place's top left, else
+  the last one before it in reading order, a two-column page's left column before its right; empty without
+  prose.json), the first line of its note cut at a word (else its quoted words), its first tag (110 pt at most) and
+  "+k" for the others. A
+  comment found on no page keeps its whole note and "(location not found in Round N)".
+- **Past 20 rows** (`render.ROWS`, small fixes counted as one): what comes back (not new) stays a row each under
+  `Again`; the new ones go in a row per top-level section (`§3 Method`, "Title and abstract" before the first
+  heading, else by page without prose.json): its name, "11 on pp.2–3", its two commonest tags (5 or more comments), and
+  its chips in the paper's order, each after its colour.
+- **Small fixes**: comments whose tags are only Grammar, Wording or Format share one row of chips when there are 3 or
+  more.
+- **Tag names**: as the app shows them (`tag_names` {id: name} given to `finish` and `final_preview`), else the
+  ledger's `tag_names`, else the built-in names (`render.TAG_NAMES`).
+- Gone: How to reply's box and its To do chips (the table is the to-do list), the Key and its sentence (status words in
+  the rows), the per-group rows of closed comments and their notes, "I have read N of them" (a mark per row), and the
+  "page numbers are the paper's" sentence. Later summary pages repeat the header line.
+- **`finish`** builds the round's prose.json before final.pdf when it is missing or stale (its sections), and takes
+  `tag_names`.
+- **`final_preview`** {paper, out, checks?, groups?, disabled?, tag_names?} → {round, out}: final.pdf of the open round
+  as `finish` would write it now (check items synced on a copy), written to `out`, an absolute `.pdf` path in an
+  existing folder outside the paper's folder. The ledger is not written and the round stays open; prose.json may be
+  built (as the prose RPC). No state in the result. Refused: no open round, a bad `out`, bad `tag_names`; a
+  request the app cancelled (`cancel`, a newer preview asked) before it began or before final.pdf is drawn says
+  "Cancelled." and writes nothing.
+- Tests: `tests/test_summary_page.py` (a short round: rows, overall, small fixes, Well done, tag names, the strip's
+  pictures and links; 22 comments by section; an overall comment closed with a note and an overall praise keep their
+  words, six tags leave the note its room; a right-column comment of a two-column paper named by its own section; the
+  preview leaves the ledger and round, writes what finish writes, and refuses paths in the paper folder and others; no
+  open round; a cancelled preview); the summary assertions of test_rounds_core,
+  test_cards, test_check_items, test_cli_round1, test_final_pdf, test_overall_comments, test_prose and test_revive
+  follow the new page.

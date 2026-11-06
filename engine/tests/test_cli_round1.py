@@ -156,8 +156,8 @@ def test_round1_cli(tmp_path):
     final, build = pymupdf.open(rnd["final_pdf"]), pymupdf.open(pdf)
     assert final.page_count == 5
     summary = final[0].get_text()
-    for expected in ("Review of Round 1", TITLE, "Student: Lin Zhou", "To do for Round 2",
-                     "New comments in this round (6)", "这句不准确：Hybrid 也决定预热窗口。", "R1-07"):
+    for expected in ("Review of Round 1", TITLE, "Lin Zhou · draft received", "To do for Round 2",
+                     "of 6 comments", "这句不准确：Hybrid 也决定预热窗口。", "R1-07"):
         assert expected in summary
     # no comment annotations: the outline lists the comments, and the marks and notes are burned in
     assert all(a.type[1] == "Link" for p in final for a in p.annots())

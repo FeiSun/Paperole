@@ -557,8 +557,9 @@ def test_reading_counts_as_checking(paper2):
     # final.pdf counts a read change as read
     api.read({"paper": p, "blocks": c06["blocks"]}, quiet)
     api.finish({"paper": p}, quiet)
-    summary = pymupdf.open(paper2 / "r2" / "final.pdf")[0].get_text()
-    assert "I have read 1 of them: those marked read." in " ".join(summary.split())
+    final = pymupdf.open(paper2 / "r2" / "final.pdf")
+    summary = "".join(page.get_text() for page in final if page.get_label().startswith("Summary"))
+    assert "Your changes no comment asked for (6)" in summary and summary.split("\n").count("read") == 1  # its row
 
 
 def test_edits_left_unread_are_read_next_round(paper2):

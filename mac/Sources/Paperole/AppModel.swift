@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import PDFKit
 import UniformTypeIdentifiers
 
 /// The panel's tabs; Checks only while Settings › Reading's Checks is on (UX.md §39).
@@ -237,6 +238,14 @@ final class FinishPreview: ObservableObject {
     @Published var finishing = false
     @Published var handled: [String: FinishSummary.Handled] = [:]
     var guardUntil: TimeInterval = 0
+    /// final.pdf as Finish would write it now (the engine's `final_preview`; design/summary-page), its error, and
+    /// whether a newer one is being made. `asked` numbers the requests: an older reply is dropped.
+    @Published var document: PDFDocument?
+    @Published var previewError: String?
+    @Published var preparing = false
+    var asked = 0
+    /// The engine request of the preview being made, cancelled when a newer one is asked.
+    var request: Int?
 }
 
 /// The pending mark style and the modes over the PDF; observed by the floating toolbar, the Comment menu and the
@@ -2080,7 +2089,60 @@ final class AppModel: ObservableObject {
         finishPreview.done = nil
         finishPreview.error = nil
         finishPreview.handled = [:]
+        finishPreview.document = nil
+        finishPreview.previewError = nil
         showFinish = true
+        refreshFinalPreview()
+    }
+
+    /// The tag names the app shows for the round's tags, so final.pdf names them as the app does (a built-in tag can
+    /// be renamed).
+    var tagNamesForPDF: [String: String] {
+        let ids = Set((state?.comments ?? []).flatMap { $0.tags ?? [] })
+        return Dictionary(uniqueKeysWithValues: ids.map { ($0, tags.catalog.name($0, backup: state?.tagNames ?? [:])) })
+    }
+
+    /// The Finish sheet's preview: the engine writes final.pdf as Finish would into the app's caches, and the sheet
+    /// shows it. Asked when the sheet opens and after each engine reply while it is open (a draft sent as a follow-up).
+    func refreshFinalPreview() {
+        guard showFinish, finishPreview.done == nil, roundIsOpen, fixtureURL == nil, let paper = selectedPath else { return }
+        // a test run keeps out of the app's caches (CLAUDE.md): a folder of its own in the temporary folder
+        let folder = LaunchOptions.isTestRun
+            ? FileManager.default.temporaryDirectory.appendingPathComponent("Paperole-preview-\(ProcessInfo.processInfo.processIdentifier)")
+            : AppVariant.current.cachesFolder.appendingPathComponent("Previews", isDirectory: true)
+        do { try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true) } catch {
+            finishPreview.previewError = error.localizedDescription
+            return
+        }
+        let out = folder.appendingPathComponent("final.pdf")
+        let params: [String: Any] = ["paper": paper, "out": out.path, "checks": checksOn,
+                                     "groups": Array(checkKinds).sorted(), "disabled": Array(disabledCheckCodes).sorted(),
+                                     "tag_names": tagNamesForPDF]
+        guard let json = try? JSONSerialization.data(withJSONObject: params) else { return }
+        finishPreview.asked += 1
+        let ask = finishPreview.asked
+        finishPreview.preparing = true
+        if let old = finishPreview.request, let stop = try? JSONSerialization.data(withJSONObject: ["id": old]) {
+            _ = engine.send("cancel", params: stop)  // the engine drops it if it has not begun
+        }
+        let id = engine.send("final_preview", params: json)
+        finishPreview.request = id
+        Task {
+            var document: PDFDocument?, message: String?
+            do {
+                _ = try await engine.result(id)
+                // read whole into memory: the next preview replaces the file
+                document = (try? Data(contentsOf: out)).flatMap(PDFDocument.init(data:))
+                if document == nil { message = "The preview could not be read." }
+            } catch {
+                message = describe(error)
+            }
+            guard ask == finishPreview.asked, selectedPath == paper else { return }
+            finishPreview.request = nil
+            finishPreview.preparing = false
+            if let document { finishPreview.document = document }
+            finishPreview.previewError = message
+        }
     }
 
     /// The sheet's Send as follow-up (`send`) or Discard on an unsent draft. Its row stays where it is and says what was
@@ -2114,7 +2176,8 @@ final class AppModel: ObservableObject {
         finishPreview.finishing = true
         finishPreview.error = nil
         call("finish", ["paper": paper, "checks": checksOn, "groups": Array(checkKinds).sorted(),
-                        "disabled": Array(disabledCheckCodes).sorted()], quiet: true, then: { reply in
+                        "disabled": Array(disabledCheckCodes).sorted(), "tag_names": tagNamesForPDF], quiet: true,
+             then: { reply in
             self.finishPreview.finishing = false
             self.draftStore.save(paper: paper, round: n, drafts: [:])
             let card = RoundCardAsk(stats: self.roundStats(reply.state), justFinished: true, finalPdf: reply.state.round?.finalPdf)
@@ -2370,6 +2433,7 @@ final class AppModel: ObservableObject {
         }
         loadDrafts(st)
         buildCards(st)
+        if showFinish && finishPreview.done == nil && !finishPreview.finishing { refreshFinalPreview() }
         switch selection {
         case .comment(let id)? where comment(id) == nil: selection = nil; panel.expanded = nil
         case .change(let id)? where change(id) == nil: selection = nil; changes.expanded = nil

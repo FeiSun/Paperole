@@ -135,6 +135,7 @@ import SwiftUI
 ///                               as File › Close does (performClose): the app quits, as from the menu ({delegate,
 ///                               question} before it; {closed, popover, asked} after it when it is still running)
 ///   finishsheet [send <id> [<s>]|discard <id> [<s>]|undo <id>|show <id>|left <comments|edits|paragraphs>|cancel|finish|
+///                               click <page> <x> <y>|
 ///                               done]  opens Finish Round…, or acts in it (a draft's Send as follow-up, Discard, a
 ///                               discard's Undo, Show, each as its click, guarded; a Left for you row's Review or Show;
 ///                               Cancel; Finish Round; the card's Done once finished), the next item <s> seconds later (2
@@ -143,7 +144,10 @@ import SwiftUI
 ///                               unrequested, unread, card, finished, error, round, roundClosed, selected, tab, toast,
 ///                               notice, reading, before} (`card`: the round's card so far, as the summary result's;
 ///                               `finished`: the card the sheet turned into, or null; `notice`: the window's line and its
-///                               buttons; `before`: a resumed round's "Finished before on …" line)
+///                               buttons; `before`: a resumed round's "Finished before on …" line; `preview`: the
+///                               final.pdf preview's {pages, labels, summary: page 1's text, preparing, error,
+///                               shownInSheet}; `clicked`: the comment a `click` showed, in PDF points from the page's
+///                               top left, or null)
 ///   summary [<n>|export <path.png> [title] [student] [light|dark]|copy|done]  Round N Summary… (the shown round's, or
 ///                               round n's), its card written as Export Image… writes it, without the panel, its Copy
 ///                               Image (a --background run's own pasteboard), or its Done: {shown, round, words, wrote,
@@ -1257,8 +1261,14 @@ final class DebugScript {
         case "finishsheet":
             let (what, args) = Self.split(rest)
             let (id, delay) = Self.split(args)
+            var clicked: Any = NSNull()
             if let m = model {
                 switch what {
+                case "click":  // finishsheet click <page> <x> <y>: a click on the preview, in PDF points from the top left
+                    let v = args.split(separator: " ").compactMap { Double($0) }
+                    if v.count == 3, let view = Self.previewView() {
+                        clicked = view.click(page: Int(v[0]), x: v[1], y: v[2]) ?? NSNull()
+                    }
                 case "send": m.finishDraft(id, send: true)
                 case "discard": m.finishDraft(id, send: false)
                 case "undo": m.finishRestoreDraft(id)
@@ -1275,7 +1285,11 @@ final class DebugScript {
                 default: m.openFinish()
                 }
             }
-            next(Double(delay) ?? 2.0) { [weak self] in self?.finishResult() }
+            next(what == "click" ? 1.0 : Double(delay) ?? 2.0) { [weak self] in
+                guard var out = self?.finishResult() as? [String: Any] else { return NSNull() }
+                out["clicked"] = clicked
+                return out
+            }
         case "summary":
             let (what, args) = Self.split(rest)
             var exported: Any = NSNull()
@@ -1828,7 +1842,8 @@ final class DebugScript {
         s.checks = m.finishChecks
         let rows = FinishSummary.rows(s.drafts, handled: m.finishPreview.handled)
         let sections = (s.left.isEmpty ? [] : ["Left for you"]) + (rows.isEmpty ? [] : ["Words not sent yet"])
-            + ["Goes to the student"]
+            + ["This round", "final.pdf"]
+        let doc = m.finishPreview.document
         return ["shown": m.showFinish, "sections": sections, "left": s.left.map { [$0.item.rawValue, $0.title, $0.count] },
                 "goes": s.goes.map { [$0.item.rawValue, $0.title, $0.count] }, "reading": ["current": nul(m.currentParagraph), "flash": controller?.flashing ?? false],
                 "followUps": s.followUps, "new": s.new, "toCheck": s.toCheck, "closed": s.closed,
@@ -1840,7 +1855,23 @@ final class DebugScript {
                 "roundClosed": m.round?.closed ?? false, "selected": nul(selectedID), "tab": m.tab.rawValue,
                 "toast": nul(m.reading.toast),
                 "notice": nul(m.notice.map { [$0.text, nul($0.action), nul($0.second)] }),
-                "before": nul(m.round?.finishes.flatMap(FinishSummary.finishedBefore))]
+                "before": nul(m.round?.finishes.flatMap(FinishSummary.finishedBefore)),
+                "preview": ["pages": nul(doc?.pageCount), "labels": (0..<(doc?.pageCount ?? 0)).prefix(4).map { doc?.page(at: $0)?.label ?? "" },
+                            "summary": nul(doc?.page(at: 0)?.string), "preparing": m.finishPreview.preparing,
+                            "error": nul(m.finishPreview.previewError), "shownInSheet": Self.previewView() != nil]]
+    }
+
+    /// The Finish sheet's preview view, when the sheet shows one.
+    static func previewView() -> PreviewPDFView? {
+        func find(_ v: NSView) -> PreviewPDFView? {
+            if let p = v as? PreviewPDFView { return p }
+            for s in v.subviews { if let p = find(s) { return p } }
+            return nil
+        }
+        for w in NSApp.windows + NSApp.windows.flatMap(\.sheets) {
+            if let c = w.contentView, let p = find(c) { return p }
+        }
+        return nil
     }
 
     /// A round card's numbers and words (the `summary` and `finishsheet` results).

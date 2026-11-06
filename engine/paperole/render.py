@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pymupdf
 
-from . import analysis, cards, checks, comments, disk, ledger, prose, state
+from . import analysis, cards, checks, comments, disk, ledger, prose, state, tags
 
 NOTE_EXAMPLE = "% R1-03 your note"  # a student's note (notes.py)
 REPLY_RULE = ("No need to list what you fixed. To explain a change, or why you left something as it is, add a comment "
@@ -28,7 +28,6 @@ CHECK_SIGNS = {"new": "new", "still": "open"}  # their _glyph: + and the ring
 CHECK_EXAMPLE = "% {} for an automatic check"
 CHECK_RULE = "Fix it, or reply % {} with why it is right."  # the box's header names it an automatic check
 CHECK_INTRO = "Paperole found these, not me, and it can be wrong. Fix each, or reply with % {} why it is right."
-CHECK_KEY = "an automatic check, found by Paperole, not by me"
 CHECK_GROUPS = {"references": "References", "bibliography": "Bibliography", "consistency": "Consistency",
                 "typesetting": "Typesetting", "submission": "Submission"}
 LABELS = {"new": "new", None: "still open", "reopened": "follow-up", "verified": "resolved",
@@ -56,6 +55,16 @@ CJK_FONTS = ("/System/Library/Fonts/Hiragino Sans GB.ttc", "/System/Library/Font
 CJK = "\u2e80-\u9fff\uf900-\ufaff\uff00-\uffef"  # ideographs, CJK punctuation and full-width forms: break anywhere
 CLOSE = "，。、；：！？）」』〉》】”’"  # never starts a line
 TOKEN = re.compile(r"[^\S\xa0]+|[{0}][{1}]*|(?:[^\s{0}]|\xa0)+[{1}]*".format(CJK, CLOSE))  # no break at U+00A0
+VERMILION = "#C04734"  # the app's one mark colour (its icon's): the summary's count of what is to do, and its dots
+HAIR = "#ECECEC"  # the rules between the summary's to-do rows
+ROWS = 20  # the most rows the to-do table takes, a row a comment, before it groups the comments by section
+SMALL = ("grammar", "wording", "format")  # small fixes: comments with only these tags share a row of chips
+SMALL_MIN = 3  # small fixes take a row of their own from this many
+STRIP_MAX = 16  # pages in a row of the summary's page strip
+TAG_NAMES = {"grammar": "Grammar", "wording": "Wording", "clarity": "Clarity", "logic": "Logic & claims",
+             "evidence": "Evidence & citations", "structure": "Structure", "figures": "Figures & tables",
+             "math": "Math & notation", "format": "Format & LaTeX", "praise": "Well done"}  # the app's built-in
+# catalogue (Tags.swift), for a tag the app sent no name for
 DIGIT_INK = 0.18  # of a line number's box height: no ink above its digits, nor below them (digits have no descenders)
 
 
@@ -790,14 +799,16 @@ def _change_marks(page, mine, dx, x0, x1, gap):
 class _Flow:
     """Summary pages inserted before the paper, filled from the top; a new page when the next block does not fit."""
 
-    def __init__(self, doc, size):
-        self.doc, self.size, self.count, self.links = doc, size, 0, []
+    def __init__(self, doc, size, running=""):
+        self.doc, self.size, self.count, self.links, self.running = doc, size, 0, [], running
         self.L, self.R = 48, size[0] - 48
         self.new_page()
 
     def new_page(self):
         self.page = self.doc.new_page(pno=self.count, width=self.size[0], height=self.size[1])
         self.count += 1
+        if self.count > 1 and self.running:  # a later page says what it is
+            _put(self.page, self.L, 30, _fit(self.running, self.R - self.L, 8), 8, "r", MUTED)
         self.y = 48
 
     def need(self, h):
@@ -867,74 +878,6 @@ def _place_views(cs, n, data):
                     "anchor", "anchor_state", "confidence", "method", "context")})}))
             out.append(dict(v, _place={"first": i == 0, "line": line}))
     return out
-
-
-def _comment_row(f, c, n, label=None):
-    """A summary row: group label, chip (a link to the comment on its page), page and the text's first line, cut with
-    "…": the margin box beside the words holds it whole (design/comments/PLAN.md P0.1, the summary half). A comment
-    with no place on the page (Not found) keeps its whole text and its last known quote here, the only place it is
-    shown; a note longer than the page goes on at the top of the next, never cut."""
-    status, target = _status(c, n), _target(c, n)
-    where = _where(c, n).replace("location not found", "—")
-    X1 = max(f.L + 160, f.L + 126 + _width(where, 8.5) + 8)  # "p.1 ⇄ p.4" pushes the text along
-    main, muted = _texts(c, n)
-    heading = _wrap(label, 74, 9, "b") if label else []  # "No change needed (k)": on two lines, clear of the chip
-    lost = sum(1 for _, r in comments.places(c, n) if not (r["anchor"] and r["anchor"]["page"] is not None
-                                                           and r["anchor"]["rects"])) if c.get("link") else 0
-    if target and lost:  # one of several places not found this round: said first
-        main = "({} not found in Round {}) {}".format("1 place" if lost == 1 else "{} places".format(lost), n,
-                                                      main or "")
-    if target:
-        text = " ".join((main or "").split())
-        line = (_fit(text, f.R - X1, 9.0), 9.0, "r", INK) if text else \
-            (_fit("“{}”".format(_quote(c, n, 200)), f.R - X1, 8.5), 8.5, "i", MUTED)
-        lines = [line + (11,)]
-    else:
-        lines = [(t, 9.0, "r", INK, 11) for t in (_wrap(main, f.R - X1, 9.0) if main else [])]
-        lines += [(t, 8.0, "r", MUTED, 9.8) for t in (_wrap(muted, f.R - X1, 8.0) if muted else [])]
-        quote = _quote(c, n, 200)
-        where = "location not found in Round {}".format(n)
-        lines += [(t, 8.5, "i", MUTED, 10.5) for t in _wrap(("“{}” ({})".format(quote, where) if quote
-                                                            else "({})".format(where)), f.R - X1, 8.5, "i")]
-    f.need(min(max(sum(e[4] for e in lines), 11 * len(heading)) + 2, f.size[1] - 96) + 6)
-    y = f.y + 9
-    for k, t in enumerate(heading):
-        _put(f.page, f.L, y + 11 * k, t, 9, "b", STATUS[status][2])
-    f.chip(f.L + 78, y, c["id"], STATUS[status], target=target)
-    _put(f.page, f.L + 126, y, where, 8.5, "r", MUTED)
-    bottom = y + 11 * len(heading)
-    for k, (t, size, style, ink, step) in enumerate(lines):
-        if k and lines[k - 1][1] != size:
-            y += 2  # the muted text a little apart
-        if y > f.size[1] - 40:
-            f.new_page()
-            y, bottom = f.y + 9, 0
-        _put(f.page, X1, y, t, size, style, ink)
-        y += step
-    f.y = max(y, bottom, f.y + 20) - 9 + 2 + 6
-
-
-def _overall_row(f, c, n):
-    """An Overall row: the status word, the chip, and the comment's text whole (no place holds it elsewhere); a note
-    longer than the page goes on at the top of the next."""
-    status = _status(c, n)
-    X1 = f.L + 126
-    main, muted = _texts(c, n)
-    lines = [(line, 9.0, INK, 11) for line in (_wrap(main, f.R - X1, 9.0) if main else [])]
-    lines += [(line, 8.0, MUTED, 9.8) for line in (_wrap(muted, f.R - X1, 8.0) if muted else [])]
-    f.need(min(sum(e[3] for e in lines) + 2, f.size[1] - 96) + 6)
-    y = f.y + 9
-    _put(f.page, f.L, y, "new" if status == "new" else LABELS[status], 9, "b", STATUS[status][2])
-    f.chip(f.L + 78, y, c["id"], STATUS[status], glyph=_sign(status))
-    for k, (line, size, ink, step) in enumerate(lines):
-        if k and lines[k - 1][1] != size:
-            y += 2  # the muted text a little apart
-        if y > f.size[1] - 40:
-            f.new_page()
-            y = f.y + 9
-        _put(f.page, X1, y, line, size, "r", ink)
-        y += step
-    f.y = max(y, f.y + 11 + 9) - 9 + 2 + 6
 
 
 def _check_row(f, v, label=None):
@@ -1018,10 +961,6 @@ def _sign(status):
     return status or "open"
 
 
-def _names(ids):
-    return ids[0] if len(ids) == 1 else ", ".join(ids[:-1]) + " and " + ids[-1]
-
-
 def _reply_rule(items):
     """REPLY_RULE, naming a check item's id too when check items go out (items: their views)."""
     if not items:
@@ -1040,181 +979,426 @@ def _check_target(v):
     return (p["page"], p["rects"][0][1]) if p else None
 
 
-def _summary(doc, paper, lg, n, changes, size, asked, read=(), sent=None):
-    """Draw the summary pages at the front of doc; returns them as a _Flow (count and chip links). changes: in the
-    paper's order; asked: comments.commenters; sent: the check items that go out (check_items.outgoing) or None."""
+def _praise(c):
+    """A comment whose only tag is Well done: never a thing to do."""
+    return tags.ids(c) == [tags.PRAISE]
+
+
+def _small(c):
+    """A small fix: tagged, and only with SMALL tags."""
+    ids = tags.ids(c)
+    return bool(ids) and set(ids) <= set(SMALL)
+
+
+def _tag_name(tid, names):
+    return (names or {}).get(tid) or TAG_NAMES.get(tid) or tid
+
+
+def _section(data, page, x, y):
+    """(the numbered heading over the point (page, x, y), "§4.1" or "", the top-level section it is in, "§4
+    Experiments", or "Title and abstract" before the first heading, or None without prose.json) from prose.json's
+    blocks: the text block whose part holds the point, else the last one before it in reading order (on a two-column
+    page the left column before the right; a block across both columns counts as the left)."""
+    if not data:
+        return "", None
+    blocks = data.get("blocks") or []
+    parts = [(i, pg, r) for i, b in enumerate(blocks) if b.get("kind") in ("paragraph", "item", "heading")
+             for pg, r in b.get("parts") or ()]  # a float prints away from its source
+    hit = next((i for i, pg, r in parts if pg == page and r[0] - 2 <= x <= r[2] + 2 and r[1] - 2 <= y <= r[3] + 2),
+               None)
+    if hit is None:
+        here = [r for _, pg, r in parts if pg == page]
+        mid = (min(r[0] for r in here) + max(r[2] for r in here)) / 2 if here else 0
+
+        def col(x0):
+            return 1 if here and x0 > mid else 0
+        at = (page, col(x), y + 2)
+        before = [((pg, col(r[0]) if pg == page else 0, r[1]), i) for i, pg, r in parts
+                  if (pg, col(r[0]) if pg == page else 0, r[1]) <= at]
+        hit = max(before)[1] if before else None
+    i = hit
+    if i is None:
+        return "", None
+    heads = [j for j in range(i, -1, -1) if blocks[j].get("kind") == "heading"]
+    if not heads:
+        return "", "Title and abstract"
+    numbered = next((j for j in heads if blocks[j].get("number")), None)
+    top = min(blocks[j].get("level") or 9 for j in heads)
+    j = next(j for j in heads if (blocks[j].get("level") or 9) == top)
+    title = " ".join((blocks[j].get("text") or "").split())
+    number = blocks[j].get("number")
+    return ("§" + blocks[numbered]["number"] if numbered is not None else "",
+            "§{} {}".format(number, title) if number else title or "Untitled section")
+
+
+def _at(c, n):
+    """(page, x, y) of a comment's first place found in round n (in reading order), or None."""
+    found = _found(c, n)
+    return (found[0]["page"], found[0]["rects"][0][0], found[0]["rects"][0][1]) if found else None
+
+
+def _cut(text, width, size, style="r"):
+    """text cut at a word with … to fit width (a word longer than width is cut where it must)."""
+    if _width(text, size, style) <= width:
+        return text
+    words = text.split(" ")
+    while len(words) > 1 and _width(" ".join(words) + "…", size, style) > width:
+        words.pop()
+    return _fit(" ".join(words).rstrip(" ,;:·") + "…", width, size, style)
+
+
+def _put_rule(f, text, size=8.5):
+    """The reply rule in muted lines, the note's form (NOTE_EXAMPLE) in a typewriter face, never broken."""
+    code = NOTE_EXAMPLE.replace(" ", "\xa0")
+    lines = _wrap(text.replace(NOTE_EXAMPLE, code).replace("% A", "%\xa0A"), f.R - f.L - 20, size)
+    f.need(11 * len(lines) + 4)
+    for line in lines:
+        x = f.L
+        for k, part in enumerate(line.split(code)):
+            if k:
+                tw = pymupdf.TextWriter(f.page.rect)
+                tw.append((x, f.y), NOTE_EXAMPLE, font=pymupdf.Font("cour"), fontsize=size)
+                x = tw.last_point.x + 0.5
+                tw.write_text(f.page, color=_rgb(INK))
+            x = _put(f.page, x, f.y, part.replace("\xa0", " "), size, "r", MUTED)
+        f.y += 11
+
+
+def _summary(doc, paper, lg, n, changes, size, asked, read=(), sent=None, data=None, clean=None, names=None):
+    """Draw the summary pages at the front of doc; returns them as a _Flow (count and chip links). A to-do sheet
+    (design/summary-page): what is to do and where, each note once (the margin holds it, so a row shows its first
+    line; the summary holds an overall comment's and a lost comment's whole). changes: in the paper's order; asked:
+    comments.commenters; read: the changes read; sent: the check items that go out (check_items.outgoing) or None;
+    data: the round's prose.json (sections); clean: the build PDF as built (the page strip); names: tag names {id}."""
     rnd = next(r for r in lg["rounds"] if r["n"] == n)
-    revived, reopened, still, new, verified, wontfix = _groups(lg, n)
     today = datetime.date.today().isoformat()
-    f = _Flow(doc, size)
-    L, R, p = f.L, f.R, f.page
-    _put(p, L, 32, "Paperole · Round {} review · {}".format(n, today), 8, "r", MUTED)
-    _put(p, L, 60, "Review of Round {}".format(n), 19, "b")
-    y = 78
-    for line in _wrap(lg["paper"]["title"], R - L, 11):
-        _put(p, L, y, line, 11)
-        y += 13.5
-    meta = ("Student: {} · source received {} · reviewed {} · page numbers are the paper's (the summary comes before "
-            "its page 1)").format(lg["paper"]["student"], rnd["created"][:10], today)
-    for line in _wrap(meta, R - L, 8.5):
-        _put(p, L, y + 1.5, line, 8.5, "r", MUTED)
-        y += 11
+    cs = sorted((c for c in lg["comments"] if str(n) in c["rounds"]), key=lambda c: ledger.id_key(c["id"]))
+    todo = [c for c in cs if _status(c, n) in ("new", None, "reopened", "revived") and not _praise(c)]
+    closed = [c for c in cs if _status(c, n) in ("verified", "wontfix") or _praise(c)]  # done: nothing to do
+    again = [c for c in todo if _status(c, n) != "new"]
+    whole = sorted((c for c in todo if _overall(c)), key=lambda c: (_status(c, n) == "new", ledger.id_key(c["id"])))
+    placed = [c for c in todo if not _overall(c)]
+    f = _Flow(doc, size, "Paperole · Review of Round {} · {}".format(n, lg["paper"]["title"]))
+    L, R = f.L, f.R
 
-    # comments on the whole paper, first and whole (design/comments/PLAN.md §3 S), then only here
-    overall = [c for c in revived + reopened + still + new + wontfix + verified if _overall(c)]
-    revived, reopened, still, new, verified, wontfix = ([c for c in group if not _overall(c)]
-                                                        for group in (revived, reopened, still, new, verified, wontfix))
-    if overall:
-        f.y = y - 4
-        f.section("Overall")
-        for c in overall:
-            _overall_row(f, c, n)
-        y, p = f.y + 6, f.page
+    # --- who and what ---------------------------------------------------------------------------------------------
+    _put(f.page, L, 34, "Paperole · Review of Round {} · {}".format(n, today), 8, "r", MUTED)
+    y = 60
+    for line in _wrap(lg["paper"]["title"], R - L, 15, "b"):
+        _put(f.page, L, y, line, 15, "b")
+        y += 18
+    _put(f.page, L, y + 1, "{} · draft received {}".format(lg["paper"]["student"], rnd["created"][:10]), 9, "r", MUTED)
+    y += 30
 
-    # how to reply, and what to do next round
-    todo = sorted(revived + reopened + still + new + [c for c in overall if _status(c, n) in ("revived", "reopened",
-                                                                                              None, "new")],
-                  key=lambda c: ledger.id_key(c["id"]))
-    items = sent["items"] if sent else []
-    rule = _wrap(_reply_rule(items).replace(NOTE_EXAMPLE, NOTE_EXAMPLE.replace(" ", "\xa0")).replace("% A", "%\xa0A"),
-                 R - L - 106, 9.5)
-    # one line of chips, or with check items going out a line of comments and one of checks (each when it has any),
-    # each after its label: [(label or None, [(chip, its sign, colours, target, radius)])]
-    lines = [(None if not items else "Comments ({}):".format(len(todo)),
-              [(c["id"], _sign(_status(c, n)), STATUS[_status(c, n)], _target(c, n), 0.3) for c in todo])]
-    if items:
-        lines = [ln for ln in lines if ln[1]] + [("Automatic checks ({}):".format(len(items)),
-                                                  [(v["id"], CHECK_SIGNS[v["state"]], CHECK_CHIP, _check_target(v),
-                                                    None) for v in items])]
-    chips, labels, cy = [], [], 0
-    for k, (label, row) in enumerate(lines):
-        if k:
-            cy += 14
-        labels.append((cy, label))
-        x0 = L + 130 + (_width(label, 9.5) + 6 if label else 0)
-        cx = x0
-        for chip in row:
-            w = _glyph_w(chip[1], 8) + _width(chip[0], 8, "b") + 13
-            if cx + w > R - 10:
-                cx, cy = x0, cy + 14
-            chips.append((cx, cy, chip))
-            cx += w
-    top = y + 6
-    box_h = 12 * len(rule) + 41 + cy
-    p.draw_rect(pymupdf.Rect(L, top, R, top + box_h), color=_rgb("#D5DDEA"), fill=_rgb("#F5F8FC"), width=0.6)
-    _put(p, L + 10, top + 15, "How to reply", 9.5, "b")
-    for k, line in enumerate(rule):
-        _put(p, L + 96, top + 15 + 12 * k, line, 9.5)
-    ty = top + 15 + 12 * len(rule) + 6
-    _put(p, L + 10, ty, "To do for Round {} ({})".format(n + 1, len(todo)) if not items else
-         "To do for Round {}".format(n + 1), 9.5, "b")
-    for ly, label in labels:
-        if label:
-            _put(p, L + 130, ty + ly, label, 9.5)
-    for cx, cy, (cid, sign, colours, target, radius) in chips:
-        f.chip(cx, ty + cy, cid, colours, target=target, glyph=sign, radius=radius)
-    if not chips:
-        _put(p, L + 130, ty, "nothing", 9.5)
-    _put(p, L + 10, ty + cy + 15, "Next round: send the full LaTeX source (zip) again.", 9.5)
-    f.y = top + box_h + 22
+    # --- how much is to do, and every comment's fate as a bar: closed, again (carried and open), new ---------------
+    items = sent["items"] if sent else []  # the automatic checks that go out are to do too
+    x = _put(f.page, L, y + 14, str(len(todo) + len(items)), 30, "b", VERMILION)
+    _put(f.page, x + 6, y + 3, "to do", 9.5, "b")
+    total = len(todo) + len(closed)
+    of = (["{} comment{}".format(total, "" if total == 1 else "s")] if total or not items else []) \
+        + (["{} check{}".format(len(items), "" if len(items) == 1 else "s")] if items else [])
+    end = _put(f.page, x + 6, y + 14, "of " + " + ".join(of), 9.5, "r", MUTED)
+    bx0, by = max(L + 120, end + 18), y - 4
+    unit = (R - bx0 - 4) / max(total, 1)
+    xs, free = bx0, bx0  # free: where the next label may start, clear of the one before
+    for k, (count, label) in enumerate(((len(closed), "closed"), (len(again), "again"),
+                                        (len(todo) - len(again), "new"))):
+        if not count:
+            continue
+        w = count * unit
+        if k == 2:  # new comments after a gap: the last round did not have them
+            xs += 4
+            f.page.draw_rect(pymupdf.Rect(xs, by, xs + w, by + 7), color=_rgb(INK), fill=None, width=0.8)
+        else:
+            f.page.draw_rect(pymupdf.Rect(xs, by, xs + w, by + 7), color=None, fill=_rgb("#D4D4D4" if k == 0 else INK),
+                             width=0)
+        free = _put(f.page, max(xs, free), by + 19, "{} {}".format(count, label), 8.5, "b" if k else "r",
+                    INK if k else MUTED) + 12
+        xs += w
+    y += 30
 
-    # key of the statuses in this round, in the order of the summary's groups: each its sign and word, open ones black
-    # and closed ones grey
-    used = {_status(c, n) for c in revived + reopened + still + new + verified + wontfix + overall}
-    x = _put(p, L, f.y, "Key", 8, "b") + 9
-    for status in ("reopened", None, "new"):
-        if status in used:
-            x = _glyph(p, _sign(status), x, f.y, 8, STATUS[status][2])
-            x = _put(p, x, f.y, "new comment" if status == "new" else LABELS[status], 8) + 12
-    if "wontfix" in used:
-        x = _put(p, x, f.y, "– " + LABELS["wontfix"], 8, "r", STATUS["wontfix"][2]) + 12
-    if "verified" in used:
-        x = _glyph(p, "verified", x, f.y, 8, STATUS["verified"][2])
-        x = _put(p, x, f.y, LABELS["verified"], 8, "r", STATUS["verified"][2]) + 12
-    if items:  # the check chip, square and slate
-        if x + _width(_first(items), 8, "b") + 12 + _width(CHECK_KEY, 8) > R:  # on a line of its own
-            f.y += 13
-            x = L + _width("Key", 8, "b") + 9
-        x = f.chip(x, f.y, _first(items), CHECK_CHIP, radius=None) + 4
-        x = _put(p, x, f.y, CHECK_KEY, 8) + 12
-    if n > 1:
-        if x + 32 + _width("text your change since Round {} old deleted".format(n - 1), 8) > R:  # on a line of its own
-            f.y += 13
-            x = L + _width("Key", 8, "b") + 9
-        p.draw_rect(pymupdf.Rect(x, f.y - 8, x + 1.7, f.y + 1.5), color=None, fill=_rgb(HIST), width=0)
-        p.draw_rect(pymupdf.Rect(x + 5, f.y - 7, x + 9 + _width("text", 8), f.y + 1.8), color=None,
-                    fill=_rgb(HIST_FILL), width=0)
-        x = _put(p, x + 7, f.y, "text", 8) + 6
-        x = _put(p, x, f.y, "your change since Round {}".format(n - 1), 8) + 12
-        _cross(p, x + 2, f.y - 2.5, HIST)
-        x1 = _put(p, x + 7, f.y, "old", 8, "r", HIST_TEXT)
-        p.draw_line((x + 7, f.y - 2.4), (x1, f.y - 2.4), color=_rgb(HIST_TEXT), width=0.6)
-        x = _put(p, x1 + 4, f.y, "deleted", 8) + 12
-    f.y += 13
-    _put(p, L, f.y, "In the paper, each comment's mark keeps the colour I chose for it; its status is on its ID chip "
-                    "and margin box.", 8, "r", MUTED)
-    f.y += 4
+    # the round's main issues: the tags of what is to do (the advisor, 2026-11-05), when they say something
+    counts = {}
+    for c in todo:
+        for t in tags.ids(c):
+            if t != tags.PRAISE:
+                counts[t] = counts.get(t, 0) + 1
+    if len(todo) >= 6 and counts and max(counts.values()) >= 2:
+        x = _put(f.page, L, y + 10, "Main issues", 8.5, "b") + 12
+        for k, (t, m) in enumerate(sorted(counts.items(), key=lambda e: (-e[1], e[0]))[:5]):
+            if k:
+                x = _put(f.page, x + 6, y + 10, "·", 8.5, "r", FAINT) + 6
+            item = _tag_name(t, names)
+            if x + _width(item + " 00", 8.5) > R:
+                break
+            x = _put(f.page, x, y + 10, item, 8.5)
+            x = _put(f.page, x + 3, y + 10, str(m), 8.5, "b", MUTED)
+        y += 12
 
-    carried = revived + reopened + still + wontfix + verified
-    if carried:
-        f.section("Earlier comments ({})".format(len(carried)))
-        noted = [c for c in verified if c["rounds"][str(n)]["verdict_note"]]  # a row each: the note says something
-        plain = [c for c in verified if c not in noted]
-        for group, name, total in ((revived, "Reopened", len(revived)), (reopened, "Follow-ups", len(reopened)),
-                                   (still, "Still open", len(still)),
-                                   (wontfix, "No change needed", len(wontfix)), (noted, "Resolved", len(verified))):
-            for k, c in enumerate(group):
-                _comment_row(f, c, n, "{} ({})".format(name, total) if k == 0 else None)
-            if group:
-                f.y += 5
-        if plain:
-            f.need(20)
-            yb, x = f.y + 9, L + 78
-            if not noted:
-                _put(f.page, L, yb, "Resolved ({})".format(len(verified)), 9, "b", STATUS["verified"][2])
-            for c in plain + [None]:  # None: the closing words
-                w = _glyph_w("verified", 8) + _width(c["id"], 8, "b") + 14 if c else \
-                    _width("Closed. No action needed.", 9) + 12
-                if x + w > R:
-                    f.y = yb + 6
-                    f.need(15)
-                    yb, x = f.y + 9, L + 78
-                if c:
-                    x = f.chip(x, yb, c["id"], STATUS["verified"], target=_target(c, n), glyph="verified") + 6
-            _put(f.page, x + 6, yb, "Closed. No action needed.", 9, "r", MUTED)
-            f.y = yb + 10
-    if new:
-        f.section("New comments in this round ({})".format(len(new)))
-        for c in new:
-            _comment_row(f, c, n)
+    # --- the advisor on the whole paper, whole: no margin holds these (design/comments/PLAN.md §3 S) ----------------
+    f.y = y + 4
+    if whole:
+        f.section("Overall ({})".format(len(whole)))
+        f.y -= 2
+        for c in whole:
+            status = _status(c, n)
+            main, muted = _texts(c, n)
+            lines = [(t, 10, INK, 13.5) for t in _wrap(main, R - L - 70, 10)]
+            lines += [(t, 8.5, MUTED, 11) for t in _wrap(muted, R - L - 70, 8.5)]
+            f.need(min(sum(e[3] for e in lines), f.size[1] - 96) + 10)
+            yb = top = f.y + 11
+            f.chip(L + 8, yb, c["id"], STATUS[status], glyph=_sign(status))
+            _put(f.page, L + 8, yb + 13, "new" if status == "new" else LABELS[status], 8, "r", MUTED)
+            for k, (t, sz, ink, step) in enumerate(lines):
+                if k and lines[k - 1][1] != sz:
+                    yb += 3
+                if yb > f.size[1] - 40:  # a note longer than the page goes on at the top of the next
+                    f.page.draw_rect(pymupdf.Rect(L, top - 9, L + 2.4, yb - 11), color=None,
+                                     fill=_rgb(comments.PALETTE[comments.color(c)][0]), width=0)
+                    f.new_page()
+                    yb = top = f.y + 11
+                _put(f.page, L + 70, yb, t, sz, "r", ink)
+                yb += step
+            f.page.draw_rect(pymupdf.Rect(L, top - 9, L + 2.4, max(yb - 12, top + 16)), color=None,
+                             fill=_rgb(comments.PALETTE[comments.color(c)][0]), width=0)
+            f.y = max(yb, top + 21) - 11 + 12
+        f.y -= 8
+
+    # --- the page strip: where the work is; a page links to itself ------------------------------------------------
+    if clean is not None and clean.page_count:
+        _strip(f, clean, cs, todo, n)
+
+    # --- what is to do on the pages: a row each, or past ROWS by section --------------------------------------------
+    f.section("On the pages ({})".format(len(placed)) if whole else "To do for Round {}".format(n + 1))
+    f.y -= 6
+    smalls = [c for c in placed if _small(c)]
+    smalls = smalls if len(smalls) >= SMALL_MIN else []
+    singles = [c for c in placed if c not in smalls]
+    grouped = len(singles) + bool(smalls) > ROWS
+    rows = [c for c in singles if not grouped or _status(c, n) != "new"]  # grouped: what came back, a row each
+    pw = max([_width(_where(c, n).replace("location not found", "—"), 8.5, "b") for c in rows] + [20])
+
+    def row(c):
+        """A comment on a line: its colour, chip, status, page(s), section, the first line of its note, its tags. A
+        comment with no place found keeps its whole note here, the only place it is shown."""
+        status, target = _status(c, n), _target(c, n)
+        f.need(18)
+        yb = f.y + 12
+        f.page.draw_rect(pymupdf.Rect(L, yb - 8.5, L + 2.4, yb + 2.5), color=None,
+                         fill=_rgb(comments.PALETTE[comments.color(c)][0]), width=0)
+        f.chip(L + 8, yb, c["id"], STATUS[status], target=target, glyph=_sign(status))
+        _put(f.page, L + 64, yb, "new" if status == "new" else LABELS[status], 8, "r", MUTED)
+        x = L + 122
+        _put(f.page, x, yb, _where(c, n).replace("location not found", "—"), 8.5, "b")
+        x += pw + 8
+        if data:
+            _put(f.page, x, yb, _section(data, *_at(c, n))[0] if target else "", 8, "r", MUTED)
+            x += 34
+        ids = tags.ids(c)
+        label = _fit(_tag_name(ids[0], names), 110, 8) + (" +{}".format(len(ids) - 1) if len(ids) > 1 else "") \
+            if ids else ""
+        tw = _width(label, 8) if label else 0
+        main, muted = _texts(c, n)
+        lost = sum(1 for _, r in comments.places(c, n) if not (r["anchor"] and r["anchor"]["page"] is not None
+                                                               and r["anchor"]["rects"])) if c.get("link") else 0
+        if target and lost:  # one of several places not found this round: said first
+            main = "({} not found in Round {}) {}".format("1 place" if lost == 1 else "{} places".format(lost), n,
+                                                          main or "")
+        width = R - x - (tw + 12 if label else 0)
+        if target:
+            text = " ".join((main or "").split())
+            if text:
+                _put(f.page, x, yb, _cut(text, width, 9), 9)
+            else:  # a mark without a note: the words it marks
+                _put(f.page, x, yb, _cut("“{}”".format(_quote(c, n, 200)), width, 8.5, "i"), 8.5, "i", MUTED)
+            if label:
+                _put(f.page, R - tw, yb, label, 8, "r", MUTED)
+            f.y += 18
+        else:
+            lines = [(t, 9.0, "r", INK, 11) for t in (_wrap(main, width, 9.0) if main else [])]
+            lines += [(t, 8.0, "r", MUTED, 9.8) for t in (_wrap(muted, width, 8.0) if muted else [])]
+            quote, where = _quote(c, n, 200), "location not found in Round {}".format(n)
+            lines += [(t, 8.5, "i", MUTED, 10.5) for t in _wrap("“{}” ({})".format(quote, where) if quote
+                                                               else "({})".format(where), width, 8.5, "i")]
+            if label:
+                _put(f.page, R - tw, yb, label, 8, "r", MUTED)
+            for k, (t, sz, style, ink, step) in enumerate(lines):
+                if k and lines[k - 1][1] != sz:
+                    yb += 2
+                if yb > f.size[1] - 40:
+                    f.new_page()
+                    yb = f.y + 12
+                _put(f.page, x, yb, t, sz, style, ink)
+                yb += step
+            f.y = max(yb, f.y + 30) - 12 + 6
+        f.page.draw_line((L + 8, f.y + 1), (R, f.y + 1), color=_rgb(HAIR), width=0.5)
+
+    def place(c):
+        return _target(c, n) or (10 ** 6, 0)
+
+    def room(group, x0):
+        """The height a group's chips take from x0."""
+        return 15 * (1 + sum(_width(c["id"], 8, "b") + 22 for c in group) // max(R - x0, 1)) + 8
+
+    def chips(group, x0):
+        """The group's chips from x0 to R in the paper's order, wrapped, each after a bar of its mark's colour; the
+        status sign only when some are not new. Returns the baseline of the last line."""
+        signs = any(_status(c, n) != "new" for c in group)
+        f.need(room(group, x0))
+        yb, x = f.y + 12, x0
+        for c in sorted(group, key=place):
+            status = _status(c, n)
+            w = _width(c["id"], 8, "b") + 14 + (_glyph_w(_sign(status), 8) if signs else 0)
+            if x + w > R:
+                yb, x = yb + 15, x0
+                if yb > f.size[1] - 40:
+                    f.new_page()
+                    yb = f.y + 12
+            f.page.draw_rect(pymupdf.Rect(x, yb - 8.5, x + 2, yb + 2.5), color=None,
+                             fill=_rgb(comments.PALETTE[comments.color(c)][0]), width=0)
+            x = f.chip(x + 4, yb, c["id"], STATUS[status], target=_target(c, n),
+                       glyph=_sign(status) if signs else None) + 6
+        return yb
+
+    def label(lines, yb):
+        """A group's name (bold) and its facts (muted) in the left column; returns the last baseline."""
+        for k, text in enumerate(lines):
+            for t in _wrap(text, 140, 9 if k == 0 else 8, "b" if k == 0 else "r"):
+                _put(f.page, L, yb, t, 9 if k == 0 else 8, "b" if k == 0 else "r", INK if k == 0 else MUTED)
+                yb += 11
+        return yb - 11
+
+    def pages_of(group):
+        ps = sorted({_target(c, n)[0] + 1 for c in group if _target(c, n)})
+        return "" if not ps else "p.{}".format(ps[0]) if len(ps) == 1 else "pp.{}–{}".format(ps[0], ps[-1])
+
+    def facts(group):
+        where = pages_of(group)
+        return "{}{}".format(len(group), " on " + where if where else "")
+
+    def tag_line(group):
+        counts = {}
+        for c in group:
+            for t in tags.ids(c):
+                counts[t] = counts.get(t, 0) + 1
+        return " · ".join("{} {}".format(_tag_name(t, names), m)
+                          for t, m in sorted(counts.items(), key=lambda e: (-e[1], e[0]))[:2])
+
+    XC = L + 150
+    if not placed:
+        _put(f.page, L, f.y + 12, "Nothing.", 9, "r", MUTED)
+        f.y += 18
+    if not grouped:
+        for c in sorted(singles, key=place):
+            row(c)
+    else:
+        if rows:
+            _put(f.page, L, f.y + 12, "Again", 9, "b")
+            f.y += 14
+            for c in sorted(rows, key=place):
+                row(c)
+            f.y += 8
+        secs = {}
+        for c in singles:
+            if c not in rows:
+                t = _target(c, n)
+                key = _section(data, *_at(c, n))[1] if t else None
+                secs.setdefault(key or ("p.{}".format(t[0] + 1) if t else "Location not found"), []).append(c)
+        for key, group in sorted(secs.items(), key=lambda e: min(place(c) for c in e[1])):
+            f.need(max(room(group, XC), 48))  # chips and label on one page
+            top = f.y
+            end = chips(group, XC)
+            low = label([key, facts(group)] + ([tag_line(group)] if len(group) >= 5 else []), top + 12)
+            f.y = max(end, low) + 8
+            f.page.draw_line((L, f.y + 1), (R, f.y + 1), color=_rgb(HAIR), width=0.5)
+    if smalls:
+        f.need(max(room(smalls, XC if grouped else L + 122), 48 if grouped else 20))
+        top = f.y
+        if grouped:
+            end = chips(smalls, XC)
+            low = label(["Small fixes", facts(smalls),
+                         ", ".join(_tag_name(t, names) for t in SMALL).capitalize()], top + 12)
+        else:
+            end = chips(smalls, L + 122)
+            low = label(["Small fixes · {}".format(len(smalls))], top + 12)
+        f.y = max(end, low) + 8
+    f.y += 14
+    _put_rule(f, _reply_rule(items) + " Next round, send the full LaTeX source (zip) again.")
     if sent:
         _check_section(f, n, sent)
+
+    # --- done: chips (the margin holds each note); a comment that no margin holds (on the whole paper, or found on no
+    # page) keeps its words; the advisor's praise in their words ---------------------------------------------------
+    if closed:
+        f.section("Closed ({})".format(len(closed)))
+        f.y -= 4
+        for name, group in (("Resolved", [c for c in closed if not _praise(c) and _status(c, n) == "verified"]),
+                            ("No change needed", [c for c in closed if not _praise(c) and _status(c, n) == "wontfix"]),
+                            ("Well done", sorted((c for c in closed if _praise(c)), key=place))):
+            if not group:
+                continue
+            f.need(20)
+            yb = f.y + 10
+            x = _put(f.page, L, yb, name, 8.5, "b", STATUS["verified"][2])
+            _put(f.page, x + 4, yb, str(len(group)), 8.5, "r", MUTED)
+            chipped = [c for c in group if _target(c, n)] if name != "Well done" else []
+            x = L + 108
+            for c in chipped:
+                verdict = _status(c, n)
+                w = _glyph_w(_sign(verdict), 8) + _width(c["id"], 8, "b") + 13
+                if x + w > R:
+                    f.y += 16
+                    f.need(20)
+                    yb, x = f.y + 10, L + 108
+                x = f.chip(x, yb, c["id"], STATUS[verdict], target=_target(c, n), glyph=_sign(verdict)) + 5
+            if chipped:
+                f.y += 17
+            for c in (c for c in group if c not in chipped):
+                f.need(20)
+                yb = f.y + 10
+                main, muted = _texts(c, n)
+                pno = _target(c, n)
+                if pno:  # praise on the page: its page (a link) and its words, cut (the margin holds them)
+                    x = _put(f.page, L + 108, yb, "p.{}".format(pno[0] + 1), 8.5, "b")
+                    f.links.append((f.count - 1, pymupdf.Rect(L + 108, yb - 9, x, yb + 3), pno))
+                    text = " ".join((main or "").split()) or _quote(c, n, 200)
+                    _put(f.page, x + 8, yb, _cut("“{}”".format(text), R - x - 8, 8.5, "i"), 8.5, "i", MUTED)
+                    f.y += 17
+                    continue
+                status = _status(c, n)
+                f.chip(L + 108, yb, c["id"], STATUS[status if status in STATUS else "verified"],
+                       glyph=_sign(status) if status in ("verified", "wontfix") else None)
+                if not _overall(c):
+                    muted = " · ".join(t for t in (muted, "location not found in Round {}".format(n)) if t)
+                lines = [(t, 9.0, INK, 11) for t in (_wrap(main, R - L - 170, 9.0) if main else [])]
+                lines += [(t, 8.0, MUTED, 9.8) for t in (_wrap(muted, R - L - 170, 8.0) if muted else [])]
+                for k, (t, sz, ink, step) in enumerate(lines):
+                    if k and lines[k - 1][1] != sz:
+                        yb += 2
+                    if yb > f.size[1] - 40:
+                        f.new_page()
+                        yb = f.y + 10
+                    _put(f.page, L + 170, yb, t, sz, "r", ink)
+                    yb += step
+                f.y = max(yb, f.y + 27) - 10 + 6
+
+    # --- the student's changes no comment asked for: what the advisor did with each ---------------------------------
     unrequested = [ch for ch in changes if not ch["attached_to"]]
     if unrequested:
-        # what the advisor did with each: checked it, marked its paragraphs read (read), or wrote a comment on it
-        # this round (asked about it)
         checked = set(rnd.get("checked", [])) | set(read)
-        about = [ch for ch in unrequested if asked.get(ch["id"])]
-        read = [ch for ch in unrequested if ch["id"] in checked or asked.get(ch["id"])]
-        said = "I have read all of these." if len(read) == len(unrequested) else \
-            "I have read {} of them: those marked read{}.".format(len(read), " or asked about" if about else "") \
-            if read else ""
-        if about:
-            ids = sorted({k for ch in about for k in asked[ch["id"]]}, key=ledger.id_key)
-            said += " {} {} about {} of them.".format(_names(ids), "asks" if len(ids) == 1 else "ask", len(about))
         f.section("Your changes no comment asked for ({})".format(len(unrequested)))
-        for line in _wrap(said.strip(), R - L, 8.5):
-            _put(f.page, L, f.y + 2, line, 8.5, "r", MUTED)
-            f.y += 12
+        f.y -= 4
         for ch in unrequested:
-            lines = _wrap(_change_text(ch, 90), R - (L + 126) - 150, 8.5)
-            f.need(13.5 * len(lines))
-            yb = f.y + 9
-            f.chip(L, yb, "your change", (HIST, STATUS["wontfix"][1], HIST_TEXT), 7.5)
-            _put(f.page, L + 78, yb, "p.{}".format(ch["page"] + 1) if ch["page"] is not None else "—", 8.5, "b")
+            ids = asked.get(ch["id"], [])
+            right = sum(_width(k, 8, "b") + 11 for k in ids) + (_width("asks about this", 8) + 4 if ids else 0) \
+                if ids else (_glyph_w("verified", 8) + _width("read", 8, "b") if ch["id"] in checked else 0)
+            lines = _wrap(_change_text(ch, 90), R - (L + 40) - right - 12, 8.5)
+            f.need(11 * len(lines) + 4)
+            yb = f.y + 10
+            _put(f.page, L, yb, "p.{}".format(ch["page"] + 1) if ch["page"] is not None else "—", 8.5, "b")
             for k, line in enumerate(lines):
-                _put(f.page, L + 126, yb + 11 * k, line, 8.5)
-            x, ids = R - 140, asked.get(ch["id"], [])
+                _put(f.page, L + 40, yb + 11 * k, line, 8.5)
+            x = R - right
             for k in ids:
                 x = f.chip(x, yb, k, STATUS["new"], target=_target(ledger.get_comment(lg, k), n)) + 3
             if ids:
@@ -1222,25 +1406,93 @@ def _summary(doc, paper, lg, n, changes, size, asked, read=(), sent=None):
             elif ch["id"] in checked:
                 x = _glyph(f.page, "verified", x, yb, 8, STATUS["verified"][2])
                 _put(f.page, x, yb, "read", 8, "b", STATUS["verified"][2])
-            f.y += 11 * len(lines) + 3.5
-    f.section("Build")
-    for line in _wrap(_build_line(lg, n, changes), R - L, 8.5):
-        f.need(12)
-        _put(f.page, L, f.y, line, 8.5)
+            f.y += 11 * len(lines) + 3
+
+    # --- the foot: the build, and the marks in the paper ------------------------------------------------------------
+    f.need(48)
+    f.y += 16
+    f.page.draw_line((L, f.y - 10), (R, f.y - 10), color=_rgb(RULE), width=0.6)
+    _put(f.page, L, f.y, "Build", 8, "b")
+    for line in _wrap(_build_line(lg, n, changes), R - L - 40, 8):
+        _put(f.page, L + 40, f.y, line, 8, "r", MUTED)
         f.y += 11
+    yb = f.y + 3
+    _put(f.page, L, yb, "Marks", 8, "b")
+    x = L + 40
+    if n > 1:
+        f.page.draw_rect(pymupdf.Rect(x, yb - 8, x + 1.7, yb + 1.5), color=None, fill=_rgb(HIST), width=0)
+        f.page.draw_rect(pymupdf.Rect(x + 5, yb - 7, x + 9 + _width("text", 8), yb + 1.8), color=None,
+                         fill=_rgb(HIST_FILL), width=0)
+        x = _put(f.page, x + 7, yb, "text", 8) + 5
+        x = _put(f.page, x, yb, "your change since Round {}".format(n - 1), 8, "r", MUTED) + 12
+        _cross(f.page, x + 2, yb - 2.5, HIST)
+        x1 = _put(f.page, x + 7, yb, "old", 8, "r", HIST_TEXT)
+        f.page.draw_line((x + 7, yb - 2.4), (x1, yb - 2.4), color=_rgb(HIST_TEXT), width=0.6)
+        x = _put(f.page, x1 + 4, yb, "deleted", 8, "r", MUTED) + 12
+    f.page.draw_rect(pymupdf.Rect(x, yb - 8.5, x + 2.4, yb + 2.5), color=None,
+                     fill=_rgb(comments.PALETTE["yellow"][0]), width=0)
+    _put(f.page, x + 7, yb, "a comment's colour, as on its mark", 8, "r", MUTED)
+    f.y = yb + 6
     return f
+
+
+def _strip(f, clean, cs, todo, n):
+    """A small picture of each page of the paper as built, at most STRIP_MAX in a row: a vermilion dot at each place of
+    a comment to do, a grey one at a closed comment's; a page with something to do is framed and says how many. A page
+    links to itself."""
+    pages = clean.page_count
+    per = min(pages, max(STRIP_MAX, -(-pages // 4)))  # at most four rows: a long paper's pages get smaller
+    tw = min(58.0, (f.R - f.L - (6 if per <= STRIP_MAX else 2) * (per - 1)) / per)
+    gap = (f.R - f.L - tw * per) / (per - 1) if per > 1 else 0
+    th = max(p.rect.height * tw / p.rect.width for p in clean)
+    rows = -(-pages // per)
+    f.y += 16
+    f.need(rows * (th + 26))
+    dots = {}
+    for c in cs:
+        for a in _found(c, n) if not _overall(c) else ():
+            dots.setdefault(a["page"], []).append((c in todo, a["rects"][0]))
+    for pg in range(pages):
+        page = clean[pg]
+        s = tw / page.rect.width
+        x0 = f.L + (pg % per) * (tw + gap)
+        y0 = f.y + (pg // per) * (th + 26)
+        r = pymupdf.Rect(x0, y0, x0 + tw, y0 + page.rect.height * s)
+        f.page.insert_image(r, pixmap=page.get_pixmap(matrix=pymupdf.Matrix(s * 2.5, s * 2.5), alpha=False))
+        f.page.draw_rect(r, color=None, fill=_rgb("#FFFFFF"), fill_opacity=0.55, width=0)  # the paper, faded
+        here = 0
+        for open_, rect in sorted(dots.get(pg, []), key=lambda d: d[0]):  # open ones on top
+            cx, cy = x0 + (rect[0] + rect[2]) / 2 * s, y0 + (rect[1] + rect[3]) / 2 * s
+            if open_:
+                here += 1
+                f.page.draw_circle((cx, cy), 2.6 if tw >= 30 else 1.9, color=_rgb("#FFFFFF"), fill=_rgb(VERMILION),
+                                   width=0.6)
+            else:
+                f.page.draw_circle((cx, cy), 1.6 if tw >= 30 else 1.2, color=None, fill=_rgb("#9A9A9A"), width=0)
+        f.page.draw_rect(r, color=_rgb(INK if here else FAINT), width=0.8 if here else 0.5)
+        f.links.append((f.count - 1, r, (pg, 0)))
+        if tw < 16:  # too small to name: the frames and the dots say it
+            continue
+        text = ("p.{}".format(pg + 1) if tw >= 30 else str(pg + 1)) + (" · {}".format(here) if here and tw >= 40
+                                                                       else "")
+        style = "b" if here else "r"
+        _put(f.page, x0 + (tw - _width(text, 7.5, style)) / 2, r.y1 + 10, text, 7.5, style, INK if here else MUTED)
+        if here and tw < 40:
+            _put(f.page, x0 + (tw - _width(str(here), 7.5, "b")) / 2, r.y1 + 19, str(here), 7.5, "b")
+    f.y += rows * (th + 26) - 2
 
 
 # --- final.pdf ----------------------------------------------------------------------------------------------
 
-def final_pdf(paper, lg, n, out, sent=None):
+def final_pdf(paper, lg, n, out, sent=None, names=None):
     """Summary page(s), then the round's build PDF in the margin style; sent: the check items that go out with the
-    round (check_items.outgoing), or None. Returns the margin items placed ([{"page": paper page, "id", "side",
+    round (check_items.outgoing), or None; names: the tag names the app shows ({id: name}; else TAG_NAMES). Returns the margin items placed ([{"page": paper page, "id", "side",
     "rect", "leader": its points, "chip": its rect or None}], for tests)."""
     paper = Path(paper)
     rnd = next(r for r in lg["rounds"] if r["n"] == n)
     pdf = str(paper / rnd["build"]["pdf"])
     doc = pymupdf.open(pdf)
+    clean = pymupdf.open(pdf)  # the pages as built, for the summary's page strip
     size = (doc[0].rect.width, doc[0].rect.height)  # the paper's own, before the margins widen its pages
     lay = {k: state._build_layout(paper, rnd["build"], k) for k in ("text_x", "columns")}  # as ingest stored them
     changes = analysis.changes(paper, n)
@@ -1277,14 +1529,18 @@ def final_pdf(paper, lg, n, out, sent=None):
     done = prose.read_map(paper, lg)
     read = {ch["id"] for ch in changes if prose.change_read(ch, prose.change_hashes(data, ch), done, n)}
     # the summary at the paper's own page size (Letter, A4), not the widened one, so it prints at 100%
-    f = _summary(doc, paper, lg, n, changes, size, asked, read, sent)
+    f = _summary(doc, paper, lg, n, changes, size, asked, read, sent, data, clean,
+                 dict(lg.get("tag_names") or {}, **(names or {})))
     offset = f.count
     for spno, r, (pno, y) in f.links:
         doc[spno].insert_link({"kind": pymupdf.LINK_GOTO, "from": r, "page": pno + offset,
                                "to": pymupdf.Point(0, max(0, y - 60)), "zoom": 0})
+    clean.close()
     _outline(doc, offset, [c for c in cs if _target(c, n)], n,
              [v for v in sent["items"] if _check_target(v)] if sent else (),
-             sorted((c for c in cs if _overall(c)), key=lambda c: ledger.id_key(c["id"])))
+             sorted((c for c in cs if _overall(c) and not _praise(c)
+                     and _status(c, n) in ("new", None, "reopened", "revived")),
+                    key=lambda c: (_status(c, n) == "new", ledger.id_key(c["id"]))))  # the summary's Overall block
     doc.set_page_labels([{"startpage": 0, "prefix": "Summary" + (" " if offset > 1 else ""),
                           "style": "D" if offset > 1 else "", "firstpagenum": 1}]
                         + ([] if any(lb["startpage"] == 0 for lb in labels) else

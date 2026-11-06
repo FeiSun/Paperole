@@ -248,7 +248,7 @@ def test_revive_brings_a_closed_comment_back_to_check_and_on(reef):
     state = call("finish", paper=p)["state"]
     assert state["round"]["email"] == text
     doc = pymupdf.open(str(paper / "r3" / "final.pdf"))
-    assert "Reopened (1)" in doc[0].get_text()
+    assert "reopened" in doc[0].get_text().split("\n")  # its row's status word
     assert "{} · reopened".format(a) in "".join(page.get_text() for page in doc)
     page = cs[a]["path"][-1][2]
     assert [3 - 1, "{} · reopened · p.{}".format(a, page + 1)] in [t[:2] for t in doc.get_toc()]

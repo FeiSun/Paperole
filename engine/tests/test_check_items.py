@@ -403,9 +403,8 @@ def _final_round1(paper, found):
     k = len(final) - len(build)  # the summary's pages
     summary = " ".join(_words(final[j]) for j in range(k))
     summary = summary.replace("\xa0", " ")
-    assert "Automatic checks (4)" in summary and "To do for Round 2 Automatic checks (4):" in summary
+    assert "Automatic checks (4)" in summary and "4 to do of 4 checks" in summary  # the checks are to do too
     assert "or % A1-01 for an automatic check." in summary
-    assert "A1-01 an automatic check, found by Paperole, not by me" in summary
     assert "Paperole found these, not me, and it can be wrong." in summary
     assert "Consistency + A1-01 p.1 “minimise” 1× · “minimize” 1×" in summary
     assert "Still open" not in summary and "Fixed since" not in summary  # a first round's checks are all new

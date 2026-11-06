@@ -150,11 +150,18 @@ def test_rounds_2_and_3(paper, standin):
     final = pymupdf.open(state["round"]["final_pdf"])
     assert final.page_count == 5
     summary = unicodedata.normalize("NFKC", final[0].get_text())  # MuPDF keeps the "ﬁ" ligature
-    for expected in ("Review of Round 2", "To do for Round 3 (3)\nR1-02\nR1-04\n+ R2-01", "Follow-ups (1)",
-                     "Still open (1)", "Resolved (2)\nR1-01\nR1-03", "No change\nneeded (1)",
-                     "这次先不改。", "Your changes no comment asked for (1)"):
-        assert expected in summary
+    words = " ".join(summary.split())
+    for expected in ("Review of Round 2", "3 to do of 6 comments", "3 closed", "2 again", "1 new", "To do for Round 3",
+                     "R1-02 follow-up p.1", "R1-04 still open —", "Closed (3) Resolved 2", "No change needed 1",
+                     "Your changes no comment asked for (1)"):
+        assert expected in words
+    # a row each in the paper's order, the comment found nowhere last; closed ones are chips
+    assert max(words.index("R1-02 follow-up"), words.index("R2-01 new")) < words.index("R1-04 still open")
+    closed = words[words.index("Closed (3)"):]
+    assert closed.index("R1-01") < closed.index("R1-03") < closed.index("R1-05")
     assert "只用一天调参够吗" not in summary  # a line per comment: the earlier note is in the margin box
+    assert "这次先不改。" not in summary  # a closed comment's note too
+    assert "这次先不改。" in final[next(c for c in state["comments"] if c["id"] == "R1-05")["page"] + 1].get_text()
     assert "(location not found in Round 2)" in " ".join(summary.split())  # wrapped at the paper's page width
     # no annotation but the paper's links: the outline lists the comments, and the marks are burned in, each in the
     # comment's colour (a highlight in its fill, other kinds in its ink)
@@ -292,12 +299,10 @@ def test_a_round_finished_now_uses_the_students_words(paper, standin):
     text = " ".join(" ".join(page.get_text() for page in final).split())
     assert not [w for w in ("reopened", "verified", "won't fix") if w in (email + text).lower()]
     summary = " ".join(final[0].get_text().split())
-    key = summary[summary.index("Key "):summary.index("Earlier comments")]
-    assert key.index("follow-up") < key.index("new comment") < key.index("– no change needed") < key.index("resolved")
-    assert summary.index("Follow-ups (1)") < summary.index("No change needed (1)") < summary.index("Resolved (1)")
-    labels = [s["bbox"] for b in final[0].get_text("dict")["blocks"] for line in b.get("lines", [])
-              for s in line["spans"] if s["text"] in ("No change", "needed (1)")]  # on two lines, clear of the chip
-    assert len(labels) == 2 and max(r[2] for r in labels) < min(r.x0 for r in final[0].search_for("R1-03"))
+    # the status words in the rows (no key), then the closed ones as chips
+    assert "R1-02 follow-up" in summary and "R2-01 new" in summary
+    assert summary.index("To do for Round 3") < summary.index("Closed (2)") < summary.index("Resolved 1") \
+        < summary.index("No change needed 1")
     assert sorted(t[1] for t in final.get_toc() if t[0] == 2) == [
         "R1-01 · resolved · p.1", "R1-02 · follow-up · p.1", "R1-03 · no change needed · p.3", "R2-01 · new · p.1"]
 

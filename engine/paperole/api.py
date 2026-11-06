@@ -2,6 +2,7 @@
 
 cli.py and rpc.py only translate to and from these functions."""
 import contextlib
+import copy
 import datetime
 import hashlib
 import json
@@ -636,45 +637,62 @@ def _checks_flag(params):
     return flag
 
 
+def _going_out(paper, lg, rnd, params, send):
+    """The round's check items as Finish sends them (check_items.outgoing), or None; lg is changed as Finish keeps it."""
+    n = rnd["n"]
+    if send:  # synced once more with checks.json when it is current (else as last synced); an item marked OK
+        # before it was sent never goes out
+        groups = _check_groups(params) if "groups" in params else rnd.get("check_groups", list(checks.GROUPS))
+        disabled = _check_disabled(params) if "disabled" in params else rnd.get("check_disabled", [])
+        rnd["check_groups"] = groups
+        if disabled or "check_disabled" in rnd:
+            rnd["check_disabled"] = disabled
+        found = checks.load(paper, n)
+        if found is not None:
+            check_items.sync(lg, n, found["checks"], groups, disabled, check_report.failed(found))
+        # A setting changed while checks were rebuilding: honour it even without a current cache.
+        for item in (lg.get("check_items") or {}).values():
+            if str(n) in item["rounds"] and (item["code"] in disabled or item["group"] not in groups):
+                item["rounds"][str(n)]["state"] = None
+        check_items.drop(lg, n, unsent=True)
+    else:  # nothing goes out: the open items stay open for a later round
+        check_items.drop(lg, n)
+    return check_items.outgoing(lg, n) if send else None
+
+
+def _tag_names(params):
+    """The tag names the app shows ({id: name}, optional): final.pdf's summary names tags so."""
+    names = params.get("tag_names", {})
+    if not isinstance(names, dict) or not all(isinstance(k, str) and isinstance(v, str) and 0 < len(v) <= 200
+                                              for k, v in names.items()):
+        raise EngineError("tag_names maps tag ids to names.")
+    return {k: " ".join(v.split()) for k, v in names.items()}
+
+
 def finish(params, progress):
     paper = _paper(params)
     send = _checks_flag(params)
+    names = _tag_names(params)
     with _edit(paper, keep="finish") as lg:
         rnd = comments.require_open(lg)
         n = rnd["n"]
         rdir = paper / "r{}".format(n)
-        if send:  # synced once more with checks.json when it is current (else as last synced); an item marked OK
-            # before it was sent never goes out
-            groups = _check_groups(params) if "groups" in params else rnd.get("check_groups", list(checks.GROUPS))
-            disabled = _check_disabled(params) if "disabled" in params else rnd.get("check_disabled", [])
-            rnd["check_groups"] = groups
-            if disabled or "check_disabled" in rnd:
-                rnd["check_disabled"] = disabled
-            found = checks.load(paper, n)
-            if found is not None:
-                check_items.sync(lg, n, found["checks"], groups, disabled, check_report.failed(found))
-            # A setting changed while checks were rebuilding: honour it even without a current cache.
-            for item in (lg.get("check_items") or {}).values():
-                if str(n) in item["rounds"] and (item["code"] in disabled or item["group"] not in groups):
-                    item["rounds"][str(n)]["state"] = None
-            check_items.drop(lg, n, unsent=True)
-        else:  # nothing goes out: the open items stay open for a later round
-            check_items.drop(lg, n)
-        sent = check_items.outgoing(lg, n) if send else None
+        sent = _going_out(paper, lg, rnd, params, send)
         rnd.pop("checks_sent", None)
         rnd.pop("checks_fixed", None)
         if send:
             rnd["checks_sent"] = len(sent["items"]) if sent else 0
             rnd["checks_fixed"] = len(sent["fixed"]) if sent else 0
         prose.materialize(paper, lg)  # before closing: an older ledger counts the rounds closed before as read
+        data = prose.load(paper, n) or _prose(paper, lg, n, None, progress)  # before final.pdf: its summary's sections
         progress("Writing final.pdf…")
-        render.final_pdf(paper, lg, n, rdir / "final.pdf", sent)
+        render.final_pdf(paper, lg, n, rdir / "final.pdf", sent, names)
         disk.atomic_write(rdir / "email.txt", render.email_text(lg, n, sent))
         # every paragraph is read once the round is closed (round 1: the advisor read it in the PDF while
         # commenting), so the next round's bars are the paragraphs changed since; after final.pdf, which lists the
         # changes read in this round only
         # the hashes it marks are kept, so Resume can take them off again
-        rnd["marked_read"] = prose.close_read(lg, n, prose.load(paper, n) or _prose(paper, lg, n, None, progress))
+        rnd["marked_read"] = prose.close_read(lg, n, data)
         # the round's checksums, last: a closed round never changes, so damage shows in any copy (DATA.md §2.4)
         disk.write_manifest(rdir, Path(rnd["build"]["pdf"]).stem)
         rnd["closed"], rnd["closed_at"] = True, ledger.now()
@@ -1091,6 +1109,38 @@ def state_(params, progress):
     return {"state": out}
 
 
+def final_preview(params, progress):
+    """final.pdf of the open round as `finish` would write it now (design/summary-page: the Finish sheet shows it), at
+    `out`, a .pdf path of the app's own outside the paper folder; the ledger is left as it is and the round open. Its
+    result has no state: {"round", "out"}."""
+    paper = _paper(params)
+    send = _checks_flag(params)
+    names = _tag_names(params)
+    out = params.get("out")
+    if not isinstance(out, str) or not os.path.isabs(out) or not out.endswith(".pdf"):
+        raise EngineError("out is an absolute path to a .pdf file.")
+    out = Path(out)
+    if not out.parent.is_dir():
+        raise EngineError("There is no folder {}.".format(out.parent))
+    there = out.parent.resolve()
+    if there == paper.resolve() or paper.resolve() in there.parents:
+        raise EngineError("A preview is not written into the paper's folder.")
+    stopped = getattr(progress, "cancelled", lambda: False)  # a newer preview was asked: this one is dropped
+    if stopped():
+        raise EngineError("Cancelled.")
+    lg = copy.deepcopy(ledger.load(paper))
+    rnd = comments.require_open(lg)
+    n = rnd["n"]
+    sent = _going_out(paper, lg, rnd, params, send)
+    prose.materialize(paper, lg)
+    _prose_quietly(paper, n, progress)
+    if stopped():
+        raise EngineError("Cancelled.")
+    progress("Writing the preview…")
+    render.final_pdf(paper, lg, n, out, sent, names)
+    return {"round": n, "out": str(out)}
+
+
 def email_preview(params, progress):
     """The email `finish` would write for the open round now: render.email_text of the ledger as it stands, which
     depends on nothing else. Read only, for the app's Finish sheet; like summaries, its result has no state."""
@@ -1398,7 +1448,7 @@ def swap_in(params, progress):
 
 METHODS = {"new": new, "ingest": ingest, "comment": comment, "edit_comment": edit_comment, "reanchor": reanchor,
            "add_place": add_place, "remove_place": remove_place,
-           "delete_comment": delete_comment, "verdict": verdict, "import": import_, "finish": finish,
+           "delete_comment": delete_comment, "verdict": verdict, "import": import_, "finish": finish, "final_preview": final_preview,
            "check_change": check_change, "state": state_, "summaries": summaries, "prose": prose_, "links": links_,
            "checks": checks_, "check_ok": check_ok, "check_items": check_items_, "check_note": check_note,
            "references": references, "ref_results": ref_results,

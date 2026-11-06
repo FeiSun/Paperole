@@ -96,7 +96,8 @@ def test_an_overall_comment_is_carried_answered_and_sent(paper, tmp_path):
     call("finish", paper=str(paper))
     summary = pymupdf.open(paper / "r1/final.pdf")[0].get_text()
     assert "Overall" in summary and "The method needs a running example." in summary
-    assert summary.index("Overall") < summary.index("How to reply"), "first, before How to reply"
+    assert summary.index("Overall (1)") < summary.index("On the pages (1)"), "before the comments on the pages"
+    assert "2\nto do\nof 2 comments" in summary, "the overall comment is to do too"
     toc = pymupdf.open(paper / "r1/final.pdf").get_toc()
     assert [t[1] for t in toc[:3]] == ["Summary", "Overall (1)", "{} · new".format(cid)]
     email = (paper / "r1/email.txt").read_text()
@@ -116,7 +117,7 @@ def test_an_overall_comment_is_carried_answered_and_sent(paper, tmp_path):
     call("verdict", paper=str(paper), id=cid, verdict="reopened", note="Use it in Section 3 too.")
     call("finish", paper=str(paper))
     first = pymupdf.open(paper / "r2/final.pdf")[0].get_text()
-    assert "Use it in Section 3 too." in first and first.index("Overall") < first.index("How to reply")
+    assert "Use it in Section 3 too." in first and first.index("Overall (1)") < first.index("On the pages")
     assert cid in (paper / "r2/email.txt").read_text()
 
     # round 3: resolved, then reopened as any comment

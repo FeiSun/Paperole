@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Summary page</title>
+<style>
+:root{--bg:#F6F6F4;--label:#1F2621;--secondary:#5F6A61;--rule:rgba(0,0,0,.10)}
+@media (prefers-color-scheme:dark){:root{--bg:#1B1C1B;--label:#E6EBE6;--secondary:#9EA89F;--rule:rgba(255,255,255,.11)}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--label);font:13px/1.45 -apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif}
+header{padding:16px 24px;border-bottom:1px solid var(--rule)}
+h1{margin:0;font-size:17px;font-weight:600}
+section{padding:20px 24px 28px;border-bottom:1px solid var(--rule)}
+h2{margin:0 0 4px;font-size:15px;font-weight:600}
+section p{margin:0 0 14px;color:var(--secondary);max-width:900px}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+figure{margin:0}
+figcaption{margin:0 0 8px;font-weight:600}
+figcaption span{font-weight:400;color:var(--secondary)}
+img{width:100%;display:block;background:#fff;box-shadow:0 0 0 1px var(--rule),0 2px 8px rgba(0,0,0,.08)}
+@media (max-width:900px){.grid,.grid.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><h1>final.pdf summary page · synthetic demo paper, Round 2</h1></header>
+<section>
+<h2>A short round</h2>
+<p>5 to do of 16 comments: a row each, in the paper's order.</p>
+<div class="grid">
+<figure><figcaption>Today <span>engine as of 2026-11-05</span></figcaption><img src="png/before.png" alt="Today's summary page"></figure>
+<figure><figcaption>A <span>to-do table</span></figcaption><img src="png/mockup-a.png" alt="Proposal A"></figure>
+<figure><figcaption>B <span>to-do table and page strip</span></figcaption><img src="png/mockup-b.png" alt="Proposal B"></figure>
+</div>
+</section>
+<section>
+<h2>A long round</h2>
+<p>The same paper with 62 more new comments, as a newcomer's first draft may get: 67 to do. Past 20 rows the table groups by section; what came back is still a row each, and small fixes share one row.</p>
+<div class="grid two">
+<figure><figcaption>Page 1</figcaption><img src="png/mockup-c.png" alt="Many comments, page 1"></figure>
+<figure><figcaption>Page 2</figcaption><img src="png/mockup-c-2.png" alt="Many comments, page 2"></figure>
+</div>
+</section>
+<section>
+<h2>Finish Round</h2>
+<p>The round's card stays on the left; the student's first page, live, on the right. The pointer is over R1-05's row.</p>
+<div class="grid two">
+<figure><figcaption>Light</figcaption><img src="png/finish-sheet-light.png" alt="Finish sheet, light"></figure>
+<figure><figcaption>Dark</figcaption><img src="png/finish-sheet-dark.png" alt="Finish sheet, dark"></figure>
+</div>
+</section>
+</body>
+</html>

@@ -546,16 +546,18 @@ struct FinishSheet: View {
                 .lineLimit(1)
                 .padding(.top, 3)
             }
-            HStack(alignment: .top, spacing: 20) {
-                // the whole column when it fits; else the drafts scroll, so what goes to the student stays in view
+            HStack(alignment: .top, spacing: 22) {
+                // the whole column when it fits; else the drafts scroll, so the round's card stays in view
                 ViewThatFits(in: .vertical) {
                     handOff(s, scrollingDrafts: false).padding(2)
                     handOff(s, scrollingDrafts: true).padding(2)
                 }
-                .frame(maxWidth: .infinity, alignment: .top)
+                .frame(width: 430, alignment: .top)
+                .frame(maxHeight: .infinity, alignment: .top)
+                // what the student gets, as Finish would write it now (design/summary-page)
                 VStack(alignment: .leading, spacing: 0) {
-                    header("This round", sub: "· your card when you finish", first: true)
-                    if let st = model.state { CompactRoundCard(stats: model.roundStats(st), dark: scheme == .dark) }
+                    header("final.pdf", first: true)
+                    finalPreview
                 }
                 .padding(.vertical, 2)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -580,12 +582,34 @@ struct FinishSheet: View {
         .padding(.horizontal, 22)
         .padding(.top, 20)
         .padding(.bottom, 18)
-        .frame(width: 920, height: 640)
+        .frame(width: 1120, height: 760)
         .background(Color(nsColor: Palette.sheet))
     }
 
-    /// The left column: Left for you, Words not sent yet (`scrollingDrafts`: in a list of their own that scrolls), Goes
-    /// to the student, and what finishing does to the paragraphs.
+    /// The preview in a white box: the document, else while the first is made a quiet spinner, else its error. A
+    /// newer preview replaces the shown one when it is ready.
+    private var finalPreview: some View {
+        ZStack {
+            Color.white
+            if let doc = preview.document {
+                FinalPreviewView(document: doc, ids: Set((model.state?.comments ?? []).map(\.id))) { id in
+                    model.review(.comment(id))
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let e = preview.previewError {
+                Text(e).font(.system(size: 12)).foregroundStyle(Color(nsColor: NSColor(white: 0.36, alpha: 1)))
+                    .multilineTextAlignment(.center).padding(24)
+            } else {
+                ProgressView().controlSize(.small).colorScheme(.light)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Color(nsColor: Palette.rule), lineWidth: 0.5))
+    }
+
+    /// The left column: Left for you, Words not sent yet (`scrollingDrafts`: in a list of their own that scrolls), the
+    /// round's card so far, and what finishing does to the paragraphs. What goes to the student is the preview's.
     private func handOff(_ s: FinishSummary, scrollingDrafts: Bool) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             if !s.left.isEmpty {
@@ -607,8 +631,8 @@ struct FinishSheet: View {
                     drafts
                 }
             }
-            header("Goes to the student", first: s.left.isEmpty && rows.isEmpty)
-            box(s.goes)
+            header("This round", sub: "· your card when you finish", first: s.left.isEmpty && rows.isEmpty)
+            if let st = model.state { CompactRoundCard(stats: model.roundStats(st), dark: scheme == .dark) }
             // about the bars: not said while reading marks are off (Settings), when there are none
             if model.readingMarksOn {
                 Text(s.round == 1 ? "Finishing Round 1 marks every paragraph read."

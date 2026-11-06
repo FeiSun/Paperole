@@ -388,8 +388,9 @@ def test_new_comments_on_changes_and_closed_notes(paper):
     final = pymupdf.open(state["round"]["final_pdf"])
     assert final.xref_get_key(final.pdf_catalog(), "OpenAction")[1].startswith("[{} 0 R".format(final[0].xref))
     summary = " ".join(final[0].get_text().split())
-    assert note in summary and "asks about this" in summary and asking in summary
-    assert "Your changes no comment asked for" in summary and "of them: those marked read or asked about" in summary
+    # a closed comment is a chip on the summary; its note is in the margin (design/summary-page)
+    assert note not in summary and struck in summary.split("Closed (")[1]
+    assert "Your changes no comment asked for" in summary and "{} asks about this".format(asking) in summary
     page = final[1]  # paper page 1
     assert note in " ".join(page.get_text().split())  # in the margin, not cut
     c = next(c for c in state["comments"] if c["id"] == struck)
