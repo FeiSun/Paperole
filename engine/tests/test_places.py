@@ -125,3 +125,28 @@ def test_an_overall_comment_takes_no_places(paper):
 def test_place_ids_sort_after_their_comment():
     assert sorted(["R1-02", "R1-01#b", "R1-01", "R1-01#c"], key=ledger.id_key) == ["R1-01", "R1-01#b", "R1-01#c",
                                                                                      "R1-02"]
+
+
+def test_a_place_added_to_a_carried_comment(paper, tmp_path):
+    cid = call("comment", paper=str(paper), note="Disagree.", **sel(paper, 1, "by 4.1 points"))["id"]
+    call("finish", paper=str(paper))
+    call("ingest", paper=str(paper), source=str(tmp_path / "source"))
+    out = call("add_place", paper=str(paper), id=cid, kind="highlight", **sel(paper, 2, "3.7 points"))
+    c = comment_in(out["state"], cid)
+    assert c["carried"] and c["places"][0]["anchor_state"] == "new" and c["places"][0]["added"] == 2
+    call("edit_comment", paper=str(paper), id=cid, relation="does not match")
+    call("finish", paper=str(paper))
+    assert "does not match" in " ".join(pymupdf.open(paper / "r2/final.pdf")[1].get_text().split())
+
+
+def test_the_overview_places_a_comment_whose_own_place_is_lost_at_another(paper, tmp_path):
+    cid = call("comment", paper=str(paper), note="Disagree.", **sel(paper, 1, "by 4.1 points"))["id"]
+    call("add_place", paper=str(paper), id=cid, kind="highlight", **sel(paper, 1, "3.7 points"))
+    call("finish", paper=str(paper))
+    (tmp_path / "source/main.tex").write_text(TEX.replace("Our method improves accuracy by 4.1 points on the benchmark.",
+                                                          "We study curricula."))
+    call("ingest", paper=str(paper), source=str(tmp_path / "source"))
+    from paperole import overview
+    o = overview.overview([str(paper)])["papers"][0]["overview"]
+    r2 = next(r for r in o["rounds"] if r["n"] == 2)
+    assert r2["comments"]["not_found"] == 0 and r2["unplaced"] == 0, "its other place is found"

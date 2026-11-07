@@ -481,6 +481,21 @@ final class DebugScript {
             // the tab switch's motion slowed down (`motion 8`) so screenshots can catch it in flight; `motion 1` back
             TabMotion.slow = max(Double(rest) ?? 1, 1)
             next(0.05) { ["motion": TabMotion.slow] }
+        case "addto":  // `addto <id>`: the selection (or box) added to that comment as another place (UX.md §46)
+            let bar = self.model?.toolbar.addTo.map(\.id) ?? []
+            model?.addPlace(to: rest)
+            next(3) { [weak self] in
+                let c = self?.model?.comment(rest)
+                let r: [String: Any] = ["toolbar": bar, "places": c?.others.map(\.key) ?? [],
+                                        "selected": self?.model?.panel.expanded as Any? ?? NSNull(),
+                                        "line": self?.model?.pdf.linkLine?.superview != nil,
+                                        "state": c.map { CardModel($0, round: self?.model?.round?.n ?? 0, pdfs: [:], textX: [], showChanges: true).stateWord as Any? ?? NSNull() } ?? NSNull()]
+                return r
+            }
+        case "relation":  // `relation <id> <words>`: the card's "How the places relate" saved
+            let (id, words) = Self.split(rest)
+            model?.setRelation(id, words)
+            next(2) { [weak self] in ["relation": self?.model?.comment(id)?.relation as Any? ?? NSNull()] }
         case "overall":  // `overall`: + Overall comment's editor opened; `overall <note>`: also typed and saved
             model?.beginOverallComment()
             if !rest.isEmpty, let m = model, let d = m.listBar.overallDraft {

@@ -162,10 +162,15 @@ def place_comment(c, key):
     """Comment c seen from one of its other places, as the code that knows one anchor reads a comment: its id
     "R1-03#b", that place's kind, and its records (only the rounds that have the place), each with the round's verdict
     fields."""
-    kind = next(p["kind"] for p in c["link"]["places"] if p["key"] == key)
+    entry = next(p for p in c["link"]["places"] if p["key"] == key)
     rounds = {k: dict({f: r.get(f) for f in ("verdict", "verdict_note", "verdict_at", "revived")}, **r["places"][key])
               for k, r in c["rounds"].items() if key in (r.get("places") or {})}
-    return dict(c, id="{}#{}".format(c["id"], key), kind=kind, rounds=rounds)
+    for r in rounds.values():  # reopened from a round before the place was added: nothing there to compare with
+        if r["revived"] and str(r["revived"]["from"]) not in rounds:
+            r["revived"] = None
+    # its first round is the one it was added in (a place added to a carried comment has no earlier text)
+    return dict(c, id="{}#{}".format(c["id"], key), kind=entry["kind"], rounds=rounds,
+                created_round=entry.get("added", c["created_round"]))
 
 
 def add_place(paper, lg, cid, page, rects, text, kind):

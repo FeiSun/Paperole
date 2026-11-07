@@ -204,6 +204,9 @@ final class EditState: ObservableObject {
     @Published var swatches: String?
     @Published var roundOpen = false
     @Published var round = 0
+    /// The card whose "How the places relate" field takes focus once shown: a comment just given its second place
+    /// (design/comments/PLAN.md §6a); dropped once the field has it.
+    @Published var relationFocus: String?
     /// The expanded card's follow-up field (UX.md §8): its text (the card's unsent draft), the card whose field has
     /// focus, and a request for focus (R, Return; never a selection), dropped once the field has it.
     @Published var draft = ""
@@ -257,10 +260,17 @@ final class ToolbarModel: ObservableObject {
     @Published var boxArmed = false
     @Published var hasBox = false
     @Published var reanchor: String?
+    /// Re-anchoring one of the comment's other places (its key), or nil for its own place.
+    @Published var reanchorPlace: String?
     @Published var reanchorError: String?
+    /// The mark being re-anchored: "R1-02", or "R1-02#b" for one of its other places (`MarkKey.reanchor`).
+    var reanchorKey: String? { reanchor.map { id in reanchorPlace.map { id + "#" + $0 } ?? id } }
     /// At a find match the floating toolbar is the Comment button alone (design/review-page/BRIEF.md E5): the composer
     /// it opens has the swatches and kinds.
     @Published var matchOnly = false
+    /// [+ R1-05 ▾] after Comment: the comments the selection can be added to as another place, the shown one first
+    /// (design/comments/PLAN.md §1); empty while no such comment is shown.
+    @Published var addTo: [AddTarget] = []
 
     init() {
         color = MarkColor(name: Prefs.string("markColor") ?? "") ?? .yellow
@@ -409,6 +419,11 @@ final class CardActions {
     func cancelEdit() { model?.cancelEdit() }
     func focusLost() { model?.commitEdit(focusLost: true) }
     func reanchor(_ id: String) { model?.beginReanchor(id) }
+    /// A place line's menu (design/comments/PLAN.md §3, 1 and 3): that place re-anchored or taken off.
+    func reanchorPlace(_ id: String, _ key: String) { model?.beginReanchor(id, place: key == "a" ? nil : key) }
+    func removePlace(_ id: String, _ key: String) { model?.removePlace(id, key) }
+    func revealPlace(_ id: String, _ key: String) { model?.revealPlace(id, key) }
+    func setRelation(_ id: String, _ text: String) { model?.setRelation(id, text) }
     /// A section's Show all, or the thread's folded line ("fold").
     func toggleShowAll(_ block: String) {
         guard let e = model?.edit else { return }
@@ -1205,7 +1220,7 @@ final class AppModel: ObservableObject {
         // an open inline editor is saved first, to the paper it was begun on, as for another round (UX.md §17)
         commitEdit(focusLost: true)
         closeEdit()
-        toolbar.reanchor = nil
+        toolbar.reanchor = nil; toolbar.reanchorPlace = nil
         clearPanelToast()  // its Undo is this paper's: never another's
         pdf.endSteps()
         pdf.closePinned()  // the kept previews are this paper's (none over a hub page)
@@ -1857,6 +1872,8 @@ final class AppModel: ObservableObject {
             restore(a.id, a.before) { ok in ok ? toast(self.word(a.before)) : self.history.undoFailed() }
         case .style(let s):
             restyle(s, to: s.before, from: s.after) { ok in ok ? toast(s.words(self.style(s.id) ?? s.before)) : self.history.undoFailed() }
+        case .place(let p):
+            removePlace(p.id, p.key, record: false) { ok in ok ? toast(self.placesWords(p.id)) : self.history.undoFailed() }
         }
     }
 
@@ -1873,6 +1890,13 @@ final class AppModel: ObservableObject {
             restore(a.id, a.after) { ok in ok ? toast(self.word(a.after)) : self.history.redoFailed() }
         case .style(let s):
             restyle(s, to: s.after, from: s.before) { ok in ok ? toast(s.words(self.style(s.id) ?? s.after)) : self.history.redoFailed() }
+        case .place(let p):
+            let made = key  // the paper and round the step is of: its history is the one shown only there
+            addPlace(p.id, anchor: (p.page, p.rects, p.text), kind: p.kind, record: false) { new in
+                guard let new else { return self.shows(made) ? self.history.redoFailed() : () }
+                if self.shows(made) { self.history.rekey(p, to: new) }
+                toast(self.placesWords(p.id))
+            }
         }
     }
 
@@ -2316,8 +2340,9 @@ final class AppModel: ObservableObject {
     // MARK: Re-anchoring (UX.md §8)
 
     /// Like a note's editor, re-anchoring starts while the engine works; Place waits for it (the request is queued).
-    func beginReanchor(_ id: String) {
+    func beginReanchor(_ id: String, place: String? = nil) {
         guard let c = comment(id), roundIsOpen else { return }
+        toolbar.reanchorPlace = place
         commitEdit()
         dropChoice()
         tab = .comments
@@ -2333,6 +2358,7 @@ final class AppModel: ObservableObject {
     func leaveReanchor() {
         guard toolbar.reanchor != nil else { return }
         toolbar.reanchor = nil
+        toolbar.reanchorPlace = nil
         toolbar.reanchorError = nil
         syncCheckComment()
         pdf.clearSelection()
@@ -2350,9 +2376,15 @@ final class AppModel: ObservableObject {
         }
         params.merge(["page": a.page, "rects": a.rects, "text": a.text]) { a, _ in a }
         let isBox = a.isBox
+        let place = toolbar.reanchorPlace.flatMap { k in c.others.first { $0.key == k } }
+        if toolbar.reanchorPlace != nil && place == nil {  // taken off meanwhile: never move its own place instead
+            toolbar.reanchorError = "That place was removed."
+            return
+        }
+        if let place { params["place"] = place.key }
         if isBox {
             params["kind"] = MarkKind.box.rawValue
-        } else if c.markKind == .box {
+        } else if (place?.markKind ?? c.markKind) == .box {
             params["kind"] = MarkKind.highlight.rawValue
         }
         toolbar.reanchorError = nil
@@ -4377,3 +4409,95 @@ extension AppModel {
         })
     }
 }
+
+// MARK: Comments on several places (design/comments/PLAN.md §3, 1 and 3, §6a; mac/UX.md §46)
+
+/// A comment a selection can be added to as another place: its id and the start of its note.
+struct AddTarget: Equatable, Identifiable {
+    var id: String
+    var title: String
+    /// Carried into the open round and not answered yet.
+    var toCheck: Bool
+}
+
+extension AppModel {
+    /// Whether a selection can become another place of the comment: of the open round (new, or carried and not
+    /// answered), not on the whole paper.
+    func canAddPlace(_ c: Comment) -> Bool { roundIsOpen && !c.isOverall && (!c.carried || c.verdict == nil) }
+
+    /// The comments a selection can be added to (PLAN §1 "Linking two places"): the shown one first, then this round's
+    /// new ones, latest first, then the carried ones to check, in the paper's order.
+    func addTargets() -> [AddTarget] {
+        let cs = (state?.comments ?? []).filter(canAddPlace)
+        let shown = selectedComment.flatMap { canAddPlace($0) ? $0 : nil }
+        // "R2-14" after "R2-9": by its number, not its letters
+        let seq = { (c: Comment) in Int(c.id.split(separator: "-").last ?? "") ?? 0 }
+        let new = cs.filter { !$0.carried && $0.id != shown?.id }.sorted { seq($0) > seq($1) }
+        let ordered = (shown.map { [$0] } ?? []) + new + cs.filter { $0.carried && $0.id != shown?.id }
+        return ordered.map { AddTarget(id: $0.id, title: PDFMenus.otherTitle($0), toCheck: $0.carried) }
+    }
+
+    /// "on 2 places", for the toasts.
+    func placesWords(_ id: String) -> String {
+        let n = 1 + (comment(id)?.others.count ?? 0)
+        return n == 1 ? "on one place" : "on \(n) places"
+    }
+
+    /// [+ R1-05] or Add to Comment ▸: the selection or the pending box becomes another place of the comment, in the
+    /// toolbar's kind (a box stays a box), with Undo in the toast; a comment's first other place opens its relation field.
+    func addPlace(to id: String) {
+        guard let a = pdf.pendingAnchor() else { return }
+        let kind = a.isBox ? MarkKind.box.rawValue : toolbar.kind.rawValue
+        addPlace(id, anchor: (a.page, a.rects, a.text), kind: kind, record: true) { _ in }
+    }
+
+    func addPlace(_ id: String, anchor a: (page: Int, rects: [[Double]], text: String), kind: String, record: Bool,
+                  done: @escaping (String?) -> Void) {
+        guard let c = comment(id), canAddPlace(c), !refusedWhileBusy(), let paper = selectedPath else { return done(nil) }
+        let first = !c.linked
+        call("add_place", ["paper": paper, "id": id, "page": a.page, "rects": a.rects, "text": a.text, "kind": kind],
+             then: { r in
+                 guard let key = r.place else { return done(nil) }
+                 guard paper == self.selectedPath else { return done(key) }
+                 self.pdf.clearSelection()
+                 self.pdf.dropPendingBox()
+                 if self.tab != .comments { self.tab = .comments }
+                 if self.panel.expanded != id { self.select(.comment(id), reveal: false, scroll: .centre) }
+                 if record {
+                     self.history.record(PlaceStep(id: id, key: key, page: a.page, rects: a.rects, text: a.text, kind: kind))
+                     self.showPanelToast("\(id) is " + self.placesWords(id), action: .undo)
+                     if first { self.edit.relationFocus = id }
+                 }
+                 done(key)
+             }, failed: { _ in done(nil) })
+    }
+
+    /// A place's menu (the card's place line, the mark's): Remove This Place. The comment and its other places stay.
+    func removePlace(_ id: String, _ key: String, record: Bool = true, done: @escaping (Bool) -> Void = { _ in }) {
+        guard roundIsOpen, !refusedWhileBusy(), let paper = selectedPath else { return done(false) }
+        if toolbar.reanchor == id && toolbar.reanchorPlace == key { leaveReanchor() }  // the place being moved goes
+        call("remove_place", ["paper": paper, "id": id, "place": key], then: { _ in
+            if record, paper == self.selectedPath {
+                self.history.forgetPlaces(id)  // its place steps name keys that are gone
+                self.showPanelToast("\(id) is " + self.placesWords(id))
+            }
+            done(true)
+        }, failed: { _ in done(false) })
+    }
+
+    /// The card's "How the places relate" field, saved on Return or when it loses focus: the advisor's words, which
+    /// the student reads at each place ("" for none).
+    func setRelation(_ id: String, _ text: String) {
+        let words = text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+        guard let c = comment(id), c.linked, words != (c.relation ?? ""), roundIsOpen, let paper = selectedPath else { return }
+        call("edit_comment", ["paper": paper, "id": id, "relation": words])
+    }
+
+    /// A place line's click: that place shown, a look-up step for Back (its own place: as the page number does).
+    func revealPlace(_ id: String, _ key: String) {
+        guard let c = comment(id) else { return }
+        if key == "a" { return pdf.reveal(page: c.page, rects: c.rects, step: .lookUp) }
+        if let p = c.others.first(where: { $0.key == key }) { pdf.reveal(page: p.page, rects: p.rects, step: .lookUp) }
+    }
+}
+

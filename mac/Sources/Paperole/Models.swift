@@ -55,6 +55,7 @@ struct ReadingInfo: Decodable, Equatable {
 struct Reply: Decodable {
     var state: EngineState
     var id: String?
+    var place: String? = nil  // add_place: the new place's key
 }
 
 /// The papers list's next steps (`summaries`): one per paper folder, or the error that folder gave.
@@ -282,6 +283,55 @@ struct Comment: Decodable, Equatable, Identifiable {
     var revived: Revived? = nil
     /// It can be reopened into the paper's open round now (closed in an earlier round, the open round built).
     var revivable: Bool? = nil
+    /// Where its own place is, by name: a float's caption name ("Table 1"), else the innermost heading ("§4.1 Setup"),
+    /// else nil (engine/CONTRACT.md amendment "Comments on places, step 2").
+    var name: String? = nil
+    /// Its other places in the shown round, in the order added (none: one place); its own is place "a".
+    var places: [Place]? = nil
+    /// How the places relate, in the advisor's words ("" for none).
+    var relation: String? = nil
+
+    /// One more place of a comment (design/comments/PLAN.md §2): found again every round with its own state.
+    struct Place: Decodable, Equatable {
+        var key: String
+        var kind: String
+        var added: Int
+        var page: Int?
+        var rects: [[Double]]
+        var text: String?
+        var anchorState: String
+        var confidence: Double
+        var method: String
+        var file: String? = nil
+        var line: Int? = nil
+        var context: AnchorContext? = nil
+        var name: String? = nil
+        var changes: [String]? = nil
+
+        var markKind: MarkKind { MarkKind(rawValue: kind) ?? .highlight }
+        var found: Bool { anchorState != "orphan" && page != nil }
+    }
+
+    /// Its other places (none for a comment on one place).
+    var others: [Place] { places ?? [] }
+    /// On two places or more.
+    var linked: Bool { !others.isEmpty }
+    /// Each of its places found in the shown round, its own first: key, page and rects.
+    var foundPlaces: [(key: String, page: Int, rects: [[Double]])] {
+        (anchorState != "orphan" ? page.map { [("a", $0, rects)] } ?? [] : [])
+            + others.compactMap { p in p.found ? p.page.map { (p.key, $0, p.rects) } : nil }
+    }
+    /// The pages its places are found on, in their order, each once.
+    var foldedPages: [Int] {
+        var seen: [Int] = []
+        for p in foundPlaces where !seen.contains(p.page) { seen.append(p.page) }
+        return seen
+    }
+    /// Where the comment is shown from (a card's page, a reveal): its own place, else the first other place found.
+    var shownPlace: (page: Int?, rects: [[Double]]) {
+        if anchorState != "orphan" || !linked { return (page, rects) }
+        return foundPlaces.first.map { ($0.page, $0.rects) } ?? (page, rects)
+    }
 
     var tagIDs: [String] { tags ?? [] }
 

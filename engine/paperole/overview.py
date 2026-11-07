@@ -455,6 +455,11 @@ def _paper_overview(path, marks=False, key_page=None, buckets=None):
                 continue
             rec, a = recs[n], recs[n]["anchor"]
             st = rec["anchor_state"]
+            if st == "orphan" or a is None:  # its own place lost: shown at another place found (PLAN.md §2), as the app does
+                other = next((p for p in (rec.get("places") or {}).values() if p["anchor"] and p["anchor_state"] != "orphan"),
+                             None)
+                if other:
+                    a, st = other["anchor"], other["anchor_state"]
             page, pos = (a["page"], place(n, a["page"], a["rects"])) if a else (None, None)
             if c.get("kind") == "overall":  # on the whole paper: no place, and not lost
                 where_ = "whole"

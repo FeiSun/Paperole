@@ -79,7 +79,7 @@ struct CompactRow: View, Equatable {
                     .foregroundStyle(Ink.secondary)
                     .padding(.trailing, 3)
                 }
-                Text(card.overall ? "overall" : card.page.map { "p.\($0 + 1)" } ?? "—").font(.system(size: 11))
+                Text(card.pageWords ?? "—").font(.system(size: 11))
                     .foregroundStyle(Ink.secondary).monospacedDigit()
             }
             .frame(height: 18)
@@ -271,6 +271,7 @@ struct ExpandedCard: View, Equatable {
         VStack(alignment: .leading, spacing: 0) {
             header
             note.padding(.top, 10)
+            if !card.places.isEmpty { PlacesBlock(card: card, actions: actions).padding(.top, 8) }
             // the writing tags under the title (UX.md §24): words and signs, + for the picker; in any round
             CardTagRow(card: card, actions: actions).padding(.top, card.note.isEmpty && card.carried ? 0 : 8)
             thread.padding(.top, 14)
@@ -308,7 +309,7 @@ struct ExpandedCard: View, Equatable {
                 if card.overall {
                     Text("overall").help("On the whole paper: it has no mark")
                 } else {
-                    Button(card.page.map { "p.\($0 + 1)" } ?? "no page") { actions.reveal(card.id) }
+                    Button(card.pageWords ?? "no page") { actions.reveal(card.id) }
                         .buttonStyle(.plain)
                         .help("Show the mark in the PDF")
                 }

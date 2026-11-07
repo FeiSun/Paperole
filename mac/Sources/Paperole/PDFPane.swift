@@ -377,6 +377,8 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     private var markKey: MarkKey?
     private var marks: [(PDFPage, PDFAnnotation)] = []
     private var commentMarks: [String: (page: PDFPage, mark: MarkAnnotation)] = [:]
+    /// Every place's mark of each comment, its own ("a") first (design/comments/PLAN.md §2).
+    private var placeMarks: [String: [(key: String, page: PDFPage, mark: MarkAnnotation)]] = [:]
     /// The bars beside the paragraphs to read (UX.md §18), by block, with the parts they were drawn for and whether
     /// bold (the paragraph Next went to).
     private var readingMarks: [Int: (parts: [PageRect], bold: Bool, marks: [(PDFPage, MarkAnnotation)])] = [:]
@@ -433,6 +435,8 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     /// The selected comment's outline round its mark and id label (UX.md §5), a view of its own too: taking the mark off
     /// its page and putting it back with an outline made PDFKit redraw the whole page, every mark on it, on each J/K.
     private var selectionOutline: OutlineView?
+    private var placeOutlines: [OutlineView] = []  // the selected comment's other places
+    private(set) var linkLine: LinkLineView?  // between the selected comment's labels in view
     /// Set only here, and by a test to stand for a shown editor (no window is on screen in a test run).
     var popover: NSPopover?
     private(set) var draft: CommentDraft?
@@ -560,6 +564,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
                 self?.lastScroll = ProcessInfo.processInfo.systemUptime  // the column's window waits for it to settle
                 self?.model?.pdfScrolled()
                 self?.checkChip()
+                self?.updateLinkLine()  // a label scrolled in or out of view
             }
         }
         observers.append(ClipObserver(clip: clip, token: token))
@@ -633,7 +638,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             selectedChange = nil
             placeChangeOutline()
             marks = []
-            commentMarks = [:]
+            commentMarks = [:]; placeMarks = [:]
             readingMarks = [:]
             markKey = nil
             placeSelectionOutline()
@@ -671,7 +676,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             pageChanged()
         }
         var k = input
-        k.reanchor = model?.toolbar.reanchor
+        k.reanchor = model?.toolbar.reanchorKey
         if v.document != nil, k != markKey { rebuildMarks(k) }
         if v.document != nil { observeScrolling() }
         if let r = pendingReveal, v.document != nil {
@@ -720,7 +725,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     func refreshMarks() {
         guard let m = markKey else { return }
         var k = m
-        k.reanchor = model?.toolbar.reanchor
+        k.reanchor = model?.toolbar.reanchorKey
         if k != markKey { rebuildMarks(k) }
     }
 
@@ -736,7 +741,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         if k.showChanges != markKey?.showChanges { closeLane() }  // change marks turned on or off
         for (page, a) in marks { page.removeAnnotation(a) }
         marks = []
-        commentMarks = [:]
+        commentMarks = [:]; placeMarks = [:]
         checkMarks = [:]
         checkShapes = [:]
         changeMarks = [:]
@@ -761,40 +766,46 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         }
         var later: [(PDFPage, MarkAnnotation)] = []  // the comments' marks: their labels placed first, drawn last
         for (order, c) in (st?.comments ?? []).enumerated() {
-            guard let (page, idx, rs) = pageRects(doc, c.page, c.rects) else { continue }
             let status = Status(c)
-            let point = rs.allSatisfy { $0.width < 1 && $0.height < 1 }
-            let style: MarkAnnotation.Style
-            if c.anchorState == "gone" {
-                style = .gone
-            } else {
-                switch c.markKind {
-                case .highlight: style = .highlight
-                case .underline: style = .underline
-                case .strikeout: style = .strike
-                case .box: style = .box
-                case .note: style = point ? .sticky : .textNote
+            // its own place, then each other place (design/comments/PLAN.md §2): a mark and a label at every one found
+            let places = [(key: "a", page: c.page, rects: c.rects, state: c.anchorState, kind: c.markKind)]
+                + c.others.map { (key: $0.key, page: $0.page, rects: $0.rects, state: $0.anchorState, kind: $0.markKind) }
+            for place in places {
+                guard place.state != "orphan", let (page, idx, rs) = pageRects(doc, place.page, place.rects) else { continue }
+                let point = rs.allSatisfy { $0.width < 1 && $0.height < 1 }
+                let style: MarkAnnotation.Style
+                if place.state == "gone" {
+                    style = .gone
+                } else {
+                    switch place.kind {
+                    case .highlight: style = .highlight
+                    case .underline: style = .underline
+                    case .strikeout: style = .strike
+                    case .box: style = .box
+                    case .note: style = point ? .sticky : .textNote
+                    }
                 }
+                // The label is in the comment's own ink with its status as a glyph: in the status colours it was read as
+                // a mark colour next to a mark of the same hue (resolved green, new blue). ⇄: it has other places.
+                let labels = MarkAnnotation.labels(c.id, glyph: status.glyph, linked: c.linked)
+                let (lr, size) = labelRect(labels, beside: rs[0], on: page, index: idx)
+                let a = MarkAnnotation(rects: rs, style: style, fill: c.markColor.fill, ink: c.markColor.ink,
+                                       label: labels[size], labelRect: lr, labelColor: c.markColor.ink, labelSize: size)
+                a.faded = status.closed
+                a.dashed = k.reanchor == (place.key == "a" ? c.id : c.id + "#" + place.key)
+                later.append((page, a))  // added after the checks' marks, so it lies over them
+                marks.append((page, a))
+                if commentMarks[c.id] == nil { commentMarks[c.id] = (page, a) }  // its own, else the first found
+                placeMarks[c.id, default: []].append((place.key, page, a))
+                var s = [MarkShape.label(c.id, lr, order: order)]
+                switch style {
+                case .gone: s.append(.caret(c.id, rs[0], order: order))
+                case .sticky: s.append(.point(c.id, CGPoint(x: rs[0].midX, y: rs[0].midY), order: order))
+                case .box: s.append(.box(c.id, rs, order: order))
+                default: s.append(.text(c.id, rs, order: order))
+                }
+                shapes[idx, default: []] += s
             }
-            // The label is in the comment's own ink with its status as a glyph: in the status colours it was read as
-            // a mark colour next to a mark of the same hue (resolved green, new blue).
-            let labels = MarkAnnotation.labels(c.id, glyph: status.glyph)
-            let (lr, size) = labelRect(labels, beside: rs[0], on: page, index: idx)
-            let a = MarkAnnotation(rects: rs, style: style, fill: c.markColor.fill, ink: c.markColor.ink,
-                                   label: labels[size], labelRect: lr, labelColor: c.markColor.ink, labelSize: size)
-            a.faded = status.closed
-            a.dashed = c.id == k.reanchor
-            later.append((page, a))  // added after the checks' marks, so it lies over them
-            marks.append((page, a))
-            commentMarks[c.id] = (page, a)
-            var s = [MarkShape.label(c.id, lr, order: order)]
-            switch style {
-            case .gone: s.append(.caret(c.id, rs[0], order: order))
-            case .sticky: s.append(.point(c.id, CGPoint(x: rs[0].midX, y: rs[0].midY), order: order))
-            case .box: s.append(.box(c.id, rs, order: order))
-            default: s.append(.text(c.id, rs, order: order))
-            }
-            shapes[idx, default: []] += s
         }
         // overall comments: a label each at the top of p.1, over its text, side by side (design/comments/PLAN.md §6a)
         let overall = (st?.comments ?? []).enumerated().filter { $0.element.isOverall }
@@ -918,6 +929,7 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     func setSelected(_ id: String?) {
         if markBarID != nil && id != markBarID { hideMarkBar() }
         guard id != selectedID else { return }
+        if toolbarView?.isHidden == false { DispatchQueue.main.async { [weak self] in self?.showToolbar() } }  // [+ R1-05] for it
         selectedID = id
         placeSelectionOutline()
         updateLaneHalo()
@@ -929,6 +941,16 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         let m = selectedID.flatMap { commentMarks[$0] } ?? selectedCheck.flatMap { id in
             checkMarks[id].flatMap { $0[selectedCheckPlace] ?? $0.min { $0.key < $1.key }?.value }
         }
+        // a comment's other places: an outline each (design/comments/PLAN.md §3, 1 and 3), and the line between labels
+        placeOutlines.forEach { $0.removeFromSuperview() }
+        placeOutlines = []
+        for p in selectedID.flatMap({ placeMarks[$0] }) ?? [] where p.mark !== m?.mark {
+            let o = OutlineView(width: 2)
+            if o.place(SelectionOutline.boxes(lines: p.mark.dashed ? [] : p.mark.lines, label: p.mark.labelRect), on: p.page, in: view) {
+                placeOutlines.append(o)
+            }
+        }
+        updateLinkLine()
         let boxes = m.map { SelectionOutline.boxes(lines: $0.mark.dashed ? [] : $0.mark.lines, label: $0.mark.labelRect) } ?? []
         guard let m, !boxes.isEmpty else {
             selectionOutline?.removeFromSuperview()
@@ -938,6 +960,30 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         let o = selectionOutline ?? OutlineView(width: 2)
         if !o.place(boxes, on: m.page, in: view) { o.removeFromSuperview() }
         selectionOutline = o
+    }
+
+    /// While a comment on several places is selected and two of its labels or more are in view, a hairline joins them
+    /// through the margin, the advisor's words for how they relate at its middle (design/comments/PLAN.md §6a): a view
+    /// over the PDF, laid again as the page scrolls or zooms. None for one label in view: the card's place lines go on.
+    func updateLinkLine() {
+        guard let v = view, let doc = v.documentView, let id = selectedID, let all = placeMarks[id], all.count > 1 else {
+            linkLine?.removeFromSuperview()
+            linkLine = nil
+            return
+        }
+        let shown = all.compactMap { p -> CGRect? in
+            guard let lr = p.mark.labelRect else { return nil }
+            let r = v.convert(lr, from: p.page)
+            return v.bounds.intersects(r) ? doc.convert(r, from: v) : nil
+        }
+        guard shown.count > 1 else {
+            linkLine?.removeFromSuperview()
+            linkLine = nil
+            return
+        }
+        let line = linkLine ?? LinkLineView()
+        line.place(labels: shown, text: model?.comment(id)?.relation ?? "", middle: doc.bounds.midX, in: doc)
+        linkLine = line
     }
 
     /// The selected change gets a lasting accent outline while it is selected (UX.md §16): a view over the PDF, so
@@ -1049,7 +1095,8 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
     /// (asked for before, it waits for them: `pendingOverall`). Nothing for an overall comment whose label is hidden.
     func show(_ c: Comment, reveal: Bool, flash: Bool, step: PDFSteps.Kind? = nil) {
         guard c.isOverall else {
-            if reveal { self.reveal(page: c.page, rects: c.rects, step: step) } else if flash { self.flash(page: c.page, rects: c.rects) }
+            let at = c.shownPlace  // its own place, else the first other place found
+            if reveal { self.reveal(page: at.page, rects: at.rects, step: step) } else if flash { self.flash(page: at.page, rects: at.rects) }
             return
         }
         guard reveal || flash else { return }
@@ -1066,7 +1113,9 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
 
     /// Whether a comment's mark (an overall comment's label) is on screen.
     func isVisible(_ c: Comment) -> Bool {
-        guard c.isOverall else { return isVisible(page: c.page, rects: c.rects) }
+        guard c.isOverall else {
+            return isVisible(page: c.page, rects: c.rects) || c.others.contains { isVisible(page: $0.page, rects: $0.rects) }
+        }
         guard let v = view, let m = commentMarks[c.id], let lr = m.mark.labelRect else { return false }
         return v.bounds.intersects(v.convert(lr, from: m.page))
     }
@@ -1583,9 +1632,10 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
                 }
                 let cards = Dictionary(model.panel.cards.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
                 for c in model.state?.comments ?? [] where model.roundIsOpen && Status(c) == .toCheck {  // vermilion: your move
-                    guard let page = c.page else { continue }
+                    let at = c.shownPlace  // its own place, else another place found
+                    guard let page = at.page else { continue }
                     add(ScrollerMark(kind: .toCheck, fraction: 0, target: .comment(c.id), page: page,
-                                     label: cards[c.id]?.accessibility ?? c.id), top(c.rects))
+                                     label: cards[c.id]?.accessibility ?? c.id), top(at.rects))
                 }
                 // the checks the student answered: your move too (design/checks-ui), at their first place with rects
                 for c in model.checksToCheck {
@@ -2382,6 +2432,9 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
         // at a find match, the Comment button alone (BRIEF E5); a selection of your own, the whole toolbar
         let only = pendingBox == nil && find.currentIsSelection
         if model.toolbar.matchOnly != only { model.toolbar.matchOnly = only }
+        // [+ R1-05 ▾] while a comment it can go to is shown
+        let add = model.selectedComment.map(model.canAddPlace) == true && !model.busy ? model.addTargets() : []
+        if model.toolbar.addTo != add { model.toolbar.addTo = add }
         // made once; a paper switch or a trip to the hub makes a new PDF view, and the toolbar moves into it
         let bar = toolbarView ?? makeToolbar()
         if bar.superview !== v { v.addSubview(bar) }
@@ -2429,6 +2482,10 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
 
     /// For --debug-script markbar: a comment's mark's page and lines (page space).
     func debugMark(_ id: String) -> (page: PDFPage, lines: [CGRect])? { commentMarks[id].map { ($0.page, $0.mark.lines) } }
+    /// For the tests: the places of a comment drawn, by key, with their pages and label rects.
+    func debugPlaces(_ id: String) -> [(key: String, page: PDFPage, label: CGRect?)] {
+        (placeMarks[id] ?? []).map { ($0.key, $0.page, $0.mark.labelRect) }
+    }
 
     /// Whether a click on the comment's mark shows its toolbar: a new comment of the open round, outside re-anchoring.
     static func showsMarkBar(_ c: Comment, roundOpen: Bool, reanchoring: Bool) -> Bool {
@@ -2565,6 +2622,23 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             groups.append([Self.menuItem("Comment…") { [weak self] in self?.beginComment() },
                            Self.menuItem("Strike Out") { [weak self] in self?.strikeOut() },
                            Self.menuItem("Replace With…") { [weak self] in self?.replaceSelection() }])
+            // another place of a comment (design/comments/PLAN.md §4): the shown one, or any from the list
+            let targets = model.addTargets()
+            if !targets.isEmpty {
+                var add: [NSMenuItem] = []
+                if let shown = model.selectedComment, shown.id == targets[0].id {
+                    add.append(Self.menuItem("Add to \(shown.id)") { [weak model] in model?.addPlace(to: shown.id) })
+                }
+                let item = NSMenuItem(title: "Add to Comment", action: nil, keyEquivalent: "")
+                item.submenu = NSMenu()
+                for t in targets {
+                    item.submenu?.addItem(Self.menuItem(t.title + (t.toCheck ? " · to check" : "")) { [weak model] in
+                        model?.addPlace(to: t.id)
+                    })
+                }
+                add.append(item)
+                groups.append(add)
+            }
         }
         let query = PDFMenus.collapsed(text)
         var look = [Self.menuItem("Copy") { [weak self] in
@@ -2619,6 +2693,15 @@ final class PDFController: NSObject, NSPopoverDelegate, NSWindowDelegate {
             })
         }
         groups += PDFMenus.actionable(CardMenus.more(id, model: model))
+        // one of its other places (design/comments/PLAN.md §4): that place re-anchored or taken off, never the comment
+        if c.linked, model.roundIsOpen, !model.busy,
+           let key = placeMarks[id]?.first(where: { m in
+               m.page === page && (m.mark.labelRect.map { $0.insetBy(dx: -2, dy: -2).contains(p) } == true
+                                   || m.mark.lines.contains { $0.insetBy(dx: -minSize / 2, dy: -minSize / 2).contains(p) })
+           })?.key, key != "a" {
+            groups.append([Self.menuItem("Re-anchor This Place…") { [weak model] in model?.beginReanchor(id, place: key) },
+                           Self.menuItem("Remove This Place") { [weak model] in model?.removePlace(id, key) }])
+        }
         let others = hits.filter { $0 != id }.compactMap { model.comment($0) }
         if !others.isEmpty {
             let item = NSMenuItem(title: "Other Comments Here", action: nil, keyEquivalent: "")
@@ -2956,6 +3039,7 @@ struct ToolbarActions {
     weak var model: AppModel?
     func comment() { model?.beginComment() }
     func place() { model?.placeReanchor() }
+    func addPlace(_ id: String) { model?.addPlace(to: id) }
 }
 
 /// Swatches, kinds and Comment, over the PDF next to a selection or a pending box (UX.md §7).
@@ -2997,10 +3081,41 @@ struct FloatingToolbar: View {
                 Button { actions.comment() } label: { Text("Comment").fontWeight(.semibold) }
                     .buttonStyle(VerdictButtonStyle(active: true, color: .accentColor))
                     .help("Write a comment (Return)")
+                if !toolbar.addTo.isEmpty { AddPlaceButton(targets: toolbar.addTo, add: actions.addPlace) }
             }
         }
         .padding(.horizontal, 7)
         .frame(height: 30)
+    }
+}
+
+/// [+ R1-05 ▾] (design/comments/PLAN.md §1, §6a): the selection as another place of the shown comment; ▾ lists the
+/// comments it can go to instead, this round's latest first, then the carried ones to check.
+struct AddPlaceButton: View {
+    let targets: [AddTarget]
+    let add: (String) -> Void
+
+    var body: some View {
+        HStack(spacing: 0) {
+            Button { add(targets[0].id) } label: {
+                Text("+ " + targets[0].id).fontWeight(.semibold).monospacedDigit().lineLimit(1).fixedSize()
+            }
+                .buttonStyle(VerdictButtonStyle(active: false, color: .accentColor))
+                .help("Add this place to \(targets[0].id)")
+            if targets.count > 1 {
+                Menu {
+                    ForEach(targets) { t in Button(t.title + (t.toCheck ? " · to check" : "")) { add(t.id) } }
+                } label: {
+                    Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .padding(.leading, 4)
+                .help("Add this place to another comment")
+                .accessibilityLabel("Add to another comment")
+            }
+        }
     }
 }
 
@@ -3058,8 +3173,9 @@ final class MarkAnnotation: PDFAnnotation {
         faded ? (NSColor.white.withAlphaComponent(0.92), color.withAlphaComponent(0.55), color) : (color, nil, .white)
     }
 
-    static func labels(_ id: String, glyph: String) -> [String] {
-        [glyph + " " + id, glyph + "\u{2009}" + id, glyph + "\u{2009}" + id, id]
+    static func labels(_ id: String, glyph: String, linked: Bool = false) -> [String] {
+        let more = linked ? " ⇄" : ""  // on other places too
+        return [glyph + " " + id + more, glyph + "\u{2009}" + id + more, glyph + "\u{2009}" + id, id]
     }
 
     /// An overall comment's label: "○ R1-04 · overall", at labelFonts' first size (the top margin has room).
@@ -3304,6 +3420,81 @@ enum SelectionOutline {
         let xs = p.map(\.x), ys = p.map(\.y)
         return CGRect(x: xs.min() ?? 0, y: ys.min() ?? 0, width: (xs.max() ?? 0) - (xs.min() ?? 0),
                       height: (ys.max() ?? 0) - (ys.min() ?? 0))
+    }
+}
+
+/// The hairline between a comment's labels in view (design/comments/PLAN.md §6a), in document space: two labels on
+/// the same side of the page are joined through the margin, 6 pt outside the outer one; on opposite sides, straight
+/// across. The relation sits at the first line's middle, in a small capsule; nothing when it is empty.
+final class LinkLineView: NSView {
+    private(set) var path = CGMutablePath()
+    private(set) var text = ""
+    private var textAt = CGPoint.zero
+
+    override var isFlipped: Bool { false }
+    override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    /// The labels' rects in `doc`'s coordinates, in the places' order; `middle`: the page's middle across.
+    @MainActor
+    func place(labels: [CGRect], text: String, middle: CGFloat, in doc: NSView) {
+        if superview !== doc { doc.addSubview(self, positioned: .above, relativeTo: nil) }
+        let text = text.count > 32 ? String(text.prefix(31)).trimmingCharacters(in: .whitespaces) + "…" : text  // a margin's room
+        var segments: [[CGPoint]] = []
+        for (a, b) in zip(labels, labels.dropFirst()) {
+            let left = a.midX < middle, sameSide = left == (b.midX < middle)
+            if sameSide {
+                let x = left ? min(a.minX, b.minX) - 6 : max(a.maxX, b.maxX) + 6
+                let ax = left ? a.minX : a.maxX, bx = left ? b.minX : b.maxX
+                segments.append([CGPoint(x: ax, y: a.midY), CGPoint(x: x, y: a.midY), CGPoint(x: x, y: b.midY), CGPoint(x: bx, y: b.midY)])
+            } else {
+                let (l, r) = left ? (a, b) : (b, a)
+                segments.append([CGPoint(x: l.maxX, y: l.midY), CGPoint(x: r.minX, y: r.midY)])
+            }
+        }
+        let font = Self.font
+        let size = (text as NSString).size(withAttributes: [.font: font])
+        let pad = CGSize(width: size.width + 10, height: size.height + 2)
+        var bounds = segments.flatMap { $0 }.reduce(CGRect.null) { $0.union(CGRect(origin: $1, size: .zero)) }
+        // the words at the first line's middle: its vertical run's middle, or the straight line's
+        var mid = CGPoint.zero
+        if let first = segments.first {
+            mid = first.count == 4 ? CGPoint(x: first[1].x, y: (first[1].y + first[2].y) / 2)
+                : CGPoint(x: (first[0].x + first[1].x) / 2, y: (first[0].y + first[1].y) / 2)
+        }
+        if !text.isEmpty { bounds = bounds.union(CGRect(x: mid.x - pad.width / 2, y: mid.y - pad.height / 2, width: pad.width, height: pad.height)) }
+        frame = bounds.insetBy(dx: -2, dy: -2)
+        let p = CGMutablePath()
+        for seg in segments {
+            let pts = seg.map { convert($0, from: doc) }
+            p.addLines(between: pts)
+        }
+        path = p
+        self.text = text
+        textAt = convert(mid, from: doc)
+        needsDisplay = true
+    }
+
+    static let font = NSFont.systemFont(ofSize: 10, weight: .medium)
+
+    override func draw(_ dirtyRect: NSRect) {
+        guard let ctx = NSGraphicsContext.current?.cgContext else { return }
+        let accent = NSColor.controlAccentColor
+        ctx.setStrokeColor(accent.withAlphaComponent(0.8).cgColor)
+        ctx.setLineWidth(1)
+        ctx.addPath(path)
+        ctx.strokePath()
+        guard !text.isEmpty else { return }
+        let attrs: [NSAttributedString.Key: Any] = [.font: Self.font, .foregroundColor: accent]
+        let size = (text as NSString).size(withAttributes: attrs)
+        let box = CGRect(x: textAt.x - size.width / 2 - 5, y: textAt.y - size.height / 2 - 1, width: size.width + 10, height: size.height + 2)
+        let capsule = CGPath(roundedRect: box, cornerWidth: box.height / 2, cornerHeight: box.height / 2, transform: nil)
+        ctx.setFillColor(NSColor.white.cgColor)  // the page is white in either mode
+        ctx.addPath(capsule)
+        ctx.fillPath()
+        ctx.setStrokeColor(accent.withAlphaComponent(0.8).cgColor)
+        ctx.addPath(capsule)
+        ctx.strokePath()
+        (text as NSString).draw(at: CGPoint(x: box.minX + 5, y: box.minY + 1), withAttributes: attrs)
     }
 }
 
@@ -3668,7 +3859,7 @@ extension PDFController {
         switch t {
         case .comment(let id) where selectedID == id:
             model.tab = .comments
-            if let c = model.comment(id) { flash(page: c.page, rects: c.rects) }
+            if let c = model.comment(id) { flash(page: c.shownPlace.page, rects: c.shownPlace.rects) }
         case .change(let id) where selectedChangeID == id:
             model.tab = .changes
             if let ch = model.change(id) { flash(page: ch.page, rects: ch.rects) }

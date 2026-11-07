@@ -520,12 +520,19 @@ struct ReanchorBar: View {
     @ObservedObject var toolbar: ToolbarModel
     @EnvironmentObject var model: AppModel
 
+    /// One of the comment's other places: " at Table 1 (p.4)".
+    private var placeName: String {
+        guard let id = toolbar.reanchor, let key = toolbar.reanchorPlace,
+              let p = model.comment(id)?.others.first(where: { $0.key == key }) else { return "" }
+        return " at " + PlaceLine.name(p.name, page: p.page)
+    }
+
     var body: some View {
         if let id = toolbar.reanchor {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 10) {
                     Image(systemName: "scope")
-                    Text("Re-anchoring \(id): select the text, or ⌥-drag a box").fontWeight(.medium)
+                    Text("Re-anchoring \(id)\(placeName): select the text, or ⌥-drag a box").fontWeight(.medium)
                     Spacer()
                     Button("Place") { model.placeReanchor() }
                         .help("Move \(id) to the selection or the box (Return)")

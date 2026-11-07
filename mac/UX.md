@@ -1809,3 +1809,34 @@ The advisor's request: see the student's first page before finishing, and fix wh
   page not labelled Summary). Checked in a --background test bundle on a synthetic copy of samples/promo-demo: the
   preview in Light and Dark, and a click on R1-10's row closes the sheet and selects R1-10.
 
+
+## 46. One comment on several places (2026-11-07; design/comments/PLAN.md §1, §3 "1 and 3", §4, §6a)
+
+One note and number on two places or more, each found again every round with its own state (engine/CONTRACT.md
+amendment "Comments on places, step 2"). The comment's own place is "a"; the others are added in the order made.
+
+- **Adding a place.** Select words (or ⌥-drag a box) while a comment is shown: the floating toolbar has
+  [+ R1-05 ▾] after Comment. "+ R1-05" adds the selection to the shown comment, in the toolbar's kind (a box stays a
+  box); ▾ lists the comments it can go to instead: this round's new ones, latest first, then the carried ones to check
+  ("· to check"). Answered and overall comments are not offered. The selection's right-click menu has Add to R1-05 (the
+  shown one) and Add to Comment ▸ (the same list). The toast says "R1-05 is on 2 places"; ⌘Z takes the place off
+  again, ⇧⌘Z adds it back. A comment's first other place opens its relation field.
+- **On the page.** A mark and a label at every place found, the label "○ R1-05 ⇄". A click on any of them selects the
+  comment, and every place is outlined. While it is selected and two of its labels or more are in view, a hairline
+  joins them (through the margin when they are on the same side, straight across when not), the relation at its first
+  line's middle; none when only one label is in view. The mark's menu adds Re-anchor This Place… and Remove This Place
+  for an other place (its own place keeps the card's Re-anchor…).
+- **On the card.** Under the note, "How the places relate": free words the student reads at each place, saved on Return
+  or when the field loses focus; while it is empty, one-click suggestions (does not match, repeats, needs evidence,
+  explained later, examples: fix throughout). Then a line per place, "⇄ Table 1 (p.4) · revised": the float's caption
+  name, else the innermost heading, else the page; its state said once there (new, revised, unchanged, moved, deleted,
+  not found). A click shows that place (a step of Back); its context menu re-anchors or removes it, never the comment.
+  The row and header say "p.1 ⇄ p.4"; a carried comment's row word and its round's turn count the places revised ("1 of
+  2 revised", "Maya Chen revised 1 of 2 places"), or "1 of 2 not found" when none is revised and some are lost.
+- **Not found** only when every place is: a comment whose own place is lost but another is found stays To check and
+  is shown from the place found.
+- **Re-anchoring one place**: the bar says "Re-anchoring R1-05 at Table 1 (p.4)"; that place's mark is dashed; Place
+  moves only it.
+- Not built (PLAN P1): Done Here, the "⇄ p.N" previews by each label, paragraph and section places, the scroller
+  column's marks for other places.
+- Debug items: `addto <id>` (the selection added to that comment), `relation <id> <words>`.

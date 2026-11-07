@@ -112,15 +112,28 @@ struct StyleStep: Equatable {
     }
 }
 
-/// One step for ⌘Z and ⇧⌘Z: an answer given, or a mark's style changed.
+/// A place added to a comment (design/comments/PLAN.md §3, 1 and 3): undoing removes it, redoing adds it again from
+/// the same words, under a new key.
+struct PlaceStep: Equatable {
+    var id: String
+    var key: String
+    var page: Int
+    var rects: [[Double]]
+    var text: String
+    var kind: String
+}
+
+/// One step for ⌘Z and ⇧⌘Z: an answer given, a mark's style changed, or a place added.
 enum UndoStep: Equatable {
     case answer(AnswerStep)
     case style(StyleStep)
+    case place(PlaceStep)
 
     var id: String {
         switch self {
         case .answer(let s): return s.id
         case .style(let s): return s.id
+        case .place(let s): return s.id
         }
     }
 }
@@ -138,6 +151,23 @@ struct AnswerHistory {
     mutating func record(_ step: StyleStep) {
         guard step.before != step.after else { return }
         push(.style(step))
+    }
+
+    mutating func record(_ step: PlaceStep) { push(.place(step)) }
+
+    /// A place taken off: the comment's place steps go (their keys may name it); its answers and styles stay.
+    mutating func forgetPlaces(_ id: String) {
+        let drop = { (s: UndoStep) in if case .place(let p) = s { return p.id == id } else { return false } }
+        undos.removeAll(where: drop)
+        redos.removeAll(where: drop)
+    }
+
+    /// A place redone came back under a new key: the step on the undo stack takes it.
+    mutating func rekey(_ step: PlaceStep, to key: String) {
+        guard let i = undos.lastIndex(of: .place(step)) else { return }
+        var s = step
+        s.key = key
+        undos[i] = .place(s)
     }
 
     private mutating func push(_ step: UndoStep) {
@@ -167,8 +197,8 @@ struct AnswerHistory {
     mutating func forget(_ id: String, answersOnly: Bool = false) {
         let drop = { (s: UndoStep) in
             guard s.id == id else { return false }
-            if case .style = s { return !answersOnly }
-            return true
+            if case .answer = s { return true }
+            return !answersOnly  // a style or place step touches no draft
         }
         undos.removeAll(where: drop)
         redos.removeAll(where: drop)

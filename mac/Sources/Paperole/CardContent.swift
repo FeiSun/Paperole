@@ -528,6 +528,8 @@ struct CardModel: Equatable, Identifiable {
     var color: MarkColor
     var kind: MarkKind
     var page: Int?
+    /// Where the row and the header say it is: "p.4", "p.1 ⇄ p.4", "overall"; nil: no page.
+    var pageWords: String?
     /// On the whole paper: "overall" where the page goes, no mark to show, no kind or re-anchoring.
     var overall = false
     var note: String
@@ -567,6 +569,10 @@ struct CardModel: Equatable, Identifiable {
     /// reopened into the shown round from round k (its row's word, Undo Reopen).
     var reopenIn: Int?
     var revivedFrom: Int?
+    /// Its places, when it has more than one (design/comments/PLAN.md §3, 1 and 3): a line each, its state said once
+    /// there; and the advisor's words for how they relate.
+    var places: [PlaceLine] = []
+    var relation = ""
 
     /// `student`: the student's name as the paper's record has it; `changes`: the shown round's changes as the Changes
     /// tab has them, by id (the edits a note linked elsewhere are shown from them).
@@ -580,8 +586,12 @@ struct CardModel: Equatable, Identifiable {
         status = Status(c)
         color = c.markColor
         kind = c.markKind
-        page = c.page
+        page = c.shownPlace.page  // its own place, else the first other place found
         overall = c.isOverall
+        // "p.1 ⇄ p.4": the pages of its places found, as final.pdf's summary says them
+        let pages = c.foldedPages
+        pageWords = c.isOverall ? "overall" : pages.count > 1 ? pages.map { "p.\($0 + 1)" }.joined(separator: " ⇄ ")
+            : page.map { "p.\($0 + 1)" + (c.linked ? " ⇄" : "") }
         note = c.note
         title = NoteTitle(c.note)
         firstLine = c.note.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
@@ -627,6 +637,30 @@ struct CardModel: Equatable, Identifiable {
             stateWord = thread.count == 1 ? (c.anchorState == "moved" ? "moved" : "unchanged")
                 : "\(last.event != "moved" ? last.event : last.onlyMoved ? "moved" : "revised") in R\(last.round)"
         }
+        if c.linked {
+            places = PlaceLine.lines(c, round: n)
+            relation = c.relation ?? ""
+            // the row and the round's turn count the places revised (PLAN §6a: each place's state is said once, on its
+            // line); not found only when every place is (Status)
+            // the places the student had (one added this round is new to them too); a count only over two of them or more,
+            // and only when one was revised or lost: else the row's own word ("moved to p.5", "edit on p.6") stays
+            let old = places.filter { $0.state != "new" }
+            if c.carried && status == .toCheck && !c.isOverall && old.count > 1 {
+                let revised = old.filter(\.revised).count, lost = old.filter(\.lost).count
+                if revised > 0 {
+                    stateWord = "\(revised) of \(old.count) revised"
+                    stateTone = .plain
+                } else if lost > 0 {
+                    stateWord = "\(lost) of \(old.count) not found"
+                    stateTone = open ? .attention : .plain
+                }
+                if revised > 0, let i = turns.lastIndex(where: { $0.round == n && [.student, .quiet, .engine].contains($0.kind) }) {
+                    turns[i].verb = turns[i].who != nil ? "revised \(revised) of \(old.count) places" : "\(revised) of \(old.count) places revised"
+                    turns[i].dot = .change
+                    self.labels[turns[i].id] = CardContent.label(turns[i])
+                }
+            }
+        }
         revivedFrom = c.revived?.from
         // reopened into this round (TAGS.md §9.3): the row's one word for it, unless the comment is not found
         if revivedFrom != nil && status == .toCheck && stateTone == .plain { stateWord = "reopened" }
@@ -665,3 +699,39 @@ struct CardModel: Equatable, Identifiable {
             + (studentNote.map { $0.isEmpty ? ". The student pointed an edit to it" : ". Student’s note: " + $0 } ?? "")
     }
 }
+
+/// One place of a comment on several places, on its card (design/comments/PLAN.md §3, 1 and 3, §6a): named, not only
+/// paged ("Table 1 (p.4)"), with what happened there in the shown round, said once.
+struct PlaceLine: Equatable, Identifiable {
+    var key: String  // "a": the comment's own place
+    var name: String
+    var state: String  // "new", "revised", "unchanged", "moved", "deleted", "not found"
+    var revised: Bool
+    var lost: Bool
+    var id: String { key }
+
+    /// "Table 1 (p.4)", "§4.1 Setup (p.4)", "p.4"; without a page (a place lost) its name, else "Place 2".
+    static func name(_ name: String?, page: Int?, index: Int = 0) -> String {
+        guard let page else { return name ?? "Place \(index + 1)" }
+        return name.map { "\($0) (p.\(page + 1))" } ?? "p.\(page + 1)"
+    }
+
+    static func word(_ state: String) -> String {
+        switch state {
+        case "changed": return "revised"
+        case "gone": return "deleted"
+        case "orphan": return "not found"
+        default: return state  // new, unchanged, moved
+        }
+    }
+
+    static func lines(_ c: Comment, round n: Int) -> [PlaceLine] {
+        let all = [(key: "a", name: c.name, page: c.page, state: c.anchorState)]
+            + c.others.map { (key: $0.key, name: $0.name, page: $0.page, state: $0.anchorState) }
+        return all.enumerated().map { i, p in
+            PlaceLine(key: p.key, name: name(p.name, page: p.page, index: i), state: word(p.state),
+                      revised: ["changed", "gone"].contains(p.state), lost: p.state == "orphan")
+        }
+    }
+}
+

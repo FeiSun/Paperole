@@ -77,7 +77,8 @@ struct ListSections: Equatable {
         let placed = comments.enumerated().sorted { a, b in
             func key(_ c: Comment, _ i: Int) -> (Int, Int, Double, Double, Int) {
                 if c.isOverall { return (-1, 0, 0, 0, i) }  // on the whole paper: first
-                guard let p = c.page, let r = c.rects.first, r.count == 4 else { return (Int.max, 0, 0, 0, i) }
+                let at = c.shownPlace  // its own place, else another place found
+                guard let p = at.page, let r = at.rects.first, r.count == 4 else { return (Int.max, 0, 0, 0, i) }
                 let gap = p < columns.count ? columns[p]?.first : nil
                 return (p, gap.map { r[0] >= $0 - 3 ? 1 : 0 } ?? 0, r[1], r[0], i)
             }

@@ -87,9 +87,11 @@ final class PDFMenuTests: XCTestCase {
         let sel = try XCTUnwrap(page.selection(from: point(150, 337), to: point(400, 360)))
         view.setCurrentSelection(sel, animate: false)
         let titles = menu(300, 337)
-        XCTAssertEqual(titles.prefix(5), ["Comment…", "Strike Out", "Replace With…", "—", "Copy"])
-        XCTAssertTrue(titles[5].hasPrefix("Find “") && titles[5].hasSuffix("” in Paper"), "\(titles)")
-        XCTAssertEqual(titles.count, 6, "no Look Up for several words: \(titles)")
+        // Add to Comment ▸: another place of a comment of the round (design/comments/PLAN.md §4; no comment shown, no
+        // "Add to R1-05")
+        XCTAssertEqual(titles.prefix(7), ["Comment…", "Strike Out", "Replace With…", "—", "Add to Comment", "—", "Copy"])
+        XCTAssertTrue(titles[7].hasPrefix("Find “") && titles[7].hasSuffix("” in Paper"), "\(titles)")
+        XCTAssertEqual(titles.count, 8, "no Look Up for several words: \(titles)")
         XCTAssertEqual(view.currentSelection?.string, sel.string, "the selection stays")
         // a right-click away from the selection is on the page
         XCTAssertEqual(menu(20, 600).first, "Add Note Here")

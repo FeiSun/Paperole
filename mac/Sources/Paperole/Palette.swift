@@ -240,7 +240,8 @@ enum Status: Equatable {
     init(_ c: Comment) {
         guard c.carried else { self = .new; return }
         self = Status(verdict: c.verdict)
-        if self == .toCheck && c.anchorState == "orphan" { self = .notFound }
+        // not found only when no place of it is (design/comments/PLAN.md §2: a lost place never loses the comment)
+        if self == .toCheck && c.anchorState == "orphan" && !c.others.contains(where: \.found) { self = .notFound }
     }
 
     init(verdict v: String?) {
